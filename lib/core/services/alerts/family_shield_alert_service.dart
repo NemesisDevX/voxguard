@@ -100,10 +100,12 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
           .timeout(_timeout);
 
       if (response.statusCode == 200 || response.statusCode == 202) {
+        // The relay + OneSignal API accepted the alert — that is NOT
+        // confirmed delivery to a device.
         return AlertDispatchResult(
-          status: AlertDispatchStatus.delivered,
-          detail:
-              'Alert sent to ${familyMemberIds.length} family member(s).',
+          status: AlertDispatchStatus.accepted,
+          detail: 'Alert accepted for delivery to '
+              '${familyMemberIds.length} family member(s).',
         );
       }
       // Relay rejected the request (auth or payload) vs. the relay or

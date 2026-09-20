@@ -2,6 +2,9 @@
     <!-- Microphone access for Live Mic protection sessions. Requested
          at runtime only when the user starts a session. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO"/>
+    <!-- Family Shield push alerts (Android 13+ runtime permission;
+         requested only from the receiver card, never at launch) -->
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <application
         android:label="voxguard"
         android:name="${applicationName}"

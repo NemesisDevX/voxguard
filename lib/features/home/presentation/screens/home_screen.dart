@@ -8,6 +8,7 @@ import '../../../paywall/presentation/screens/paywall_screen.dart';
 import '../../../protection/presentation/bloc/safecall_state.dart';
 import '../../../protection/presentation/screens/safecall_screen.dart';
 import '../../../protection/presentation/widgets/post_call_safety_sheet.dart';
+import '../widgets/family_receiver_card.dart';
 import '../widgets/protection_banner.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -72,11 +73,7 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           _ShieldTab(onSafeCall: _openSafeCall, onComingSoon: _showComingSoon),
           const IncidentsHistoryScreen(),
-          const _PlaceholderTab(
-            icon: Icons.settings_outlined,
-            title: AppStrings.settingsPlaceholder,
-            description: AppStrings.settingsPlaceholderDesc,
-          ),
+          const _SettingsTab(),
         ],
       ),
       bottomNavigationBar: Container(
@@ -301,37 +298,19 @@ class _LabTile extends StatelessWidget {
   }
 }
 
-class _PlaceholderTab extends StatelessWidget {
-  const _PlaceholderTab({
-    required this.icon,
-    required this.title,
-    required this.description,
-  });
-
-  final IconData icon;
-  final String title;
-  final String description;
+/// Compact settings surface — hosts the Family Shield receiver card.
+/// Push permission is only ever requested from the card's explicit
+/// "Enable Family Alerts" button, never at app launch.
+class _SettingsTab extends StatelessWidget {
+  const _SettingsTab();
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, size: 56, color: AppColors.borderSubtle),
-            const SizedBox(height: 16),
-            Text(title, style: AppTypography.titleMedium),
-            const SizedBox(height: 8),
-            Text(
-              description,
-              textAlign: TextAlign.center,
-              style: AppTypography.bodyMedium,
-            ),
-          ],
-        ),
-      ),
+    return ListView(
+      padding: const EdgeInsets.all(20),
+      children: const [
+        FamilyReceiverCard(),
+      ],
     );
   }
 }

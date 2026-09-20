@@ -5,8 +5,10 @@ import '../../../features/forensics/domain/models/incident_report.dart';
 /// Coarse outcome of a family-shield broadcast attempt — what the UI
 /// may truthfully tell the user.
 enum AlertDispatchStatus {
-  /// Relay accepted the alert for upstream delivery.
-  delivered,
+  /// Relay + OneSignal API accepted the alert for delivery. This is
+  /// NOT confirmed receipt — a device actually displaying the push is
+  /// only observable on the receiving device.
+  accepted,
 
   /// Explicit Demo Mode — nothing left the device.
   simulated,
@@ -28,9 +30,11 @@ final class AlertDispatchResult {
     required this.detail,
   });
 
-  /// Dispatch accepted (real relay call or simulated broadcast).
+  /// Dispatch accepted (real relay call or simulated broadcast) —
+  /// named `delivered` only for call-site convenience; it does NOT
+  /// prove a device received the push.
   bool get delivered =>
-      status == AlertDispatchStatus.delivered ||
+      status == AlertDispatchStatus.accepted ||
       status == AlertDispatchStatus.simulated;
 
   /// True when the broadcast ran in simulated mode (no relay).

@@ -9,7 +9,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.41-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.11-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-10B981.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-30%2F30%20Passing-10B981)](https://github.com/NemesisDevX/voxguard/actions)
+[![Tests](https://img.shields.io/badge/Tests-66%20Flutter%20%2B%2015%20Relay%20Passing-10B981)](https://github.com/NemesisDevX/voxguard/actions)
 [![CI/CD](https://img.shields.io/github/actions/workflow/status/NemesisDevX/voxguard/ci.yml?branch=main&label=CI%2FCD)](https://github.com/NemesisDevX/voxguard/actions)
 [![Platforms](https://img.shields.io/badge/Android%20%7C%20iOS%20%7C%20Web%20%7C%20Windows-1E2333)](https://github.com/NemesisDevX/voxguard)
 
@@ -180,7 +180,9 @@ Relay holds OneSignal credentials → fans out via
 include_aliases.external_id push to relatives
 ```
 
-**Security boundary:** the OneSignal REST API key lives on the relay — never inside the Flutter client. The client payload carries no raw audio, no transcript, no PII — just an incident reference and risk band. Without a relay URL the app runs an explicitly-labelled **Demo Mode** broadcast (`IFamilyContactRepository` → `DemoFamilyContactRepository`), keeping the full journey demoable without shipping secrets.
+**Receiving device (P0.2B):** any VoxGuard install can become a real Family Shield receiver — *Settings → Family Shield Receiver → Enable Family Alerts* requests notification permission (only ever from that button, never at launch), generates an opaque `vg_…` identity persisted locally, and links it via `OneSignal.login(externalId)` so the relay's `include_aliases.external_id` reaches the device. The `onesignal_flutter` 5.x SDK is isolated behind `IPushIdentityService`; a live `FamilyPushRegistration` state tracks permission → registered transitions via the push-subscription observer (no polling). Two-device test procedure: `docs/FAMILY_SHIELD_SMOKE_TEST.md`.
+
+**Security boundary:** the OneSignal REST API key lives on the relay — never inside the Flutter client (the SDK only needs the App ID, which is not a secret). The client payload carries no raw audio, no transcript, no PII — just an incident reference and risk band. Without a relay URL the app runs an explicitly-labelled **Demo Mode** broadcast (`IFamilyContactRepository` → `DemoFamilyContactRepository`), keeping the full journey demoable without shipping secrets. "Alert accepted" means the relay + OneSignal API accepted the notification — confirmed device receipt is only observable on the receiving device.
 
 ---
 
@@ -217,7 +219,9 @@ flutter run \
 | `ASSEMBLYAI_TEMP_TOKEN` | Pre-minted short-lived token (CI/demo convenience) | — |
 | `REVENUECAT_ANDROID_KEY` / `REVENUECAT_IOS_KEY` | real store checkout | sandbox purchase lifecycle |
 | `VOXGUARD_ALERT_RELAY_URL` | live Family Shield push via the `server/` edge relay (Cloudflare Worker) | explicit Demo Mode broadcast |
-| `VOXGUARD_RELAY_TOKEN` | shared relay client token (`Bearer` auth) — abuse resistance for the public endpoint, not a real secret | requests sent without auth (relay must allow it) |
+| `VOXGUARD_RELAY_TOKEN` | shared relay client token (`Bearer` auth). **Required when the deployed relay enforces it** — the relay rejects unauthenticated requests with 401. Demo-grade abuse resistance, not a truly private mobile secret | relay returns 401 (alert not sent) |
+| `ONESIGNAL_APP_ID` | enables Family Shield push registration via the OneSignal Flutter SDK — an App ID is a client-safe identifier, not the REST secret | receiver card shows "Push not configured"; app runs normally |
+| `VOXGUARD_TEST_FAMILY_EXTERNAL_ID` | dev-only recipient override — a real `vg_…` id from a second device for the two-device push smoke test | demo contacts used |
 
 **Demo path**: Home → *Start SafeCall* → *Demo Attack* → tap **Simulate Scam** (FAB) → Arabic demo dialogue streams in with phrase highlights + evidence chips → ThreatCore escalates SAFE → CAUTION → HIGH RISK → end the call → post-call sheet walks *why flagged → verify identity → demo family alert → incident report*.
 
@@ -227,7 +231,7 @@ flutter run \
 
 ```bash
 flutter analyze   # 0 issues
-flutter test      # 55/55 passing (+15 relay tests under server/)
+flutter test      # 66/66 passing (+15 relay tests under server/)
 flutter build web --release --base-href /voxguard/
 flutter build apk --debug
 ```

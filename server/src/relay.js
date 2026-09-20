@@ -6,7 +6,7 @@
  * The OneSignal REST API key lives ONLY in server-side env vars —
  * the client never sees it.
  *
- * OneSignal contract (verified against current docs, API v11.6):
+ * OneSignal contract (verified against the current official docs):
  *   POST https://api.onesignal.com/notifications
  *   Authorization: Key <ONESIGNAL_REST_API_KEY>
  *   Body: { app_id, headings: {en}, contents: {en},
