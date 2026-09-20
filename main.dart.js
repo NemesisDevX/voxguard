@@ -23688,18 +23688,18 @@ _.cy=g
 _.dy=_.dx=_.db=null
 _.fr=h
 _.fy=_.fx=null
-_.id=_.go=!1
-_.k1=0
-_.k2=i
-_.k3=j
-_.k4=k
-_.ok=""
-_.p1=null
-_.p2=l
-_.p3=null
-_.p4=m
-_.R8=n
-_.RG=o
+_.k1=_.id=_.go=!1
+_.k2=0
+_.k3=i
+_.k4=j
+_.ok=k
+_.p1=""
+_.p2=null
+_.p3=l
+_.p4=null
+_.R8=m
+_.RG=n
+_.rx=o
 _.e=p
 _.f=q
 _.r=r
@@ -75947,8 +75947,8 @@ s.eV(s.ga5o(),t.Vh)
 s.eV(s.ga5k(),t.NT)
 s.eV(new A.a7B(s),t.Fk)
 s.eV(new A.a7C(s),t.OG)},
-uS(a){var s=new A.au($.aa,t.U),r=this.RG
-this.RG=s
+uS(a){var s=new A.au($.aa,t.U),r=this.rx
+this.rx=s
 r.fz(new A.a7x(a,new A.bC(s,t.Q)))
 return s},
 uF(a,b){return this.a5n(a,b)},
@@ -75970,7 +75970,7 @@ for(;;)switch(s){case 0:s=2
 return A.x(q.hg(),$async$pZ)
 case 2:q.Bh()
 p=q.fy=q.CW
-q.p1=new A.er(Date.now(),0,!1)
+q.p2=new A.er(Date.now(),0,!1)
 s=3
 return A.x(p.iw(),$async$pZ)
 case 3:q.a48(p)
@@ -75985,33 +75985,33 @@ a4T(a,b){var s,r,q=this,p=q.c
 if(!(p instanceof A.fQ)&&!(p instanceof A.rC))return
 s=a.a
 p=s.b
-q.p2.u(0,p)
+q.p3.u(0,p)
 if(q.id)q.cx.TS(p)
 p=s.a
-q.k1=0.4*A.aDG(p)+0.6*q.k1
+q.k2=0.4*A.aDG(p)+0.6*q.k2
 r=q.at.nA(p)
-q.p4=q.p4.cq(r,0.35)
+q.R8=q.R8.cq(r,0.35)
 p=q.qg()
 if(!b.d)b.a.$1(p)},
 uG(a,b){return this.a5v(a,b)},
 a5v(a,b){var s=0,r=A.G(t.H),q,p=this,o,n,m
 var $async$uG=A.H(function(c,d){if(c===1)return A.D(d,r)
 for(;;)switch(s){case 0:if(!(p.c instanceof A.fQ)){s=1
-break}o=p.k4
+break}o=p.ok
 n=a.b
 m=B.c.ln(n)
 if(m.length!==0)o.a.push(m)
-p.ok=o.b=""
-o=A.X(p.k3,t.hp)
+p.p1=o.b=""
+o=A.X(p.k4,t.hp)
 o.push(new A.j0(a.a,n,new A.er(Date.now(),0,!1)))
-p.k3=o
+p.k4=o
 s=3
 return A.x(p.qb(b),$async$uG)
 case 3:case 1:return A.E(q,r)}})
 return A.F($async$uG,r)},
 a5x(a,b){var s,r=this
 if(!(r.c instanceof A.fQ))return
-r.ok=r.k4.b=B.c.ln(a.a)
+r.p1=r.ok.b=B.c.ln(a.a)
 s=r.qg()
 if(!b.d)b.a.$1(s)
 s=r.fx
@@ -76025,13 +76025,13 @@ if(!b.d)b.a.$1(r)}},
 qb(a){return this.a6X(a)},
 a6X(a){var s=0,r=A.G(t.H),q,p=this,o,n
 var $async$qb=A.H(function(b,c){if(b===1)return A.D(c,r)
-for(;;)switch(s){case 0:o=p.k4
+for(;;)switch(s){case 0:o=p.ok
 n=A.X(o.a,t.N)
 o=o.b
 if(o.length!==0)n.push(o)
 s=3
 return A.x(p.ax.nA(B.b.b2(n," ")),$async$qb)
-case 3:p.R8=c
+case 3:p.RG=c
 if(!(p.c instanceof A.fQ)||a.d||a.e){s=1
 break}o=p.qg()
 if(!a.d)a.a.$1(o)
@@ -76061,22 +76061,22 @@ if(d==null)d=B.du
 o=p.ga88()
 s=3
 return A.x(p.hg(),$async$pX)
-case 3:s=p.k2===B.eE?4:6
+case 3:s=p.k3===B.eE?4:6
 break
-case 4:n=p.ay.Qn(p.p4,p.R8)
-if(p.p1==null)m=0
+case 4:n=p.ay.Qn(p.R8,p.RG)
+if(p.p2==null)m=0
 else{e=Date.now()
-l=p.p1
+l=p.p2
 l.toString
 m=B.f.cH(new A.er(e,0,!1).eb(l).a,1e6)}e=Date.now()
 l=p.cy.x8(9000)
 k=Date.now()
 j=d===B.hQ?"Live Microphone Session":"Unknown Caller (+20 10 \u2022\u2022\u2022 \u2022\u202242)"
-i=p.p3
-if(i==null)i=p.p3=A.avC(B.Bq.de(p.p2.SB()).a)
+i=p.p4
+if(i==null)i=p.p4=A.avC(B.Bq.de(p.p3.SB()).a)
 h=d.gaer()
-g=p.k2
-f=A.anw(p.p4,i,h,m,j,"INC-"+A.anY(new A.er(e,0,!1))+"-"+(1000+l),n.a,B.Hi,g,p.R8,n.c,new A.er(k,0,!1),p.k3,o)
+g=p.k3
+f=A.anw(p.R8,i,h,m,j,"INC-"+A.anY(new A.er(e,0,!1))+"-"+(1000+l),n.a,B.Hi,g,p.RG,n.c,new A.er(k,0,!1),p.k4,o)
 k=$.a04
 if(k==null){e=A.as2()
 e=$.a04=new A.Ht(new A.cd(e,$.aG(),t.Ht))}else e=k
@@ -76087,12 +76087,12 @@ break
 case 6:f=null
 case 5:e=!b.d
 if(!e||b.e){s=1
-break}l=p.k2
+break}l=p.k3
 if(e)b.a.$1(new A.rz(l,f))
 case 1:return A.E(q,r)}})
 return A.F($async$pX,r)},
 ga88(){if(this.gI_())return"Local Demo Transcript"
-if(this.id)return"AssemblyAI Streaming"
+if(this.id||this.k1)return"AssemblyAI Streaming"
 return"None \u2014 acoustic analysis only"},
 uC(a,b){return this.a5b(a,b)},
 a5b(a,b){var s=0,r=A.G(t.H),q=this
@@ -76103,16 +76103,16 @@ case 2:q.Bh()
 if(!b.d)b.a.$1(B.lK)
 return A.E(null,r)}})
 return A.F($async$uC,r)},
-Bx(a){var s,r,q,p,o=this,n=o.ay.Qn(o.p4,o.R8),m=n.b
-if(m.a>o.k2.a)o.k2=m
-m=o.p4
-s=o.R8
-r=o.k3
+Bx(a){var s,r,q,p,o=this,n=o.ay.Qn(o.R8,o.RG),m=n.b
+if(m.a>o.k3.a)o.k3=m
+m=o.R8
+s=o.RG
+r=o.k4
 q=o.fy
 q=q==null?null:q.gjd()
 if(q==null)q=B.du
 p=a==null?o.go:a
-return new A.fQ(m,s,n,r,q,p,o.k1,o.id,o.ok)},
+return new A.fQ(m,s,n,r,q,p,o.k2,o.id,o.p1)},
 qg(){return this.Bx(null)},
 hg(){var s=0,r=A.G(t.H),q=this,p,o,n
 var $async$hg=A.H(function(a,b){if(a===1)return A.D(b,r)
@@ -76147,18 +76147,18 @@ if(n!=null)n.am()
 return A.E(null,r)}})
 return A.F($async$hg,r)},
 Bh(){var s,r=this
-r.k3=B.jn
-s=r.k4
+r.k4=B.jn
+s=r.ok
 B.b.L(s.a)
-r.ok=s.b=""
-r.p4=B.hP
-r.R8=B.fZ
-r.id=r.go=!1
-r.k1=0
-r.k2=B.hl
-r.p1=null
-r.p2.SB()
-r.p3=null
+r.p1=s.b=""
+r.R8=B.hP
+r.RG=B.fZ
+r.k1=r.id=r.go=!1
+r.k2=0
+r.k3=B.hl
+r.p2=null
+r.p3.SB()
+r.p4=null
 r.at.b=null
 r.CW.r=!1},
 IE(){var s,r,q
