@@ -10,6 +10,16 @@ final class TranscriptEvent {
   final bool isFinal;
 }
 
+/// Lifecycle of a streaming transcription session.
+///
+/// `live` is emitted only once the provider session is confirmed
+/// usable (socket connected + session begun) — never merely because
+/// credentials exist. `disconnected` means the session dropped
+/// mid-flight and a bounded reconnect may follow; `failed` means
+/// transcription is unavailable for the rest of the session. In both
+/// cases the protection session continues acoustically.
+enum TranscriptionSessionStatus { connecting, live, disconnected, failed, ended }
+
 /// Contract for streaming speech-to-text.
 ///
 /// SafeCallBloc depends on this interface only — vendors are
@@ -27,6 +37,10 @@ abstract interface class IStreamingTranscriptionService {
 
   /// Partial + final transcript events.
   Stream<TranscriptEvent> get events;
+
+  /// Session lifecycle — consumers use this to reflect transcription
+  /// availability truthfully instead of inferring it from config.
+  Stream<TranscriptionSessionStatus> get status;
 
   /// Opens the streaming session for [sampleRate] Hz mono PCM16.
   Future<void> start({required int sampleRate});

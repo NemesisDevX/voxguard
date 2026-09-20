@@ -62,6 +62,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     on<IncomingTranscriptPartialEvent>(_onTranscriptPartial);
     on<AnalyzeTranscriptContextEvent>(
         (_, emit) => _runSemanticAnalysis(emit));
+    on<TranscriptionStatusChangedEvent>(_onSttStatus);
     on<SimulateDemoAttackEvent>(_onSimulateDemo);
     on<EndCallEvent>(_onEnd);
     on<ResetCallEvent>(_onReset);
@@ -100,6 +101,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
 
   StreamSubscription<AudioChunk>? _audioSub;
   StreamSubscription<TranscriptEvent>? _sttSub;
+  StreamSubscription<TranscriptionSessionStatus>? _sttStatusSub;
   final List<Timer> _demoTimers = [];
   Timer? _partialDebounce;
 
@@ -180,6 +182,15 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
               : add(IncomingTranscriptPartialEvent(e.text)),
           onError: (_) {}, // STT errors degrade to acoustic-only.
         );
+        // Liveness is authoritative from the provider — the session is
+        // only "transcription live" once it confirms usable, and a
+        // mid-session drop flips the UI back to acoustic-only without
+        // touching the protection session.
+        _sttStatusSub = _stt.status.listen((status) => add(
+              TranscriptionStatusChangedEvent(
+                status == TranscriptionSessionStatus.live,
+              ),
+            ));
         _sttLive = true;
       } catch (_) {
         _sttLive = false;
@@ -291,6 +302,18 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
         add(const AnalyzeTranscriptContextEvent());
       }
     });
+  }
+
+  /// Internal: provider session-status changes. A mid-session STT drop
+  /// only downgrades `isTranscriptionLive` — acoustic analysis and the
+  /// protection session continue untouched.
+  void _onSttStatus(
+    TranscriptionStatusChangedEvent event,
+    Emitter<SafeCallState> emit,
+  ) {
+    if (_sttLive == event.live) return;
+    _sttLive = event.live;
+    if (state is SafeCallMonitoring) emit(_snapshot());
   }
 
   /// Internal debounce target — keeps analysis off the per-partial
@@ -441,6 +464,8 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     await _activeSource?.stop();
     await _sttSub?.cancel();
     _sttSub = null;
+    await _sttStatusSub?.cancel();
+    _sttStatusSub = null;
     await _stt.stop();
     _sttLive = false;
     _cancelDemoTimers();

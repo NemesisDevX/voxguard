@@ -81,3 +81,13 @@ final class ResetCallEvent extends SafeCallEvent {
 final class AnalyzeTranscriptContextEvent extends SafeCallEvent {
   const AnalyzeTranscriptContextEvent();
 }
+
+/// Internal: the STT provider reported a session-status change (e.g.
+/// mid-session disconnect → transcription degraded). Never dispatched
+/// by the UI.
+final class TranscriptionStatusChangedEvent extends SafeCallEvent {
+  const TranscriptionStatusChangedEvent(this.live);
+
+  /// Whether the provider session is currently usable.
+  final bool live;
+}

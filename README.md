@@ -99,6 +99,8 @@ Every session picks one source behind `IAudioStreamSource`; downstream analysis 
 - **Live Mic** — real microphone capture (`record` package, mono 16 kHz PCM16), permission requested only when the user starts a session. PCM feeds the acoustic engine, the session SHA-256 digest, and — when configured — streaming STT.
 - **Demo Attack** — `DemoAudioSource` generates deterministic PCM and a scripted Egyptian-Arabic scam dialogue for judging. Always labelled `DEMO MODE` / `DEMO AUDIO`; never presented as captured audio.
 
+**Streaming transcription** uses AssemblyAI's `universal-3-5-pro` streaming model, explicitly configured in `AssemblyAiStreamingConfig` — Arabic + English streaming transcription with native code-switching, biased via the documented `language_codes=["en","ar"]` parameter. Auth is always a short-lived token on the socket URL: production obtains it from `ASSEMBLYAI_TOKEN_BROKER_URL`; `ASSEMBLYAI_API_KEY` is a development-only fallback that mints tokens client-side and must never ship in a release. If the token mint or socket handshake fails, the session continues acoustically and the UI marks transcription unavailable — `isTranscriptionLive` only reports true after the provider's `Begin` handshake, and a mid-session drop triggers exactly one bounded reconnect before degrading.
+
 ### Engine A — Acoustic Forensics
 
 Real DSP on every incoming audio chunk (heuristic prototype — not a validated classifier):
@@ -202,7 +204,7 @@ flutter run                  # attached device
 # Full integrations via --dart-define:
 flutter run \
   --dart-define=GROQ_API_KEY=gsk_... \
-  --dart-define=ASSEMBLYAI_API_KEY=... \
+  --dart-define=ASSEMBLYAI_TOKEN_BROKER_URL=https://your-broker.example.com/aai-token \
   --dart-define=REVENUECAT_ANDROID_KEY=goog_... \
   --dart-define=VOXGUARD_ALERT_RELAY_URL=https://your-relay.example.com/alert
 ```
@@ -210,13 +212,15 @@ flutter run \
 | `--dart-define` | Service | Without it |
 |---|---|---|
 | `GROQ_API_KEY` | Llama-3 semantic analysis (development builds only — production secrets should be proxied server-side) | deterministic bilingual rule engine |
-| `ASSEMBLYAI_API_KEY` | Live Mic streaming transcription. The client mints short-lived session tokens via `GET /v3/token` — production apps should proxy that mint server-side rather than ship a permanent key | Live Mic runs acoustic-only; UI shows "Live transcription unavailable" |
+| `ASSEMBLYAI_TOKEN_BROKER_URL` | **Production transcription path** — the client GETs a short-lived streaming token (≤600 s, one-time use) from a trusted broker that holds the provider secret server-side | falls through to the next option |
+| `ASSEMBLYAI_API_KEY` | **Development only** — the client mints its own short-lived token via `GET /v3/token`. Never ship a permanent provider key in a released build | Live Mic runs acoustic-only; UI shows "Live transcription unavailable" |
+| `ASSEMBLYAI_TEMP_TOKEN` | Pre-minted short-lived token (CI/demo convenience) | — |
 | `REVENUECAT_ANDROID_KEY` / `REVENUECAT_IOS_KEY` | real store checkout | sandbox purchase lifecycle |
 | `VOXGUARD_ALERT_RELAY_URL` | live Family Shield push via server relay | explicit Demo Mode broadcast |
 
 **Demo path**: Home → *Start SafeCall* → *Demo Attack* → tap **Simulate Scam** (FAB) → Arabic demo dialogue streams in with phrase highlights + evidence chips → ThreatCore escalates SAFE → CAUTION → HIGH RISK → end the call → post-call sheet walks *why flagged → verify identity → demo family alert → incident report*.
 
-**Live Mic path**: *Start SafeCall* → *Live Mic* → grant microphone permission → speak (or play suspicious audio on speakerphone) near the device → amplitude reacts, acoustic metrics update, transcript streams in when `ASSEMBLYAI_API_KEY` is set → semantic signals escalate the Threat Score.
+**Live Mic path**: *Start SafeCall* → *Live Mic* → grant microphone permission → speak (or play suspicious audio on speakerphone) near the device → amplitude reacts, acoustic metrics update, transcript streams in when a transcription credential (`ASSEMBLYAI_TOKEN_BROKER_URL` or the dev-only `ASSEMBLYAI_API_KEY`) is set → semantic signals escalate the Threat Score.
 
 ### Testing & CI
 

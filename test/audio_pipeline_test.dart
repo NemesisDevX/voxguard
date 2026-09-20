@@ -71,6 +71,8 @@ final class FakeSttService implements IStreamingTranscriptionService {
   var startCalls = 0;
 
   final _events = StreamController<TranscriptEvent>.broadcast();
+  final _status =
+      StreamController<TranscriptionSessionStatus>.broadcast();
 
   @override
   bool get isConfigured => configured;
@@ -80,6 +82,9 @@ final class FakeSttService implements IStreamingTranscriptionService {
 
   @override
   Stream<TranscriptEvent> get events => _events.stream;
+
+  @override
+  Stream<TranscriptionSessionStatus> get status => _status.stream;
 
   @override
   Future<void> start({required int sampleRate}) async {
