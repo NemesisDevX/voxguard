@@ -111,6 +111,11 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   IAudioStreamSource? _activeSource;
   bool _demoActive = false;
   bool _sttLive = false;
+
+  /// Whether the streaming provider actually delivered transcript
+  /// this session — incident provenance must credit a provider that
+  /// contributed data even if it disconnected before call end.
+  bool _sttContributed = false;
   double _lastAmplitude = 0;
   ThreatRiskLevel _peakRisk = ThreatRiskLevel.safe;
   List<TranscriptSnippet> _transcript = const [];
@@ -207,10 +212,17 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
       try {
         await _stt.start(sampleRate: _micSource.sampleRate);
         _sttSub = _stt.events.listen(
-          (e) => e.isFinal
-              ? add(IncomingTranscriptSnippetEvent(
-                  speaker: 'Caller', text: e.text))
-              : add(IncomingTranscriptPartialEvent(e.text)),
+          (e) {
+            // Mark real transcript contribution for incident
+            // provenance — survives a later STT disconnect.
+            if (e.text.trim().isNotEmpty) _sttContributed = true;
+            if (e.isFinal) {
+              add(IncomingTranscriptSnippetEvent(
+                  speaker: 'Caller', text: e.text));
+            } else {
+              add(IncomingTranscriptPartialEvent(e.text));
+            }
+          },
           onError: (_) {}, // STT errors degrade to acoustic-only.
         );
         // Liveness is authoritative from the provider — the session is
@@ -450,9 +462,12 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   }
 
   /// Provenance label for the transcription that fed this session.
+  /// Credits a provider that delivered transcript data even if it
+  /// disconnected before the call ended — current liveness alone
+  /// would falsify the record.
   String get _transcriptionSourceLabel {
     if (_activeSourceIsDemo) return 'Local Demo Transcript';
-    if (_sttLive) return _stt.providerLabel;
+    if (_sttLive || _sttContributed) return _stt.providerLabel;
     return 'None — acoustic analysis only';
   }
 
@@ -527,6 +542,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     _semantic = const SemanticThreatSignals.empty();
     _demoActive = false;
     _sttLive = false;
+    _sttContributed = false;
     _lastAmplitude = 0;
     _peakRisk = ThreatRiskLevel.safe;
     _sessionStart = null;

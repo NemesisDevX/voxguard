@@ -22,6 +22,7 @@ final class FakeOneSignalSdk implements IOneSignalSdk {
   var initializeCalls = 0;
   var loginFails = false;
   Duration initializeDelay = Duration.zero;
+  Duration loginDelay = Duration.zero;
   final calls = <String>[];
 
   void Function()? _subObserver;
@@ -41,6 +42,7 @@ final class FakeOneSignalSdk implements IOneSignalSdk {
   Future<void> login(String externalId) async {
     loginCalls++;
     calls.add('login');
+    await Future<void>.delayed(loginDelay);
     if (loginFails) throw StateError('login rejected');
     loggedInAs = externalId;
   }
@@ -368,6 +370,30 @@ void main() {
       expect(sdk.requestPermissionCalls, 1);
       expect(s.registration.value.status,
           PushRegistrationStatus.registered);
+    });
+
+    test('caller arriving during delayed identity login still awaits '
+        'the full init — no duplicate listeners or login', () async {
+      // sdk.initialize resolves fast; the LOGIN phase is the slow
+      // part — reproduces the window where _initialized could be
+      // observed before linkage finished.
+      sdk.initializeDelay = Duration.zero;
+      sdk.loginDelay = const Duration(milliseconds: 40);
+      final s = service();
+
+      final first = s.initialize();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      // SDK init done, login still in flight — second caller must
+      // await the same future rather than return early.
+      final second = s.initialize();
+      await Future.wait([first, second]);
+
+      expect(sdk.initializeCalls, 1);
+      expect(sdk.loginCalls, 1);
+      expect(sdk.observerAdds, 1);
+      expect(sdk.clickListenerAdds, 1);
+      expect(sdk.foregroundListenerAdds, 1);
+      expect(sdk.loggedInAs, isNotNull);
     });
   });
 

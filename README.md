@@ -9,7 +9,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.41-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.11-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-10B981.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-76%20Flutter%20%2B%2018%20Relay%20Passing-10B981)](https://github.com/NemesisDevX/voxguard/actions)
+[![CI](https://github.com/NemesisDevX/voxguard/actions/workflows/ci.yml/badge.svg)](https://github.com/NemesisDevX/voxguard/actions/workflows/ci.yml)
 [![CI/CD](https://img.shields.io/github/actions/workflow/status/NemesisDevX/voxguard/ci.yml?branch=main&label=CI%2FCD)](https://github.com/NemesisDevX/voxguard/actions)
 [![Platforms](https://img.shields.io/badge/Android%20%7C%20iOS%20%7C%20Web%20%7C%20Windows-1E2333)](https://github.com/NemesisDevX/voxguard)
 
@@ -230,13 +230,14 @@ flutter run \
 ### Testing & CI
 
 ```bash
-flutter analyze   # 0 issues
-flutter test      # 76/76 passing (+18 relay tests under server/)
+flutter analyze
+flutter test            # Flutter suite
+cd server && npm test   # relay suite (node:test, offline)
 flutter build web --release --base-href /voxguard/
 flutter build apk --debug
 ```
 
-Every push to `main` runs the full pipeline — analyze → test → web + APK builds → auto-deploy to GitHub Pages → APK artifact upload (see `.github/workflows/ci.yml`).
+Every push to `main` runs the full pipeline — analyze → Flutter tests → relay tests → web + APK builds → auto-deploy to GitHub Pages → APK artifact upload (see `.github/workflows/ci.yml`). The CI badge above reflects the live result.
 
 ---
 

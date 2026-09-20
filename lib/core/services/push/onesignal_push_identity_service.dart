@@ -100,17 +100,18 @@ final class PushIdentityService implements IPushIdentityService {
       _publish(PushRegistrationStatus.unsupported);
       return;
     }
-    if (_initialized) {
-      await _refreshState();
-      return;
-    }
-    // One shared in-flight future: concurrent callers (app start,
-    // an early "Enable Family Alerts" tap) await the SAME
-    // initialization — listeners install exactly once, and a caller
-    // that arrives mid-init still lands on a fully initialized SDK.
+    // In-flight init takes precedence over the `_initialized` flag —
+    // `_doInitialize` still touches SDK listeners and identity login
+    // after the raw `sdk.initialize` call returns, so a flag check
+    // alone could let a caller slip through mid-lifecycle. Anyone
+    // arriving while a future exists awaits THAT future.
     final inFlight = _initFuture;
     if (inFlight != null) {
       await inFlight;
+      return;
+    }
+    if (_initialized) {
+      await _refreshState();
       return;
     }
     final future = _doInitialize();
@@ -125,13 +126,18 @@ final class PushIdentityService implements IPushIdentityService {
   Future<void> _doInitialize() async {
     try {
       await _sdk.initialize(_appId);
-      _initialized = true;
       _sdk.addSubscriptionObserver(_refreshState);
       _sdk.addClickListener(_onClick);
       _sdk.addForegroundListener(_onForeground);
       // Link our identity up front — login is not gated on
       // notification permission and the relay targets external_id.
+      // A failed login is recoverable later via enableAlerts().
       await _linkIdentity();
+      // Only a fully completed lifecycle counts as initialized:
+      // SDK ready + listeners installed + identity linkage attempted.
+      // Concurrent callers can't observe this flag mid-lifecycle —
+      // they all funnel through `_initFuture` above.
+      _initialized = true;
       await _refreshState();
     } catch (e, st) {
       debugPrint('PushIdentityService.initialize failed: $e\n$st');

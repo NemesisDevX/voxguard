@@ -101,6 +101,10 @@ final class FakeSttService implements IStreamingTranscriptionService {
 
   void emitFinal(String text) =>
       _events.add(TranscriptEvent(text: text, isFinal: true));
+
+  /// Simulate a provider status transition (live / disconnected /
+  /// failed) reaching the bloc.
+  void emitStatus(TranscriptionSessionStatus s) => _status.add(s);
 }
 
 /// Demo source with observable lifecycle counters — the real
@@ -378,6 +382,39 @@ void main() {
       expect(mic.stopCalls, 0);
       final m = bloc.state as SafeCallMonitoring;
       expect(m.audioSourceType, AudioSourceType.microphone);
+      await bloc.close();
+    });
+
+    test('STT contributed then disconnected → incident still credits '
+        'the real provider', () async {
+      final mic = FakeMicSource();
+      final stt = FakeSttService();
+      final bloc = SafeCallBloc(
+        demoSource: DemoAudioSource(),
+        microphoneSource: mic,
+        transcriptionService: stt,
+      );
+      bloc.add(const StartLiveMicSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      // STT live → real transcript lands → STT dies before call end.
+      stt.emitFinal('أنا أخوك، محتاجك تحول لي 2000 جنيه بسرعة '
+          'ومتقولش لحد');
+      mic.emit(List.filled(256, 0.3));
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      stt.emitStatus(TranscriptionSessionStatus.failed);
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect((bloc.state as SafeCallMonitoring).isTranscriptionLive,
+          isFalse);
+
+      bloc.add(const EndCallEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      // Provenance is honest: the provider contributed real data
+      // during this session even though it was dead at call end.
+      final ended = bloc.state as SafeCallEnded;
+      expect(ended.incident, isNotNull);
+      expect(ended.incident!.transcriptionSourceLabel, 'FakeSTT');
       await bloc.close();
     });
 
