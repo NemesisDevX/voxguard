@@ -36,9 +36,13 @@ void main() {
 
   const members = ['demo_family_maya', 'demo_family_omar'];
 
+  /// Injectable sender identity — tests never touch the real
+  /// OneSignal locator.
+  Future<String> testSender() async => 'vg_${'0' * 32}';
+
   group('FamilyShieldAlertService', () {
     test('runs in Demo Mode when no relay is configured', () async {
-      final service = FamilyShieldAlertService(relayUrl: '');
+      final service = FamilyShieldAlertService(relayUrl: '', senderIdentity: testSender);
       expect(service.isRelayConfigured, isFalse);
       expect(service.isDemoMode, isTrue);
 
@@ -53,7 +57,7 @@ void main() {
     });
 
     test('does not send when Family Shield is disabled', () async {
-      final service = FamilyShieldAlertService(relayUrl: '');
+      final service = FamilyShieldAlertService(relayUrl: '', senderIdentity: testSender);
       service.toggleFamilyShield(false);
 
       final result = await service.triggerFamilyEmergencyAlert(
@@ -74,6 +78,7 @@ void main() {
       final service = FamilyShieldAlertService(
         httpClient: client,
         relayUrl: 'https://relay.example.com/alert',
+        senderIdentity: testSender,
       );
       expect(service.isRelayConfigured, isTrue);
       expect(service.isDemoMode, isFalse);
@@ -95,6 +100,10 @@ void main() {
       final body = jsonDecode(captured!.body) as Map<String, dynamic>;
       expect(body['kind'], 'family_shield_alert');
       expect(body['family_external_ids'], members);
+      expect(body['sender_external_id'], 'vg_${'0' * 32}');
+      // Names/phones never cross the boundary — only opaque ids.
+      expect(body.containsKey('sender_name'), isFalse);
+      expect(body.containsKey('phone'), isFalse);
       expect(body['incident_id'], 'INC-2026-9001');
       expect(body['risk_level'], 'highRisk');
       // No transcript or audio data leaves the device.
@@ -108,6 +117,7 @@ void main() {
       final service = FamilyShieldAlertService(
         httpClient: client,
         relayUrl: 'https://relay.example.com/alert',
+        senderIdentity: testSender,
       );
 
       final result = await service.triggerFamilyEmergencyAlert(
@@ -130,6 +140,7 @@ void main() {
       final service = FamilyShieldAlertService(
         httpClient: client,
         relayUrl: 'https://relay.example.com/alert',
+        senderIdentity: testSender,
         relayToken: 'relay-tok',
       );
 
@@ -150,12 +161,14 @@ void main() {
           (_) async => http.Response('{}', 401),
         ),
         relayUrl: 'https://relay.example.com/alert',
+        senderIdentity: testSender,
       );
       final unavailable = FamilyShieldAlertService(
         httpClient: http_testing.MockClient(
           (_) async => http.Response('{}', 502),
         ),
         relayUrl: 'https://relay.example.com/alert',
+        senderIdentity: testSender,
       );
 
       final r1 = await rejected.triggerFamilyEmergencyAlert(

@@ -26,10 +26,13 @@ function alertRequest(body, { auth = 'Bearer relay-tok', origin } = {}) {
   });
 }
 
+const SENDER_ID = `vg_${'a'.repeat(32)}`;
+
 const VALID_BODY = {
   kind: 'family_shield_alert',
   incident_id: 'INC-2026-9001',
   risk_level: 'highRisk',
+  sender_external_id: SENDER_ID,
   family_external_ids: ['fam_maya', 'fam_omar'],
   title: 'VoxGuard Family Shield',
   body: 'A high-risk call was flagged.',
@@ -76,7 +79,61 @@ test('valid alert → 202 + correct OneSignal payload + Key auth', async () => {
     kind: 'family_shield_alert',
     incident_id: 'INC-2026-9001',
     risk_level: 'highRisk',
+    sender_external_id: SENDER_ID,
   });
+});
+
+// ── sender_external_id ────────────────────────────────────────────
+
+test('missing or malformed sender_external_id → 400', async () => {
+  // Distinct token → fresh rate-limit bucket for this 7-case loop.
+  const env = { ...ENV, RELAY_CLIENT_TOKEN: 'sender-tok' };
+  for (const sender_external_id of [
+    undefined,
+    '',
+    'fam_maya',
+    'vg_123',
+    `vg_${'G'.repeat(32)}`,
+    `vg_${'a'.repeat(31)}`,
+    123,
+  ]) {
+    const res = await handleRequest(
+      alertRequest(
+        { ...VALID_BODY, sender_external_id },
+        { auth: 'Bearer sender-tok' },
+      ),
+      env,
+      okFetch({}),
+    );
+    assert.equal(res.status, 400, `sender_external_id=${sender_external_id}`);
+  }
+});
+
+test('sender id reaches OneSignal data — no name/phone fields', async () => {
+  const captured = {};
+  await handleRequest(
+    alertRequest({
+      ...VALID_BODY,
+      // Even if a hostile client sneaks PII into the envelope, the
+      // relay must not forward it.
+      sender_name: 'Aunt Maya',
+      sender_phone: '+15551234567',
+      recipient_names: ['Maya'],
+    }),
+    ENV,
+    okFetch(captured),
+  );
+  const payload = JSON.parse(captured.init.body);
+  assert.equal(payload.data.sender_external_id, SENDER_ID);
+  assert.deepEqual(Object.keys(payload.data), [
+    'kind',
+    'incident_id',
+    'risk_level',
+    'sender_external_id',
+  ]);
+  const raw = captured.init.body;
+  assert.ok(!raw.includes('Aunt Maya'));
+  assert.ok(!raw.includes('15551234567'));
 });
 
 test('notification payload carries no audio/transcript fields', async () => {

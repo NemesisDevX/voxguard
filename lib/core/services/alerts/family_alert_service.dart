@@ -21,6 +21,10 @@ enum AlertDispatchStatus {
 
   /// Family Shield is toggled off — nothing attempted.
   disabled,
+
+  /// Real relay configured but the Trusted Circle is empty — nothing
+  /// was sent and nothing should pretend otherwise.
+  noRecipients,
 }
 
 /// Outcome of a family-shield broadcast attempt.

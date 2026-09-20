@@ -26,6 +26,10 @@ const VALID_RISK_LEVELS = new Set(['safe', 'suspicious', 'highRisk']);
 // Conservative identifier charset — letters, digits, _-:.@ only.
 const SAFE_ID = /^[A-Za-z0-9_\-.:@]{1,64}$/;
 
+// VoxGuard sender identities are exactly vg_<32 lowercase hex> —
+// generated client-side by PushIdentityService.
+const SENDER_ID = /^vg_[0-9a-f]{32}$/;
+
 const ONESIGNAL_URL = 'https://api.onesignal.com/notifications';
 const UPSTREAM_TIMEOUT_MS = 8000;
 
@@ -132,6 +136,12 @@ export function validateAlertPayload(body) {
   if (!VALID_RISK_LEVELS.has(body.risk_level)) {
     return { ok: false, error: 'invalid risk_level' };
   }
+  if (
+    typeof body.sender_external_id !== 'string' ||
+    !SENDER_ID.test(body.sender_external_id)
+  ) {
+    return { ok: false, error: 'invalid sender_external_id' };
+  }
   const ids = body.family_external_ids;
   if (!Array.isArray(ids) || ids.length === 0) {
     return { ok: false, error: 'family_external_ids must be a non-empty array' };
@@ -164,6 +174,7 @@ export function validateAlertPayload(body) {
     value: {
       incidentId,
       riskLevel: body.risk_level,
+      senderExternalId: body.sender_external_id,
       // Dedupe — OneSignal rejects or double-counts duplicate
       // external_ids in include_aliases.
       recipients: [...new Set(ids)],
@@ -185,6 +196,9 @@ export function toOneSignalPayload(alert, appId) {
       kind: 'family_shield_alert',
       incident_id: alert.incidentId,
       risk_level: alert.riskLevel,
+      // Which trusted contact's device raised the alert — opaque
+      // vg_… identity only, never a name or phone number.
+      sender_external_id: alert.senderExternalId,
     },
   };
 }

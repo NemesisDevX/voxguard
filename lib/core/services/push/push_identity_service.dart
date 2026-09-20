@@ -62,32 +62,45 @@ final class FamilyAlertTap {
   const FamilyAlertTap({
     required this.incidentId,
     required this.riskLevel,
+    required this.senderExternalId,
   });
 
-  final String? incidentId;
-  final String? riskLevel;
+  final String incidentId;
+  final String riskLevel;
+
+  /// The sender's opaque `vg_…` identity — which trusted contact
+  /// raised the alert. P0.2C uses this for the resolution screen.
+  final String senderExternalId;
 
   /// Risk bands shared with the relay contract — anything else is
   /// not a routable Family Shield event.
   static const _validRiskLevels = {'safe', 'suspicious', 'highRisk'};
 
+  static final _externalIdPattern = RegExp(r'^vg_[0-9a-f]{32}$');
+
   /// Parses a notification's `additionalData`; returns null unless
   /// ALL required routing metadata is valid — kind, a non-empty
-  /// string incident id, and a recognized risk level. Malformed or
-  /// unrelated payloads produce no event and never throw.
+  /// string incident id, a recognized risk level, and a well-formed
+  /// `vg_…` sender identity. Malformed or unrelated payloads produce
+  /// no event and never throw.
   static FamilyAlertTap? fromAdditionalData(Map<String, dynamic>? data) {
     if (data == null || data['kind'] != 'family_shield_alert') {
       return null;
     }
     final incidentId = data['incident_id'];
     final riskLevel = data['risk_level'];
+    final sender = data['sender_external_id'];
     if (incidentId is! String || incidentId.isEmpty) return null;
     if (riskLevel is! String || !_validRiskLevels.contains(riskLevel)) {
+      return null;
+    }
+    if (sender is! String || !_externalIdPattern.hasMatch(sender)) {
       return null;
     }
     return FamilyAlertTap(
       incidentId: incidentId,
       riskLevel: riskLevel,
+      senderExternalId: sender,
     );
   }
 }

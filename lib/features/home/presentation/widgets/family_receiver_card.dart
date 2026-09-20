@@ -11,8 +11,7 @@ import '../../../../core/theme/app_typography.dart';
 
 /// Family Shield receiver setup — lets this device become reachable by
 /// another VoxGuard installation's alerts via its opaque `vg_…`
-/// identity. Hackathon-grade UX; the full Trusted Circle flow is a
-/// later phase.
+/// identity. Outgoing contacts live in the [TrustedCircleCard].
 class FamilyReceiverCard extends StatefulWidget {
   const FamilyReceiverCard({super.key});
 
@@ -118,16 +117,18 @@ class _FamilyReceiverCardState extends State<FamilyReceiverCard> {
                           hintText: 'vg_… external id of test device',
                           isDense: true,
                         ),
-                        onSubmitted: (v) => DemoFamilyContactRepository
-                            .setTestRecipientOverride(v),
+                        onSubmitted: (v) =>
+                            PersistedFamilyContactRepository
+                                .setTestRecipientOverride(v),
                       ),
                     ),
                     IconButton(
                       tooltip: 'Set test recipient',
                       icon: const Icon(Icons.check, size: 18),
-                      onPressed: () => DemoFamilyContactRepository
-                          .setTestRecipientOverride(
-                              _testRecipientCtrl.text),
+                      onPressed: () =>
+                          PersistedFamilyContactRepository
+                              .setTestRecipientOverride(
+                                  _testRecipientCtrl.text),
                     ),
                   ],
                 ),

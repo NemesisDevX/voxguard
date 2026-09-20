@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../features/forensics/domain/models/incident_report.dart';
+import '../push/onesignal_push_identity_service.dart';
 import 'family_alert_service.dart';
 
 /// Family Shield broadcast client.
@@ -24,6 +25,7 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
     http.Client? httpClient,
     String? relayUrl,
     String? relayToken,
+    Future<String> Function()? senderIdentity,
   })  : _client = httpClient ?? http.Client(),
         _relayUrl = relayUrl ??
             const String.fromEnvironment(
@@ -34,7 +36,9 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
             const String.fromEnvironment(
               'VOXGUARD_RELAY_TOKEN',
               defaultValue: '',
-            );
+            ),
+        _senderIdentity =
+            senderIdentity ?? PushIdentityLocator.instance.voxGuardIdentity;
 
   static const _timeout = Duration(seconds: 8);
 
@@ -46,6 +50,11 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
   /// stays server-side regardless. Production should move to
   /// authenticated users / device attestation.
   final String _relayToken;
+
+  /// Resolves this device's own `vg_…` identity — included as
+  /// `sender_external_id` so receivers can tell which trusted
+  /// contact raised the alert. Opaque id only, never name/phone.
+  final Future<String> Function() _senderIdentity;
 
   final ValueNotifier<bool> _enabled = ValueNotifier<bool>(true);
 
@@ -74,7 +83,18 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
       );
     }
 
-    final payload = _buildPayload(incident, familyMemberIds);
+    // Real mode + empty Trusted Circle → send nothing. Demo ids are
+    // never substituted as a fallback.
+    if (isRelayConfigured && familyMemberIds.isEmpty) {
+      return const AlertDispatchResult(
+        status: AlertDispatchStatus.noRecipients,
+        detail: 'Add someone to your Trusted Circle before sending '
+            'a Family Shield alert.',
+      );
+    }
+
+    final payload =
+        _buildPayload(incident, familyMemberIds, await _senderIdentity());
 
     if (!isRelayConfigured) {
       // Demo Mode broadcast — deterministic, offline-safe.
@@ -132,16 +152,20 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
   }
 
   /// Compact, privacy-minimal alert request the relay fans out via
-  /// OneSignal. Contains no user audio, transcript, or credentials —
-  /// just the incident reference and target aliases.
+  /// OneSignal. Contains no user audio, transcript, names, phone
+  /// numbers or credentials — just the incident reference, target
+  /// aliases, and the sender's opaque `vg_…` identity so receivers
+  /// know which trusted contact raised the alert.
   Map<String, Object?> _buildPayload(
     IncidentReport incident,
     List<String> familyMemberIds,
+    String senderExternalId,
   ) {
     return {
       'kind': 'family_shield_alert',
       'incident_id': incident.id,
       'risk_level': incident.riskLevel.name,
+      'sender_external_id': senderExternalId,
       'family_external_ids': familyMemberIds,
       'title': '🚨 VoxGuard Family Shield Alert',
       'body': 'A high-risk call was flagged on a protected device. '

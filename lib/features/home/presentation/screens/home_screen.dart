@@ -10,6 +10,7 @@ import '../../../protection/presentation/screens/safecall_screen.dart';
 import '../../../protection/presentation/widgets/post_call_safety_sheet.dart';
 import '../widgets/family_receiver_card.dart';
 import '../widgets/protection_banner.dart';
+import '../widgets/trusted_circle_card.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -310,6 +311,8 @@ class _SettingsTab extends StatelessWidget {
       padding: const EdgeInsets.all(20),
       children: const [
         FamilyReceiverCard(),
+        SizedBox(height: 16),
+        TrustedCircleCard(),
       ],
     );
   }

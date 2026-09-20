@@ -410,12 +410,14 @@ void main() {
         'kind': 'family_shield_alert',
         'incident_id': 'INC-1',
         'risk_level': 'highRisk',
+        'sender_external_id': 'vg_${'a' * 32}',
       });
       await Future<void>.delayed(Duration.zero);
 
       expect(taps.length, 1);
       expect(taps.single.incidentId, 'INC-1');
       expect(taps.single.riskLevel, 'highRisk');
+      expect(taps.single.senderExternalId, 'vg_${'a' * 32}');
     });
 
     test('fromAdditionalData returns null for non-family payloads', () {
@@ -426,7 +428,7 @@ void main() {
     test('malformed metadata produces no event, never throws', () {
       // Required routing fields must ALL be valid — a partial or
       // mistyped payload is not a routable Family Shield event.
-      const bad = <Map<String, dynamic>>[
+      final bad = <Map<String, dynamic>>[
         {
           'kind': 'family_shield_alert',
           'incident_id': 123,
@@ -449,6 +451,30 @@ void main() {
         },
         {'kind': 'family_shield_alert'},
         {'kind': null, 'incident_id': 'INC-1'},
+        // Missing/malformed sender identity → not routable either.
+        {
+          'kind': 'family_shield_alert',
+          'incident_id': 'INC-1',
+          'risk_level': 'highRisk',
+        },
+        {
+          'kind': 'family_shield_alert',
+          'incident_id': 'INC-1',
+          'risk_level': 'highRisk',
+          'sender_external_id': 'not-a-vg-id',
+        },
+        {
+          'kind': 'family_shield_alert',
+          'incident_id': 'INC-1',
+          'risk_level': 'highRisk',
+          'sender_external_id': 'vg_${'A' * 32}',
+        },
+        {
+          'kind': 'family_shield_alert',
+          'incident_id': 'INC-1',
+          'risk_level': 'highRisk',
+          'sender_external_id': 42,
+        },
       ];
       for (final payload in bad) {
         expect(
@@ -469,10 +495,11 @@ void main() {
       s.alertTaps.listen(taps.add);
       s.alertReceived.listen(received.add);
 
-      const payload = {
+      final payload = {
         'kind': 'family_shield_alert',
         'incident_id': 'INC-9',
         'risk_level': 'highRisk',
+        'sender_external_id': 'vg_${'b' * 32}',
       };
       sdk.fireForeground(payload); // arrives while app is open
       await Future<void>.delayed(Duration.zero);

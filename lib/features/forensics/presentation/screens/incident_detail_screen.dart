@@ -32,15 +32,13 @@ class IncidentDetailScreen extends StatelessWidget {
       };
 
   Future<void> _broadcast(BuildContext context) async {
-    final contacts =
-        await FamilyContactLocator.instance.getFamilyContacts();
+    // Demo Mode → labelled demo contacts; real relay → persisted
+    // Trusted Circle only (empty circle yields a truthful no-op).
+    final repo = FamilyAlertLocator.instance.isDemoMode
+        ? const DemoFamilyContactRepository()
+        : FamilyContactLocator.instance;
+    final contacts = await repo.getFamilyContacts();
     if (!context.mounted) return;
-    if (contacts.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No family contacts configured.')),
-      );
-      return;
-    }
     final result =
         await FamilyAlertLocator.instance.triggerFamilyEmergencyAlert(
       incident: incident,

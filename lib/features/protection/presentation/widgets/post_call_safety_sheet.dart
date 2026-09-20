@@ -345,8 +345,12 @@ class _FamilyShieldCardState extends State<_FamilyShieldCard> {
       _sending = true;
       _result = null;
     });
-    final contacts =
-        await FamilyContactLocator.instance.getFamilyContacts();
+    // Demo Mode targets the labelled demo contacts; a configured
+    // relay targets only the persisted Trusted Circle.
+    final repo = FamilyAlertLocator.instance.isDemoMode
+        ? const DemoFamilyContactRepository()
+        : FamilyContactLocator.instance;
+    final contacts = await repo.getFamilyContacts();
     final result =
         await FamilyAlertLocator.instance.triggerFamilyEmergencyAlert(
       incident: widget.incident,
