@@ -20,11 +20,19 @@ import 'family_alert_service.dart';
 /// leaves the device, so the full Family Shield journey stays
 /// demoable for judging without shipping secrets.
 final class FamilyShieldAlertService implements IFamilyAlertService {
-  FamilyShieldAlertService({http.Client? httpClient, String? relayUrl})
-      : _client = httpClient ?? http.Client(),
+  FamilyShieldAlertService({
+    http.Client? httpClient,
+    String? relayUrl,
+    String? relayToken,
+  })  : _client = httpClient ?? http.Client(),
         _relayUrl = relayUrl ??
             const String.fromEnvironment(
               'VOXGUARD_ALERT_RELAY_URL',
+              defaultValue: '',
+            ),
+        _relayToken = relayToken ??
+            const String.fromEnvironment(
+              'VOXGUARD_RELAY_TOKEN',
               defaultValue: '',
             );
 
@@ -32,6 +40,12 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
 
   final http.Client _client;
   final String _relayUrl;
+
+  /// Shared relay client token — abuse resistance for the public
+  /// endpoint, NOT a high-security secret. The OneSignal REST key
+  /// stays server-side regardless. Production should move to
+  /// authenticated users / device attestation.
+  final String _relayToken;
 
   final ValueNotifier<bool> _enabled = ValueNotifier<bool>(true);
 
@@ -55,8 +69,7 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
   }) async {
     if (!_enabled.value) {
       return const AlertDispatchResult(
-        delivered: false,
-        simulated: false,
+        status: AlertDispatchStatus.disabled,
         detail: 'Family Shield is disabled.',
       );
     }
@@ -67,8 +80,7 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
       // Demo Mode broadcast — deterministic, offline-safe.
       debugPrint('[FamilyShield·demo] ${jsonEncode(payload)}');
       return AlertDispatchResult(
-        delivered: true,
-        simulated: true,
+        status: AlertDispatchStatus.simulated,
         detail:
             'Demo alert broadcast to ${familyMemberIds.length} family member(s).',
       );
@@ -78,28 +90,40 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
       final response = await _client
           .post(
             Uri.parse(_relayUrl),
-            headers: {'Content-Type': 'application/json; charset=utf-8'},
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+              if (_relayToken.isNotEmpty)
+                'Authorization': 'Bearer $_relayToken',
+            },
             body: jsonEncode(payload),
           )
           .timeout(_timeout);
 
       if (response.statusCode == 200 || response.statusCode == 202) {
         return AlertDispatchResult(
-          delivered: true,
-          simulated: false,
+          status: AlertDispatchStatus.delivered,
           detail:
               'Alert sent to ${familyMemberIds.length} family member(s).',
         );
       }
+      // Relay rejected the request (auth or payload) vs. the relay or
+      // upstream being unavailable — the UI distinguishes honestly.
+      if (response.statusCode == 400 ||
+          response.statusCode == 401 ||
+          response.statusCode == 403 ||
+          response.statusCode == 429) {
+        return AlertDispatchResult(
+          status: AlertDispatchStatus.rejected,
+          detail: 'Relay rejected the alert (${response.statusCode}).',
+        );
+      }
       return AlertDispatchResult(
-        delivered: false,
-        simulated: false,
-        detail: 'Relay error ${response.statusCode}.',
+        status: AlertDispatchStatus.unavailable,
+        detail: 'Alert service unavailable (${response.statusCode}).',
       );
     } on Exception {
       return const AlertDispatchResult(
-        delivered: false,
-        simulated: false,
+        status: AlertDispatchStatus.unavailable,
         detail: 'Network error — alert could not be sent.',
       );
     }

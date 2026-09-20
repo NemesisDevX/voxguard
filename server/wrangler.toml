@@ -1,0 +1,12 @@
+name = "voxguard-family-shield-relay"
+main = "worker.js"
+compatibility_date = "2025-01-01"
+
+# Secrets go in via `wrangler secret put` — never in this file:
+#   wrangler secret put ONESIGNAL_REST_API_KEY
+#   wrangler secret put RELAY_CLIENT_TOKEN
+#
+# Non-secret vars may be declared here:
+# [vars]
+# ONESIGNAL_APP_ID = "your-app-id-here"
+# ALLOWED_ORIGINS  = "https://nemesisdevx.github.io,http://localhost,http://127.0.0.1"

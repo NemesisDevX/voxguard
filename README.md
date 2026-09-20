@@ -216,7 +216,8 @@ flutter run \
 | `ASSEMBLYAI_API_KEY` | **Development only** — the client mints its own short-lived token via `GET /v3/token`. Never ship a permanent provider key in a released build | Live Mic runs acoustic-only; UI shows "Live transcription unavailable" |
 | `ASSEMBLYAI_TEMP_TOKEN` | Pre-minted short-lived token (CI/demo convenience) | — |
 | `REVENUECAT_ANDROID_KEY` / `REVENUECAT_IOS_KEY` | real store checkout | sandbox purchase lifecycle |
-| `VOXGUARD_ALERT_RELAY_URL` | live Family Shield push via server relay | explicit Demo Mode broadcast |
+| `VOXGUARD_ALERT_RELAY_URL` | live Family Shield push via the `server/` edge relay (Cloudflare Worker) | explicit Demo Mode broadcast |
+| `VOXGUARD_RELAY_TOKEN` | shared relay client token (`Bearer` auth) — abuse resistance for the public endpoint, not a real secret | requests sent without auth (relay must allow it) |
 
 **Demo path**: Home → *Start SafeCall* → *Demo Attack* → tap **Simulate Scam** (FAB) → Arabic demo dialogue streams in with phrase highlights + evidence chips → ThreatCore escalates SAFE → CAUTION → HIGH RISK → end the call → post-call sheet walks *why flagged → verify identity → demo family alert → incident report*.
 
@@ -226,7 +227,7 @@ flutter run \
 
 ```bash
 flutter analyze   # 0 issues
-flutter test      # 41/41 passing
+flutter test      # 55/55 passing (+15 relay tests under server/)
 flutter build web --release --base-href /voxguard/
 flutter build apk --debug
 ```

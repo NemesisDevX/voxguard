@@ -19,6 +19,14 @@ abstract interface class ITranscriptionTokenProvider {
   /// Whether this provider can produce a token at all.
   bool get isConfigured;
 
+  /// Whether [mintToken] can produce a *fresh* token on each call.
+  ///
+  /// AssemblyAI streaming tokens are one-time-use: a provider that
+  /// returns the same static token cannot support reconnects, and the
+  /// streaming service uses this flag to avoid retrying with an
+  /// already-consumed token.
+  bool get canMintFreshToken;
+
   /// Returns a fresh short-lived streaming token.
   Future<String> mintToken();
 }
@@ -80,6 +88,9 @@ final class BrokeredTokenProvider implements ITranscriptionTokenProvider {
   bool get isConfigured => brokerUrl.isNotEmpty;
 
   @override
+  bool get canMintFreshToken => true;
+
+  @override
   Future<String> mintToken() async {
     final response =
         await _http.get(Uri.parse(brokerUrl)).timeout(_timeout);
@@ -93,6 +104,10 @@ final class BrokeredTokenProvider implements ITranscriptionTokenProvider {
 }
 
 /// A pre-minted short-lived token supplied at build/run time.
+///
+/// The same token is returned on every call, so it is valid for
+/// exactly one session — [canMintFreshToken] is false and reconnects
+/// degrade to `failed` instead of replaying a consumed token.
 final class StaticTokenProvider implements ITranscriptionTokenProvider {
   const StaticTokenProvider(this.token);
 
@@ -100,6 +115,9 @@ final class StaticTokenProvider implements ITranscriptionTokenProvider {
 
   @override
   bool get isConfigured => token.isNotEmpty;
+
+  @override
+  bool get canMintFreshToken => false;
 
   @override
   Future<String> mintToken() async => token;
@@ -123,6 +141,9 @@ final class DevApiKeyTokenProvider implements ITranscriptionTokenProvider {
 
   @override
   bool get isConfigured => apiKey.isNotEmpty;
+
+  @override
+  bool get canMintFreshToken => true;
 
   @override
   Future<String> mintToken() async {

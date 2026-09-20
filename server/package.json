@@ -1,0 +1,15 @@
+{
+  "name": "voxguard-family-shield-relay",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Minimal edge relay: VoxGuard client → relay → OneSignal REST API. Holds the OneSignal secret server-side.",
+  "scripts": {
+    "test": "node --test test/relay.test.js",
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.0.0"
+  }
+}

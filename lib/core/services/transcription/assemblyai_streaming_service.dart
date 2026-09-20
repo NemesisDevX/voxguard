@@ -122,36 +122,52 @@ final class AssemblyAiStreamingService
   /// until that lands, the session is not live and `start` propagates
   /// the failure so the caller can degrade to acoustic-only.
   Future<void> _connect() async {
-    final token = await _tokenProvider.mintToken();
-    final uri = Uri.parse(_wsBase).replace(queryParameters: {
-      'sample_rate': '$_sampleRate',
-      'speech_model': _config.speechModel,
-      if (_config.languageCodes.isNotEmpty)
-        'language_codes': jsonEncode(_config.languageCodes),
-      'token': token,
-    });
+    WebSocketChannel? channel;
+    StreamSubscription<dynamic>? sub;
+    try {
+      final token = await _tokenProvider.mintToken();
+      final uri = Uri.parse(_wsBase).replace(queryParameters: {
+        'sample_rate': '$_sampleRate',
+        'speech_model': _config.speechModel,
+        if (_config.languageCodes.isNotEmpty)
+          'language_codes': jsonEncode(_config.languageCodes),
+        'token': token,
+      });
 
-    final channel =
-        (_channelFactory ?? WebSocketChannel.connect)(uri);
-    await channel.ready.timeout(_handshakeTimeout);
+      channel = (_channelFactory ?? WebSocketChannel.connect)(uri);
+      await channel.ready.timeout(_handshakeTimeout);
 
-    final begun = Completer<void>();
-    final sub = channel.stream.listen(
-      (raw) => _onMessage(raw, begun),
-      onError: (Object _) => _onChannelClosed(begun),
-      onDone: () => _onChannelClosed(begun),
-      cancelOnError: false,
-    );
-    _channel = channel;
-    _channelSub = sub;
+      final begun = Completer<void>();
+      sub = channel.stream.listen(
+        (raw) => _onMessage(raw, begun),
+        onError: (Object _) => _onChannelClosed(begun),
+        onDone: () => _onChannelClosed(begun),
+        cancelOnError: false,
+      );
+      _channel = channel;
+      _channelSub = sub;
 
-    await begun.future.timeout(
-      _handshakeTimeout,
-      onTimeout: () =>
-          throw TimeoutException('AssemblyAI session never began'),
-    );
-    _running = true;
-    _status.add(TranscriptionSessionStatus.live);
+      await begun.future.timeout(
+        _handshakeTimeout,
+        onTimeout: () =>
+            throw TimeoutException('AssemblyAI session never began'),
+      );
+      _running = true;
+      _status.add(TranscriptionSessionStatus.live);
+    } catch (_) {
+      // A failed handshake must not leak a dangling socket — release
+      // everything before the failure propagates to the caller.
+      await sub?.cancel();
+      try {
+        await channel?.sink.close();
+      } catch (_) {}
+      if (identical(_channel, channel)) {
+        _channel = null;
+        _channelSub = null;
+      }
+      _running = false;
+      rethrow;
+    }
   }
 
   /// Socket dropped while the session should be live. One bounded
@@ -166,7 +182,10 @@ final class AssemblyAiStreamingService
     }
     if (_stopping || !_running) return;
     _running = false;
-    if (_reconnectsUsed >= _maxReconnectAttempts) {
+    // Static tokens are one-time-use — a reconnect would replay a
+    // consumed credential, so degrade straight to failed.
+    if (_reconnectsUsed >= _maxReconnectAttempts ||
+        !_tokenProvider.canMintFreshToken) {
       _status.add(TranscriptionSessionStatus.failed);
       return;
     }

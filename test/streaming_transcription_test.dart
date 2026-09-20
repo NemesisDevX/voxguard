@@ -15,7 +15,7 @@ import 'package:voxguard/features/protection/presentation/bloc/safecall_event.da
 import 'package:voxguard/features/protection/presentation/bloc/safecall_state.dart';
 import 'package:web_socket/testing.dart';
 import 'package:web_socket/web_socket.dart'
-    show TextDataReceived, WebSocket;
+    show CloseReceived, TextDataReceived, WebSocket;
 import 'package:web_socket_channel/adapter_web_socket_channel.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -58,14 +58,22 @@ final class FakeChannelPair {
 
 /// Scripted token provider.
 final class FakeTokenProvider implements ITranscriptionTokenProvider {
-  FakeTokenProvider({this.token = 'tok', this.fail = false});
+  FakeTokenProvider({
+    this.token = 'tok',
+    this.fail = false,
+    this.canMint = true,
+  });
 
   final String token;
   final bool fail;
+  final bool canMint;
   var mintCalls = 0;
 
   @override
   bool get isConfigured => true;
+
+  @override
+  bool get canMintFreshToken => canMint;
 
   @override
   Future<String> mintToken() async {
@@ -286,6 +294,62 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 30));
       expect(statuses.last, TranscriptionSessionStatus.failed);
       expect(pairs.length, 2);
+      await service.stop();
+    });
+
+    test('static token provider never replays a consumed token',
+        () async {
+      final pairs = <FakeChannelPair>[];
+      final statuses = <TranscriptionSessionStatus>[];
+      final service = AssemblyAiStreamingService(
+        tokenProvider: const StaticTokenProvider('one-shot'),
+        channelFactory: (_) {
+          final p = FakeChannelPair();
+          pairs.add(p);
+          return p.channel;
+        },
+      );
+      service.status.listen(statuses.add);
+
+      final started = service.start(sampleRate: 16000);
+      while (pairs.isEmpty) {
+        await Future<void>.delayed(const Duration(milliseconds: 5));
+      }
+      pairs[0].serverSays({'type': 'Begin'});
+      await started;
+
+      // Mid-session drop → no reconnect attempt (token already
+      // consumed) → straight to failed.
+      pairs[0].drop();
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+      expect(pairs.length, 1);
+      expect(statuses.last, TranscriptionSessionStatus.failed);
+      await service.stop();
+    });
+
+    test('failed Begin handshake releases the socket immediately',
+        () async {
+      final pair = FakeChannelPair();
+      final service = AssemblyAiStreamingService(
+        tokenProvider: FakeTokenProvider(),
+        channelFactory: (_) => pair.channel,
+        handshakeTimeout: const Duration(milliseconds: 50),
+      );
+
+      // Server never sends Begin → handshake times out → start throws
+      // and the socket must be closed, not left dangling.
+      await expectLater(
+        service.start(sampleRate: 16000),
+        throwsA(isA<TimeoutException>()),
+      );
+
+      // The channel was closed — the server peer sees a CloseReceived.
+      final sawClose = await pair.server.events
+          .map((e) => e is CloseReceived)
+          .firstWhere((closed) => closed,
+              orElse: () => false)
+          .timeout(const Duration(seconds: 2), onTimeout: () => false);
+      expect(sawClose, isTrue);
       await service.stop();
     });
   });

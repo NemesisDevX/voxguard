@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart' as http_testing;
+import 'package:voxguard/core/services/alerts/family_alert_service.dart';
 import 'package:voxguard/core/services/alerts/family_contact_repository.dart';
 import 'package:voxguard/core/services/alerts/family_shield_alert_service.dart';
 import 'package:voxguard/features/forensics/domain/models/incident_report.dart';
@@ -87,7 +88,8 @@ void main() {
 
       expect(captured, isNotNull);
       expect(captured!.url.toString(), 'https://relay.example.com/alert');
-      // No Authorization header — credentials live server-side.
+      // No relay token configured → no auth header. The OneSignal
+      // REST key is never present client-side regardless.
       expect(captured!.headers.containsKey('Authorization'), isFalse);
 
       final body = jsonDecode(captured!.body) as Map<String, dynamic>;
@@ -115,6 +117,58 @@ void main() {
 
       expect(result.delivered, isFalse);
       expect(result.simulated, isFalse);
+      expect(result.status, AlertDispatchStatus.rejected);
+    });
+
+    test('sends the shared relay token as Bearer auth when configured',
+        () async {
+      http.Request? captured;
+      final client = http_testing.MockClient((request) async {
+        captured = request;
+        return http.Response('{"ok":true}', 202);
+      });
+      final service = FamilyShieldAlertService(
+        httpClient: client,
+        relayUrl: 'https://relay.example.com/alert',
+        relayToken: 'relay-tok',
+      );
+
+      await service.triggerFamilyEmergencyAlert(
+        incident: incident,
+        familyMemberIds: members,
+      );
+
+      expect(captured!.headers['Authorization'], 'Bearer relay-tok');
+      // Still no provider secret — the OneSignal key is server-side.
+      expect(captured!.body.contains('onesignal'), isFalse);
+    });
+
+    test('distinguishes rejected vs unavailable relay outcomes',
+        () async {
+      final rejected = FamilyShieldAlertService(
+        httpClient: http_testing.MockClient(
+          (_) async => http.Response('{}', 401),
+        ),
+        relayUrl: 'https://relay.example.com/alert',
+      );
+      final unavailable = FamilyShieldAlertService(
+        httpClient: http_testing.MockClient(
+          (_) async => http.Response('{}', 502),
+        ),
+        relayUrl: 'https://relay.example.com/alert',
+      );
+
+      final r1 = await rejected.triggerFamilyEmergencyAlert(
+        incident: incident,
+        familyMemberIds: members,
+      );
+      final r2 = await unavailable.triggerFamilyEmergencyAlert(
+        incident: incident,
+        familyMemberIds: members,
+      );
+
+      expect(r1.status, AlertDispatchStatus.rejected);
+      expect(r2.status, AlertDispatchStatus.unavailable);
     });
   });
 
