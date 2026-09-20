@@ -114,10 +114,10 @@ final class SemanticThreatService {
   /// High-precision fallback analyzer. Counts lexicon hits per threat
   /// vector: 1 hit → 0.5, 2 hits → 0.8, 3+ hits → 1.0.
   SemanticThreatSignals analyzeLocally(String transcript) {
-    final urgencyHits = _matchAll(transcript, _urgencyLexicon);
-    final financialHits = _matchAll(transcript, _financialLexicon);
-    final secrecyHits = _matchAll(transcript, _secrecyLexicon);
-    final impersonationHits = _matchAll(transcript, _impersonationLexicon);
+    final urgencyHits = _matchAll(transcript, urgencyLexicon);
+    final financialHits = _matchAll(transcript, financialLexicon);
+    final secrecyHits = _matchAll(transcript, secrecyLexicon);
+    final impersonationHits = _matchAll(transcript, impersonationLexicon);
 
     return SemanticThreatSignals(
       urgencyScore: _hitsToScore(urgencyHits.length),
@@ -161,28 +161,28 @@ final class SemanticThreatService {
 
   // ── Threat lexicons (EN + Egyptian Arabic) ──────────────────────
 
-  static const _urgencyLexicon = {
+  static const urgencyLexicon = {
     'quickly', 'now', 'emergency', 'urgent', 'immediately',
     'right away', 'hurry', 'asap', 'act fast',
     'بسرعة', 'ضروري', 'دلوقتي', 'عاجل', 'حالاً', 'حالا',
     'الحقني', 'مستعجل', 'فوراً', 'فورا', 'خطير',
   };
 
-  static const _financialLexicon = {
+  static const financialLexicon = {
     'transfer', 'bank', 'wallet', 'cash', 'money', 'payment',
     'send money', 'gift card', 'wire', 'deposit',
     'حول', 'حوالة', 'فلوس', 'جنيه', 'محفظة', 'تحويل',
     'فودافون كاش', 'انستاباي', 'ادفع', 'حساب',
   };
 
-  static const _secrecyLexicon = {
+  static const secrecyLexicon = {
     "don't tell", 'do not tell', 'keep it secret', 'between us',
     'our secret', 'tell no one', "don't tell anyone", 'stay alone',
     'متقولش', 'ماتقولش', 'متقولش لحد', 'بيني وبينك', 'سر',
     'محدش يعرف', 'لوحدك', 'متحدش',
   };
 
-  static const _impersonationLexicon = {
+  static const impersonationLexicon = {
     "i'm your", 'i am your', 'this is your', 'your brother',
     'your son', 'your boss', 'bank security', 'its me', "it's me",
     'أنا أخوك', 'أنا اخوك', 'أخوك', 'أنا قريبك', 'أنا ابنك',

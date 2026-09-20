@@ -3,14 +3,16 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../forensics/presentation/screens/incident_detail_screen.dart';
+import '../../../forensics/presentation/screens/incidents_history_screen.dart';
 import '../../../paywall/presentation/screens/paywall_screen.dart';
 import '../../../paywall/presentation/widgets/family_shield_upsell_sheet.dart';
 import '../../../protection/domain/models/composite_threat_report.dart';
+import '../../../protection/presentation/bloc/safecall_state.dart';
 import '../../../protection/presentation/screens/safecall_screen.dart';
 import '../widgets/action_card.dart';
 import '../widgets/protection_banner.dart';
 
-/// Home / Shield dashboard — entry point of the app.
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -22,14 +24,36 @@ class _HomeScreenState extends State<HomeScreen> {
   int _tabIndex = 0;
 
   Future<void> _openSafeCall() async {
-    final peakRisk = await Navigator.of(context).push<ThreatRiskLevel>(
-      MaterialPageRoute<ThreatRiskLevel>(
+    final ended = await Navigator.of(context).push<SafeCallEnded>(
+      MaterialPageRoute<SafeCallEnded>(
         builder: (_) => const SafeCallScreen(),
       ),
     );
+    if (ended == null || !mounted) return;
+
     // A high-risk interception is the strongest upgrade trigger.
-    if (peakRisk == ThreatRiskLevel.highRisk && mounted) {
+    if (ended.peakRiskLevel == ThreatRiskLevel.highRisk) {
       await showFamilyShieldUpsell(context);
+    }
+    if (!mounted) return;
+
+    // Forensic record was persisted on-call-end — surface it.
+    final incident = ended.incident;
+    if (incident != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('High-risk threat logged.'),
+          action: SnackBarAction(
+            label: 'View Incident Report',
+            textColor: AppColors.statusWarning,
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => IncidentDetailScreen(incident: incident),
+              ),
+            ),
+          ),
+        ),
+      );
     }
   }
 
@@ -71,11 +95,7 @@ class _HomeScreenState extends State<HomeScreen> {
         index: _tabIndex,
         children: [
           _ShieldTab(onSafeCall: _openSafeCall, onComingSoon: _showComingSoon),
-          const _PlaceholderTab(
-            icon: Icons.receipt_long_outlined,
-            title: AppStrings.incidentsEmpty,
-            description: AppStrings.incidentsEmptyDesc,
-          ),
+          const IncidentsHistoryScreen(),
           const _PlaceholderTab(
             icon: Icons.settings_outlined,
             title: AppStrings.settingsPlaceholder,

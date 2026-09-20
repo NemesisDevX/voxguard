@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../forensics/domain/models/incident_report.dart';
 import '../../domain/models/audio_forensic_metrics.dart';
 import '../../domain/models/composite_threat_report.dart';
 import '../../domain/models/semantic_threat_signals.dart';
@@ -68,10 +69,16 @@ final class SafeCallMonitoring extends SafeCallState {
 /// so the UI can trigger post-call actions (e.g. the Family Shield
 /// upsell after a high-risk interception).
 final class SafeCallEnded extends SafeCallState {
-  const SafeCallEnded({this.peakRiskLevel = ThreatRiskLevel.safe});
+  const SafeCallEnded({
+    this.peakRiskLevel = ThreatRiskLevel.safe,
+    this.incident,
+  });
 
   final ThreatRiskLevel peakRiskLevel;
 
+  /// Forensic report persisted when the call ended at high risk.
+  final IncidentReport? incident;
+
   @override
-  List<Object?> get props => [peakRiskLevel];
+  List<Object?> get props => [peakRiskLevel, incident];
 }
