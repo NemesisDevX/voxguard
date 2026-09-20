@@ -16,8 +16,10 @@ import 'push_identity_service.dart';
 ///    surfaced only as a diagnostic.
 ///  - **Raw FCM/APNs token** — never leaves the SDK.
 ///
-/// OneSignal push isn't supported on web — those builds resolve to
-/// [PushRegistrationStatus.unsupported] instead of crashing.
+/// The `onesignal_flutter` plugin declares Android + iOS platform
+/// implementations only — every other platform (web, desktop)
+/// resolves to [PushRegistrationStatus.unsupported] without ever
+/// touching the native SDK.
 final class PushIdentityService implements IPushIdentityService {
   PushIdentityService({
     IOneSignalSdk? sdk,
@@ -42,12 +44,18 @@ final class PushIdentityService implements IPushIdentityService {
     const FamilyPushRegistration(status: PushRegistrationStatus.notConfigured),
   );
   final _taps = StreamController<FamilyAlertTap>.broadcast();
+  final _received = StreamController<FamilyAlertTap>.broadcast();
 
   bool _initialized = false;
+  bool _initializing = false;
   String? _externalId;
 
+  /// `onesignal_flutter` ships Android + iOS implementations only.
   bool get _supported =>
-      _platformSupported ?? !kIsWeb; // OneSignal push: native only.
+      _platformSupported ??
+      (!kIsWeb &&
+          (defaultTargetPlatform == TargetPlatform.android ||
+              defaultTargetPlatform == TargetPlatform.iOS));
 
   @override
   ValueListenable<FamilyPushRegistration> get registration =>
@@ -57,10 +65,18 @@ final class PushIdentityService implements IPushIdentityService {
   Stream<FamilyAlertTap> get alertTaps => _taps.stream;
 
   @override
+  Stream<FamilyAlertTap> get alertReceived => _received.stream;
+
+  static final _identityPattern = RegExp(r'^vg_[0-9a-f]{32}$');
+
+  @override
   Future<String> voxGuardIdentity() async {
     if (_externalId != null) return _externalId!;
     final existing = await _store.read();
-    if (existing != null && existing.startsWith('vg_')) {
+    // Validate the persisted value before trusting it — a malformed
+    // or truncated identity is discarded and regenerated rather
+    // than sent to the provider.
+    if (existing != null && _identityPattern.hasMatch(existing)) {
       return _externalId = existing;
     }
     final fresh = generateVoxGuardIdentity();
@@ -79,6 +95,13 @@ final class PushIdentityService implements IPushIdentityService {
       _publish(PushRegistrationStatus.unsupported);
       return;
     }
+    // Idempotent: repeated calls must not stack duplicate observers
+    // or click/foreground listeners on the SDK.
+    if (_initialized || _initializing) {
+      await _refreshState();
+      return;
+    }
+    _initializing = true;
     try {
       await _sdk.initialize(_appId);
       _initialized = true;
@@ -86,8 +109,12 @@ final class PushIdentityService implements IPushIdentityService {
       _sdk.addClickListener(_onClick);
       _sdk.addForegroundListener(_onForeground);
       await _refreshState();
-    } catch (e) {
-      _publish(PushRegistrationStatus.error, errorDetail: '$e');
+    } catch (e, st) {
+      debugPrint('PushIdentityService.initialize failed: $e\n$st');
+      _publish(PushRegistrationStatus.error,
+          errorDetail: 'Push setup failed on this device.');
+    } finally {
+      _initializing = false;
     }
   }
 
@@ -114,13 +141,23 @@ final class PushIdentityService implements IPushIdentityService {
       // device only after login links our vg_… identity.
       await _sdk.login(await voxGuardIdentity());
       await _refreshState();
-    } catch (e) {
-      _publish(PushRegistrationStatus.error, errorDetail: '$e');
+    } catch (e, st) {
+      debugPrint('PushIdentityService.enableAlerts failed: $e\n$st');
+      _publish(PushRegistrationStatus.error,
+          errorDetail: 'Could not enable push alerts. Try again.');
     }
   }
 
   @override
   Future<void> resetIdentity() async {
+    // Unlink the old external ID from the OneSignal user before
+    // minting a replacement — otherwise both identities could
+    // remain associated with this device's subscription.
+    if (_initialized) {
+      try {
+        await _sdk.logout();
+      } catch (_) {}
+    }
     await _store.clear();
     _externalId = null;
     await voxGuardIdentity();
@@ -134,6 +171,11 @@ final class PushIdentityService implements IPushIdentityService {
 
   /// Recomputes truthful registration state — called on init, after
   /// enable, and from the subscription observer (no polling).
+  ///
+  /// `registered` means genuinely addressable: permission granted,
+  /// subscription opted in, AND a non-empty OneSignal subscription
+  /// ID. Anything less is a pending state — an opted-in flag or a
+  /// bare permission grant alone does not make the device reachable.
   Future<void> _refreshState() async {
     if (!_initialized) return;
     try {
@@ -145,15 +187,17 @@ final class PushIdentityService implements IPushIdentityService {
             ? (await _sdk.canRequestPermission()
                 ? PushRegistrationStatus.permissionRequired
                 : PushRegistrationStatus.permissionDenied)
-            : (subId != null || optedIn)
+            : (optedIn && subId != null && subId.isNotEmpty)
                 ? PushRegistrationStatus.registered
                 : PushRegistrationStatus.registering,
         voxguardExternalId: _externalId,
         pushSubscriptionId: subId,
         optedIn: optedIn,
       );
-    } catch (e) {
-      _publish(PushRegistrationStatus.error, errorDetail: '$e');
+    } catch (e, st) {
+      debugPrint('PushIdentityService._refreshState failed: $e\n$st');
+      _publish(PushRegistrationStatus.error,
+          errorDetail: 'Push state could not be read.');
     }
   }
 
@@ -163,9 +207,11 @@ final class PushIdentityService implements IPushIdentityService {
   }
 
   void _onForeground(Map<String, dynamic> additionalData) {
-    // Same metadata surface as taps; default display is preserved by
-    // the adapter (notification still shows).
-    _onClick(additionalData);
+    // Foreground ARRIVAL is not a tap — it emits on the separate
+    // alertReceived stream so P0.2C navigation can hook only real
+    // user interaction. Default display is preserved by the adapter.
+    final received = FamilyAlertTap.fromAdditionalData(additionalData);
+    if (received != null) _received.add(received);
   }
 
   void _publish(PushRegistrationStatus status, {String? errorDetail}) {

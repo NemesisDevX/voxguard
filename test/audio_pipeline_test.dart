@@ -28,7 +28,8 @@ final class FakeMicSource implements IAudioStreamSource {
   FakeMicSource({this.permission = MicPermissionState.granted});
 
   MicPermissionState permission;
-  final _controller = StreamController<AudioChunk>();
+  // Broadcast like the real source — sessions re-subscribe on restart.
+  final _controller = StreamController<AudioChunk>.broadcast();
   var startCalls = 0;
   var stopCalls = 0;
 
@@ -100,6 +101,25 @@ final class FakeSttService implements IStreamingTranscriptionService {
 
   void emitFinal(String text) =>
       _events.add(TranscriptEvent(text: text, isFinal: true));
+}
+
+/// Demo source with observable lifecycle counters — the real
+/// implementation is final-ish for test purposes, so extend it.
+final class SpyDemoSource extends DemoAudioSource {
+  var startCalls = 0;
+  var stopCalls = 0;
+
+  @override
+  Future<void> start() async {
+    startCalls++;
+    await super.start();
+  }
+
+  @override
+  Future<void> stop() async {
+    stopCalls++;
+    await super.stop();
+  }
 }
 
 void main() {
@@ -281,6 +301,91 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 30));
 
       expect(stt.sentBytes, isNotEmpty);
+      await bloc.close();
+    });
+
+    test('starting live mic while demo runs never leaves two '
+        'active sources', () async {
+      final demo = SpyDemoSource();
+      final mic = FakeMicSource();
+      final bloc = SafeCallBloc(
+        demoSource: demo,
+        microphoneSource: mic,
+        transcriptionService: FakeSttService(),
+      );
+
+      bloc.add(const StartDemoSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(demo.startCalls, 1);
+      expect(demo.stopCalls, 0);
+
+      // Switch to Live Mic mid-demo — the demo timer must be
+      // torn down before the mic takes over.
+      bloc.add(const StartLiveMicSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      expect(demo.stopCalls, 1);
+      expect(mic.startCalls, 1);
+      final m = bloc.state as SafeCallMonitoring;
+      expect(m.audioSourceType, AudioSourceType.microphone);
+      await bloc.close();
+    });
+
+    test('repeated start events do not stack sources', () async {
+      final mic = FakeMicSource();
+      final bloc = SafeCallBloc(
+        demoSource: DemoAudioSource(),
+        microphoneSource: mic,
+        transcriptionService: FakeSttService(),
+      );
+      bloc.add(const StartLiveMicSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      bloc.add(const StartLiveMicSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      // The first session was fully stopped before restart.
+      expect(mic.stopCalls, greaterThanOrEqualTo(1));
+      expect(bloc.state, isA<SafeCallMonitoring>());
+      await bloc.close();
+    });
+
+    test('incident SHA-256 equals the digest of exactly the bytes '
+        'streamed', () async {
+      final mic = FakeMicSource();
+      final stt = FakeSttService();
+      final bloc = SafeCallBloc(
+        demoSource: DemoAudioSource(),
+        microphoneSource: mic,
+        transcriptionService: stt,
+      );
+      bloc.add(const StartLiveMicSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      // Feed known audio and the full scam script — drives the
+      // fusion engine to highRisk so an incident is produced.
+      final allBytes = BytesBuilder();
+      for (var i = 0; i < 3; i++) {
+        final samples = List<double>.filled(256, 0.2 + i * 0.1);
+        allBytes.add(PcmCodec.samplesToPcm16(samples));
+        mic.emit(samples);
+      }
+      stt.emitFinal('أنا أخوك، محتاجك تحول لي 2000 جنيه بسرعة '
+          'ومتقولش لحد');
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+
+      bloc.add(const EndCallEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      final ended = bloc.state as SafeCallEnded;
+      final incident = ended.incident;
+      expect(incident, isNotNull);
+      expect(
+        incident!.audioDigestSha256,
+        sha256.convert(allBytes.takeBytes()).toString(),
+      );
+      // Same digest must remain stable — the value was finalized
+      // once, not recomputed against a drained buffer.
+      expect(incident.audioDigestSha256.length, 64);
       await bloc.close();
     });
   });

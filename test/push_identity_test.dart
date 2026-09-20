@@ -15,6 +15,10 @@ final class FakeOneSignalSdk implements IOneSignalSdk {
   var optedIn = false;
   var requestPermissionCalls = 0;
   var loginCalls = 0;
+  var logoutCalls = 0;
+  var observerAdds = 0;
+  var clickListenerAdds = 0;
+  var foregroundListenerAdds = 0;
 
   void Function()? _subObserver;
   void Function(Map<String, dynamic>)? _clickListener;
@@ -33,7 +37,10 @@ final class FakeOneSignalSdk implements IOneSignalSdk {
   }
 
   @override
-  Future<void> logout() async => loggedInAs = null;
+  Future<void> logout() async {
+    logoutCalls++;
+    loggedInAs = null;
+  }
 
   @override
   Future<bool> requestPermission() async {
@@ -54,20 +61,26 @@ final class FakeOneSignalSdk implements IOneSignalSdk {
   bool get pushOptedIn => optedIn;
 
   @override
-  void addSubscriptionObserver(void Function() onChanged) =>
-      _subObserver = onChanged;
+  void addSubscriptionObserver(void Function() onChanged) {
+    observerAdds++;
+    _subObserver = onChanged;
+  }
 
   @override
   void addClickListener(
     void Function(Map<String, dynamic> additionalData) onClick,
-  ) =>
-      _clickListener = onClick;
+  ) {
+    clickListenerAdds++;
+    _clickListener = onClick;
+  }
 
   @override
   void addForegroundListener(
     void Function(Map<String, dynamic> additionalData) onForeground,
-  ) =>
-      _foregroundListener = onForeground;
+  ) {
+    foregroundListenerAdds++;
+    _foregroundListener = onForeground;
+  }
 
   /// Simulate a subscription appearing/changing.
   void fireSubscriptionChanged() => _subObserver?.call();
@@ -217,6 +230,68 @@ void main() {
       final reg = s.registration.value;
       expect(reg.toString().contains('token'), isFalse);
     });
+
+    test('registered requires permission + optedIn + subscription id',
+        () async {
+      final cases = <(bool, String?, PushRegistrationStatus)>[
+        // (optedIn, subId, expected) — granted permission assumed.
+        (true, 'os-sub', PushRegistrationStatus.registered),
+        (true, null, PushRegistrationStatus.registering),
+        (true, '', PushRegistrationStatus.registering),
+        (false, 'os-sub', PushRegistrationStatus.registering),
+        (false, null, PushRegistrationStatus.registering),
+      ];
+      for (final (optedIn, subId, expected) in cases) {
+        sdk.permission = true;
+        sdk.optedIn = optedIn;
+        sdk.subscriptionId = subId;
+        final s = service();
+        await s.initialize();
+        expect(
+          s.registration.value.status,
+          expected,
+          reason: 'optedIn=$optedIn subId=$subId',
+        );
+      }
+    });
+
+    test('repeated initialize does not duplicate listeners', () async {
+      final s = service();
+      await s.initialize();
+      await s.initialize();
+      await s.initialize();
+      expect(sdk.observerAdds, 1);
+      expect(sdk.clickListenerAdds, 1);
+      expect(sdk.foregroundListenerAdds, 1);
+    });
+
+    test('resetIdentity logs out the old external id before relogin',
+        () async {
+      sdk.permission = true;
+      sdk.subscriptionId = 'os-sub-1';
+      sdk.optedIn = true;
+      final s = service();
+      await s.initialize();
+      await s.enableAlerts();
+      final firstId = sdk.loggedInAs;
+
+      await s.resetIdentity();
+
+      expect(sdk.logoutCalls, 1);
+      expect(sdk.loggedInAs, isNotNull);
+      expect(sdk.loggedInAs, isNot(firstId));
+      expect(sdk.loggedInAs, startsWith('vg_'));
+    });
+
+    test('malformed persisted identity is regenerated safely',
+        () async {
+      await store.write('vg_not-a-real-id');
+      final s = service();
+      final id = await s.voxGuardIdentity();
+      expect(id, isNot('vg_not-a-real-id'));
+      expect(id, matches(RegExp(r'^vg_[0-9a-f]{32}$')));
+      expect(await store.read(), id);
+    });
   });
 
   group('alert tap metadata', () {
@@ -243,6 +318,62 @@ void main() {
     test('fromAdditionalData returns null for non-family payloads', () {
       expect(FamilyAlertTap.fromAdditionalData(null), isNull);
       expect(FamilyAlertTap.fromAdditionalData({'kind': 'x'}), isNull);
+    });
+
+    test('malformed metadata fields never throw', () {
+      // OneSignal can deliver arbitrary JSON types — every one of
+      // these must parse safely to null fields instead of crashing.
+      final parsed = FamilyAlertTap.fromAdditionalData({
+        'kind': 'family_shield_alert',
+        'incident_id': 123,
+        'risk_level': <String>[],
+      });
+      expect(parsed, isNotNull);
+      expect(parsed!.incidentId, isNull);
+      expect(parsed.riskLevel, isNull);
+
+      expect(
+        FamilyAlertTap.fromAdditionalData({
+          'kind': null,
+          'incident_id': 'INC-1',
+        }),
+        isNull,
+      );
+      expect(
+        FamilyAlertTap.fromAdditionalData({
+          'kind': 'family_shield_alert',
+          'incident_id': {'nested': true},
+        }),
+        isNotNull,
+      );
+    });
+
+    test('foreground arrival emits alertReceived, never alertTaps',
+        () async {
+      final s = service();
+      await s.initialize();
+
+      final taps = <FamilyAlertTap>[];
+      final received = <FamilyAlertTap>[];
+      s.alertTaps.listen(taps.add);
+      s.alertReceived.listen(received.add);
+
+      const payload = {
+        'kind': 'family_shield_alert',
+        'incident_id': 'INC-9',
+        'risk_level': 'highRisk',
+      };
+      sdk.fireForeground(payload); // arrives while app is open
+      await Future<void>.delayed(Duration.zero);
+
+      expect(received.length, 1);
+      expect(received.single.incidentId, 'INC-9');
+      expect(taps, isEmpty, reason: 'receipt is not a user tap');
+
+      sdk.fireClick(payload); // actual user interaction
+      await Future<void>.delayed(Duration.zero);
+      expect(taps.length, 1);
+      expect(received.length, 1);
     });
   });
 }

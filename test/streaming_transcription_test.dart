@@ -85,7 +85,8 @@ final class FakeTokenProvider implements ITranscriptionTokenProvider {
 
 /// Mic source stub for bloc-level tests.
 final class FakeMicSource implements IAudioStreamSource {
-  final _controller = StreamController<AudioChunk>();
+  // Broadcast like the real source — sessions re-subscribe on restart.
+  final _controller = StreamController<AudioChunk>.broadcast();
 
   @override
   AudioSourceType get type => AudioSourceType.microphone;
@@ -351,6 +352,41 @@ void main() {
           .timeout(const Duration(seconds: 2), onTimeout: () => false);
       expect(sawClose, isTrue);
       await service.stop();
+    });
+
+    test('stop() during an in-flight handshake leaves no zombie '
+        'socket or live status', () async {
+      final pair = FakeChannelPair();
+      final statuses = <TranscriptionSessionStatus>[];
+      final service = AssemblyAiStreamingService(
+        tokenProvider: FakeTokenProvider(),
+        channelFactory: (_) => pair.channel,
+      );
+      service.status.listen(statuses.add);
+
+      // Begin the handshake, then stop before the server answers.
+      final started = service.start(sampleRate: 16000);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      final stopped = service.stop();
+      // May already be closed by stop() — either ordering is valid.
+      try {
+        pair.serverSays({'type': 'Begin'});
+      } catch (_) {}
+      await stopped;
+      // start() must not surface a live session after stop().
+      await expectLater(started, throwsStateError);
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(
+        statuses,
+        isNot(contains(TranscriptionSessionStatus.live)),
+      );
+      // The socket opened mid-handshake was closed immediately.
+      final sawClose = await pair.server.events
+          .map((e) => e is CloseReceived)
+          .firstWhere((closed) => closed, orElse: () => false)
+          .timeout(const Duration(seconds: 2), onTimeout: () => false);
+      expect(sawClose, isTrue);
     });
   });
 

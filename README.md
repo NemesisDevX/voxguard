@@ -9,7 +9,7 @@
 [![Flutter](https://img.shields.io/badge/Flutter-3.41-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.11-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-10B981.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-66%20Flutter%20%2B%2015%20Relay%20Passing-10B981)](https://github.com/NemesisDevX/voxguard/actions)
+[![Tests](https://img.shields.io/badge/Tests-76%20Flutter%20%2B%2018%20Relay%20Passing-10B981)](https://github.com/NemesisDevX/voxguard/actions)
 [![CI/CD](https://img.shields.io/github/actions/workflow/status/NemesisDevX/voxguard/ci.yml?branch=main&label=CI%2FCD)](https://github.com/NemesisDevX/voxguard/actions)
 [![Platforms](https://img.shields.io/badge/Android%20%7C%20iOS%20%7C%20Web%20%7C%20Windows-1E2333)](https://github.com/NemesisDevX/voxguard)
 
@@ -126,8 +126,8 @@ Real DSP on every incoming audio chunk (heuristic prototype — not a validated 
 |------|-------------|
 | **SafeCall — Live Mic** | Microphone protection session (`LIVE MIC` badge): real PCM → acoustic forensics → AssemblyAI streaming STT when configured → semantic analysis → fused Threat Score. Acoustic analysis keeps working even without STT credentials. |
 | **SafeCall — Demo Attack** | Deterministic judging scenario (`DEMO MODE`): generated PCM + scripted Egyptian-Arabic scam dialogue → same pipeline → evidence chips, highlighted phrases, HIGH RISK escalation, verification flow. |
-| **Live Shield** | Ambient microphone monitor for speakerphone and surrounding conversations. |
-| **Analyze Recording** | Upload call audio or voice notes for deep post-hoc forensic auditing. |
+| **Live Shield** *(planned)* | Ambient microphone monitor for speakerphone and surrounding conversations — not yet implemented. |
+| **Analyze Recording** *(planned)* | Upload call audio or voice notes for deep post-hoc forensic auditing — not yet implemented. |
 
 Every high-risk session auto-persists an **Incident Report**: ID, timestamp, genuine **SHA-256 digest** of the analyzed PCM, audio/transcription source labels (*Live Microphone* vs *Generated Demo Audio*), consumer-first "Why VoxGuard Flagged This Call" evidence, phrase-highlighted transcript, and recommended verification steps — viewable in the Incidents tab, with raw telemetry under a collapsible *Technical Evidence* section.
 
@@ -231,7 +231,7 @@ flutter run \
 
 ```bash
 flutter analyze   # 0 issues
-flutter test      # 66/66 passing (+15 relay tests under server/)
+flutter test      # 76/76 passing (+18 relay tests under server/)
 flutter build web --release --base-href /voxguard/
 flutter build apk --debug
 ```

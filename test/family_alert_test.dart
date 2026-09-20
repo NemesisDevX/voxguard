@@ -47,7 +47,7 @@ void main() {
         familyMemberIds: members,
       );
 
-      expect(result.delivered, isTrue);
+      expect(result.attempted, isTrue);
       expect(result.simulated, isTrue);
       expect(result.detail, contains('Demo'));
     });
@@ -61,7 +61,7 @@ void main() {
         familyMemberIds: members,
       );
 
-      expect(result.delivered, isFalse);
+      expect(result.attempted, isFalse);
       expect(service.isFamilyShieldEnabled.value, isFalse);
     });
 
@@ -83,7 +83,7 @@ void main() {
         familyMemberIds: members,
       );
 
-      expect(result.delivered, isTrue);
+      expect(result.attempted, isTrue);
       expect(result.simulated, isFalse);
 
       expect(captured, isNotNull);
@@ -115,7 +115,7 @@ void main() {
         familyMemberIds: members,
       );
 
-      expect(result.delivered, isFalse);
+      expect(result.attempted, isFalse);
       expect(result.simulated, isFalse);
       expect(result.status, AlertDispatchStatus.rejected);
     });

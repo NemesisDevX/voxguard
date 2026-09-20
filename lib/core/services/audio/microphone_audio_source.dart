@@ -23,7 +23,11 @@ final class MicrophoneAudioSource implements IAudioStreamSource {
   static const int _sampleRate = 16000;
 
   final AudioRecorder _recorder;
-  final _controller = StreamController<AudioChunk>();
+
+  // Broadcast: sessions unsubscribe/re-subscribe across restarts —
+  // a single-subscription controller would throw "already listened"
+  // on the second start.
+  final _controller = StreamController<AudioChunk>.broadcast();
   StreamSubscription<Uint8List>? _sub;
   bool _running = false;
 

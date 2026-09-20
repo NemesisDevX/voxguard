@@ -70,9 +70,26 @@ function corsOrigin(request, env) {
     .split(',')
     .map((o) => o.trim())
     .filter(Boolean);
-  const ok = allowed.some(
-    (a) => origin === a || origin.startsWith(`${a}:`),
-  );
+
+  // Compare parsed URL parts, not string prefixes — prefix matching
+  // would let lookalike origins like `http://localhost.evil.com`
+  // or `http://localhost:8080.attacker.io` slip through.
+  let o;
+  try {
+    o = new URL(origin);
+  } catch {
+    return null; // origins with garbage ports/hosts fail parsing
+  }
+  const ok = allowed.some((a) => {
+    try {
+      const e = new URL(a);
+      return e.port
+        ? o.origin === e.origin // explicit port → exact origin match
+        : o.protocol === e.protocol && o.hostname === e.hostname;
+    } catch {
+      return false; // misconfigured allowlist entry — skip
+    }
+  });
   return ok ? origin : null;
 }
 
@@ -141,7 +158,9 @@ export function validateAlertPayload(body) {
     value: {
       incidentId,
       riskLevel: body.risk_level,
-      recipients: ids,
+      // Dedupe — OneSignal rejects or double-counts duplicate
+      // external_ids in include_aliases.
+      recipients: [...new Set(ids)],
       title,
       body: text,
     },

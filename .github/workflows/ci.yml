@@ -39,12 +39,12 @@ jobs:
       - name: Unit & widget tests
         run: flutter test
 
-      - name: Relay tests (server/)
+      - name: Setup Node.js (relay tests)
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Run relay tests
+      - name: Relay tests (server/)
         run: |
           cd server
           npm ci

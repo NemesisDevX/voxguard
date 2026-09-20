@@ -30,10 +30,10 @@ final class AlertDispatchResult {
     required this.detail,
   });
 
-  /// Dispatch accepted (real relay call or simulated broadcast) —
-  /// named `delivered` only for call-site convenience; it does NOT
-  /// prove a device received the push.
-  bool get delivered =>
+  /// The broadcast pipeline attempted the dispatch — the relay
+  /// accepted it, or Demo Mode simulated it. This is NOT confirmed
+  /// delivery: no signal here proves a device received the push.
+  bool get attempted =>
       status == AlertDispatchStatus.accepted ||
       status == AlertDispatchStatus.simulated;
 

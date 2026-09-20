@@ -152,6 +152,12 @@ final class AssemblyAiStreamingService
         onTimeout: () =>
             throw TimeoutException('AssemblyAI session never began'),
       );
+      if (_stopping) {
+        // stop() landed while the handshake was in flight — release
+        // the just-opened socket instead of surfacing a zombie
+        // "live" session that nothing will ever tear down.
+        throw StateError('stopped during handshake');
+      }
       _running = true;
       _status.add(TranscriptionSessionStatus.live);
     } catch (_) {
@@ -192,7 +198,11 @@ final class AssemblyAiStreamingService
     _reconnectsUsed++;
     _status.add(TranscriptionSessionStatus.disconnected);
     _connect().catchError((Object _) {
-      _status.add(TranscriptionSessionStatus.failed);
+      // A stop() landing mid-reconnect already handled teardown —
+      // don't overwrite that with a stale failure status.
+      if (!_stopping) {
+        _status.add(TranscriptionSessionStatus.failed);
+      }
     });
   }
 

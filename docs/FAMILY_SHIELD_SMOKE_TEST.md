@@ -15,9 +15,11 @@ Device A (protected)  →  relay  →  OneSignal  →  Device B (receiver)
 1. **OneSignal app** — create an app at onesignal.com → copy the
    **App ID** (Settings → Keys & IDs).
 2. **Android/FCM** — in the OneSignal dashboard, configure *Google
-   Android (FCM)* with a Firebase project's Server key / service
-   account; add `google-services.json` to `android/app/`. (iOS: APNs
-   key + push capability — untested in this repo.)
+   Android (FCM)* by uploading a Firebase project's service-account
+   credentials. This is dashboard-side only — the current
+   `onesignal_flutter` SDK does **not** need a `google-services.json`
+   file in the app project. (iOS: APNs key + push capability —
+   untested in this repo.)
 3. **Relay** — deploy `server/` (`npx wrangler deploy`) with
    `ONESIGNAL_APP_ID`, `ONESIGNAL_REST_API_KEY` (secret),
    `RELAY_CLIENT_TOKEN`, `ALLOWED_ORIGINS` set. See `server/README.md`.

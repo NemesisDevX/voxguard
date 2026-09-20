@@ -54,8 +54,10 @@ final class FamilyPushRegistration {
   final String? errorDetail;
 }
 
-/// Minimal metadata captured when a Family Shield notification is
-/// tapped. Routing data only — never the full payload.
+/// Minimal metadata extracted from a Family Shield notification —
+/// routing data only, never the full payload. Used for both taps
+/// ([IPushIdentityService.alertTaps]) and foreground arrivals
+/// ([IPushIdentityService.alertReceived]).
 final class FamilyAlertTap {
   const FamilyAlertTap({
     required this.incidentId,
@@ -66,14 +68,18 @@ final class FamilyAlertTap {
   final String? riskLevel;
 
   /// Parses a notification's `additionalData`; returns null for
-  /// unrelated payloads so callers can ignore them safely.
+  /// unrelated payloads so callers can ignore them safely. Every
+  /// field is type-checked — malformed values (numbers, lists,
+  /// nulls) never throw and never produce a half-valid event.
   static FamilyAlertTap? fromAdditionalData(Map<String, dynamic>? data) {
     if (data == null || data['kind'] != 'family_shield_alert') {
       return null;
     }
+    final incidentId = data['incident_id'];
+    final riskLevel = data['risk_level'];
     return FamilyAlertTap(
-      incidentId: data['incident_id'] as String?,
-      riskLevel: data['risk_level'] as String?,
+      incidentId: incidentId is String ? incidentId : null,
+      riskLevel: riskLevel is String ? riskLevel : null,
     );
   }
 }
@@ -90,8 +96,15 @@ abstract interface class IPushIdentityService {
   /// Live registration state — drives the receiver card.
   ValueListenable<FamilyPushRegistration> get registration;
 
-  /// Notification taps carrying Family Shield metadata.
+  /// Notification taps carrying Family Shield metadata — user
+  /// interaction only. P0.2C deep-link navigation must hook this
+  /// stream, never [alertReceived].
   Stream<FamilyAlertTap> get alertTaps;
+
+  /// Family Shield notifications received while the app was in the
+  /// foreground. Diagnostics/state only — receiving a notification is
+  /// NOT a user interaction and must never trigger navigation.
+  Stream<FamilyAlertTap> get alertReceived;
 
   /// This device's `vg_…` identity (created on first use, persisted).
   /// Available even when push itself isn't configured.

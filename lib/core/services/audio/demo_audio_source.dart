@@ -14,7 +14,7 @@ import 'pcm_codec.dart';
 ///
 /// [setAttackMode] flips the profile mid-stream so the demo escalates
 /// visibly alongside the scripted transcript.
-final class DemoAudioSource implements IAudioStreamSource {
+class DemoAudioSource implements IAudioStreamSource {
   DemoAudioSource({
     this.chunkInterval = const Duration(milliseconds: 420),
     this.chunkSize = 512,
@@ -25,7 +25,10 @@ final class DemoAudioSource implements IAudioStreamSource {
 
   static const int _sampleRate = 16000;
 
-  final _controller = StreamController<AudioChunk>();
+  // Broadcast: the bloc unsubscribes/re-subscribes across sessions —
+  // a single-subscription controller would throw "already listened"
+  // on restart and its close() can hang on stale listener state.
+  final _controller = StreamController<AudioChunk>.broadcast();
   final Random _rng = Random();
 
   Timer? _timer;

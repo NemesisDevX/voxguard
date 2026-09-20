@@ -118,6 +118,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   /// SHA-256 digest over every normalized PCM byte analyzed.
   DateTime? _sessionStart;
   final BytesBuilder _audioBytes = BytesBuilder(copy: false);
+  String? _finalizedDigest;
   AudioForensicMetrics _acoustic = const AudioForensicMetrics.zero();
   SemanticThreatSignals _semantic = const SemanticThreatSignals.empty();
 
@@ -166,6 +167,10 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
         break;
     }
 
+    // Teardown BEFORE reset — a start while another session is live
+    // (double-tap, demo→mic switch) must never leave two audio
+    // sources running.
+    await _teardownAudio();
     _resetSession();
     _activeSource = _micSource;
 
@@ -217,6 +222,8 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     StartDemoSessionEvent event,
     Emitter<SafeCallState> emit,
   ) async {
+    // Same teardown-first rule as Live Mic — never two live sources.
+    await _teardownAudio();
     _resetSession();
     _activeSource = _demoSource;
     _sessionStart = DateTime.now();
@@ -425,7 +432,13 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
 
   /// Genuine SHA-256 over every normalized PCM16 byte streamed this
   /// session — deterministic on web and native alike.
-  String get _audioDigest => sha256.convert(_audioBytes.takeBytes()).toString();
+  ///
+  /// `BytesBuilder.takeBytes()` is destructive, so the digest is
+  /// finalized exactly once and cached — a second read can never
+  /// silently return the digest of an empty buffer.
+  String get _audioDigest =>
+      _finalizedDigest ??=
+          sha256.convert(_audioBytes.takeBytes()).toString();
 
   String _nextIncidentId() =>
       'INC-${DateTime.now().year}-${(1000 + _rng.nextInt(9000))}';
@@ -484,6 +497,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     _peakRisk = ThreatRiskLevel.safe;
     _sessionStart = null;
     _audioBytes.takeBytes(); // drain
+    _finalizedDigest = null;
     _acousticService.reset();
     _demoSource.setAttackMode(false);
   }
@@ -496,8 +510,13 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   }
 
   @override
-  Future<void> close() {
-    _teardownAudio();
+  Future<void> close() async {
+    await _teardownAudio();
+    // Release plugin resources owned by concrete sources; injected
+    // test doubles only implement the stream contract.
+    final mic = _micSource;
+    if (mic is MicrophoneAudioSource) await mic.dispose();
+    await _demoSource.dispose();
     return super.close();
   }
 }

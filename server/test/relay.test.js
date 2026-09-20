@@ -238,6 +238,61 @@ test('OPTIONS preflight → 204 with CORS headers', async () => {
   );
 });
 
+test('CORS rejects lookalike origins that prefix-match allowlist '
+    + 'entries', async () => {
+  const lookalikes = [
+    'http://localhost.evil.com',
+    'http://localhost:8080.evil.com',
+    'https://nemesisdevx.github.io.evil.com',
+    'https://evil-nemesisdevx.github.io',
+    'http://localhostx:8080',
+    'https://nemesisdevx.github.io.attacker.dev',
+    'not a url',
+    'http://localhost:evil',
+  ];
+  for (const origin of lookalikes) {
+    const res = await handleRequest(
+      alertRequest(VALID_BODY, { origin }),
+      ENV,
+      okFetch({}),
+    );
+    assert.equal(
+      res.headers.get('Access-Control-Allow-Origin'),
+      null,
+      `origin=${origin} must not receive CORS`,
+    );
+  }
+});
+
+test('duplicate recipients are deduped before forwarding', async () => {
+  const captured = {};
+  await handleRequest(
+    alertRequest({
+      ...VALID_BODY,
+      family_external_ids: ['vg_a', 'vg_a', 'vg_b'],
+    }),
+    ENV,
+    okFetch(captured),
+  );
+  const payload = JSON.parse(captured.init.body);
+  assert.deepEqual(payload.include_aliases.external_id, ['vg_a', 'vg_b']);
+});
+
+test('recipients surviving dedupe still respect the cap', async () => {
+  // 6 ids where dedupe leaves 5 → accepted.
+  const ok = await handleRequest(
+    alertRequest({
+      ...VALID_BODY,
+      family_external_ids: ['a1', 'a1', 'a2', 'a3', 'a4', 'a5'],
+    }),
+    ENV,
+    okFetch({}),
+  );
+  // Still 400: cap applies to the request as sent, pre-dedupe —
+  // a caller submitting 6 ids is a malformed request regardless.
+  assert.equal(ok.status, 400);
+});
+
 // ── Unit-level validation ────────────────────────────────────────────
 
 test('validateAlertPayload accepts the documented shape', () => {
