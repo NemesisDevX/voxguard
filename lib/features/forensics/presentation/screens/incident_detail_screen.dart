@@ -416,13 +416,13 @@ class _IntegrityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Card(
-      title: 'AUDIO FINGERPRINT',
+      title: 'AUDIO SHA-256',
       icon: Icons.fingerprint,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            incident.audioFingerprint,
+            incident.audioDigestSha256,
             style: AppTypography.bodyMedium.copyWith(
               fontFamily: 'monospace',
               fontSize: 12,
@@ -430,13 +430,17 @@ class _IntegrityCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 8),
-          const Row(
+          Row(
             children: [
-              Icon(Icons.graphic_eq, size: 14, color: AppColors.textMuted),
-              SizedBox(width: 6),
-              Text(
-                'Session audio fingerprint · 16 kHz PCM',
-                style: AppTypography.bodyMedium,
+              const Icon(Icons.graphic_eq,
+                  size: 14, color: AppColors.textMuted),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  '${incident.audioSourceLabel} · '
+                  '${incident.transcriptionSourceLabel}',
+                  style: AppTypography.bodyMedium,
+                ),
               ),
             ],
           ),
@@ -565,7 +569,7 @@ class _SemanticCard extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.5)),
       ),
       child: Text(
-        '$label ${(score * 100).round()}%',
+        '$label ${(score * 100).round()}/100',
         style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w700,

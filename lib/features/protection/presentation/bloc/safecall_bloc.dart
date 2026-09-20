@@ -1,8 +1,16 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/services/audio/audio_stream_source.dart';
+import '../../../../core/services/audio/demo_audio_source.dart';
+import '../../../../core/services/audio/microphone_audio_source.dart';
+import '../../../../core/services/audio/pcm_codec.dart';
+import '../../../../core/services/transcription/assemblyai_streaming_service.dart';
+import '../../../../core/services/transcription/streaming_transcription_service.dart';
 import '../../../forensics/domain/models/incident_report.dart';
 import '../../../forensics/domain/services/incident_repository.dart';
 import '../../domain/models/audio_forensic_metrics.dart';
@@ -12,96 +20,236 @@ import '../../domain/models/transcript_snippet.dart';
 import '../../domain/services/acoustic_forensics_service.dart';
 import '../../domain/services/semantic_threat_service.dart';
 import '../../domain/services/threat_fusion_engine.dart';
+import '../../domain/services/transcript_buffer.dart';
 import 'safecall_event.dart';
 import 'safecall_state.dart';
 
-/// Orchestrates a SafeCall monitoring session.
+/// Orchestrates a SafeCall protection session.
 ///
-/// Simulates an incoming PCM audio stream, feeds every chunk through
-/// Engine A (acoustic forensics), forwards transcript snippets through
-/// Engine B (semantic analysis), and emits the fused threat report.
+/// Two session modes share one pipeline:
 ///
-/// [SimulateDemoAttackEvent] toggles a scripted scam conversation that
-/// escalates every signal to high risk for demos.
+///   Live Mic — real microphone PCM via [MicrophoneAudioSource],
+///              streaming STT via [IStreamingTranscriptionService]
+///              when configured.
+///   Demo     — deterministic generated PCM via [DemoAudioSource] plus
+///              the scripted Egyptian-Arabic scam dialogue.
+///
+/// Every chunk — whatever its provenance — flows through
+/// `AcousticForensicsService` → `ThreatFusionEngine` → HUD, and its
+/// PCM16 bytes are folded into a session SHA-256 digest. Committed
+/// transcript segments accumulate in a [TranscriptBuffer] whose
+/// rolling context feeds `SemanticThreatService`, so scam phrases
+/// split across STT chunks still resolve.
 final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   SafeCallBloc({
     AcousticForensicsService? acousticService,
     SemanticThreatService? semanticService,
     ThreatFusionEngine? fusionEngine,
+    IAudioStreamSource? microphoneSource,
+    DemoAudioSource? demoSource,
+    IStreamingTranscriptionService? transcriptionService,
   })  : _acousticService = acousticService ?? AcousticForensicsService(),
         _semanticService = semanticService ?? SemanticThreatService(),
         _fusionEngine = fusionEngine ?? ThreatFusionEngine(),
+        _micSource = microphoneSource ?? MicrophoneAudioSource(),
+        _demoSource = demoSource ?? DemoAudioSource(),
+        _stt = transcriptionService ?? AssemblyAiStreamingService(),
         super(const SafeCallInitial()) {
-    on<StartCallEvent>(_onStart);
+    on<StartLiveMicSessionEvent>(_onStartLiveMic);
+    on<StartDemoSessionEvent>(_onStartDemo);
     on<IncomingAudioChunkEvent>(_onAudioChunk);
     on<IncomingTranscriptSnippetEvent>(_onTranscript);
+    on<IncomingTranscriptPartialEvent>(_onTranscriptPartial);
+    on<AnalyzeTranscriptContextEvent>(
+        (_, emit) => _runSemanticAnalysis(emit));
     on<SimulateDemoAttackEvent>(_onSimulateDemo);
     on<EndCallEvent>(_onEnd);
     on<ResetCallEvent>(_onReset);
   }
 
-  // ── Simulation constants ─────────────────────────────────────────
-  static const int _sampleRate = 16000;
-  static const int _chunkSize = 512;
-  static const Duration _audioInterval = Duration(milliseconds: 420);
-  static const Duration _demoLineInterval = Duration(milliseconds: 1400);
+  // ── Session constants ────────────────────────────────────────────
   static const double _acousticSmoothing = 0.35;
 
+  /// Light amplitude smoothing — keeps the ThreatCore pulse reactive
+  /// to speech without jittering on every 30 ms frame.
+  static const double _amplitudeSmoothing = 0.4;
+
+  /// Debounce for semantic analysis of partial STT hypotheses —
+  /// committed segments analyze immediately; partials wait this long.
+  static const Duration _partialAnalysisDebounce =
+      Duration(milliseconds: 1200);
+
   /// Scripted scam monologue (Egyptian Arabic) injected progressively
-  /// by [SimulateDemoAttackEvent].
+  /// by [SimulateDemoAttackEvent] in demo sessions.
   static const List<String> _demoScript = [
     'ألو… أنا أخوك، الصوت متغير شوية عشان الخط',
     'أنا في مشكلة كبيرة ومحتاجك تساعدني دلوقتي',
     'حول لي 2,000 جنيه بسرعة على المحفظة',
     'ومتقولش لحد، الموضوع خطير وبيني وبينك',
   ];
+  static const Duration _demoLineInterval = Duration(milliseconds: 1400);
 
   // ── Dependencies & session state ─────────────────────────────────
   final AcousticForensicsService _acousticService;
   final SemanticThreatService _semanticService;
   final ThreatFusionEngine _fusionEngine;
+  final IAudioStreamSource _micSource;
+  final DemoAudioSource _demoSource;
+  final IStreamingTranscriptionService _stt;
   final Random _rng = Random();
 
-  Timer? _audioTimer;
+  StreamSubscription<AudioChunk>? _audioSub;
+  StreamSubscription<TranscriptEvent>? _sttSub;
   final List<Timer> _demoTimers = [];
+  Timer? _partialDebounce;
 
-  int _sampleOffset = 0;
+  IAudioStreamSource? _activeSource;
   bool _demoActive = false;
+  bool _sttLive = false;
   double _lastAmplitude = 0;
   ThreatRiskLevel _peakRisk = ThreatRiskLevel.safe;
   List<TranscriptSnippet> _transcript = const [];
+  final TranscriptBuffer _buffer = TranscriptBuffer();
+  String _partialTranscript = '';
 
-  /// Forensic bookkeeping — call start time and a rolling 32-bit
-  /// fingerprint of the streamed audio (stand-in for SHA-256). Kept
-  /// under 2^32 so it compiles identically on web and native.
-  DateTime? _callStart;
-  int _audioHash = 0x811c9dc5;
+  /// Forensic bookkeeping — call start time and a genuine rolling
+  /// SHA-256 digest over every normalized PCM byte analyzed.
+  DateTime? _sessionStart;
+  final BytesBuilder _audioBytes = BytesBuilder(copy: false);
   AudioForensicMetrics _acoustic = const AudioForensicMetrics.zero();
   SemanticThreatSignals _semantic = const SemanticThreatSignals.empty();
 
-  // ── Event handlers ───────────────────────────────────────────────
+  // ── Session start ────────────────────────────────────────────────
 
-  void _onStart(StartCallEvent event, Emitter<SafeCallState> emit) {
+  Future<void> _onStartLiveMic(
+    StartLiveMicSessionEvent event,
+    Emitter<SafeCallState> emit,
+  ) async {
+    if (!isClosed) {
+      emit(const SafeCallStarting(
+          audioSourceType: AudioSourceType.microphone));
+    }
+
+    if (!_micSource.isSupported) {
+      emit(const SafeCallError(
+        message: 'Microphone capture is not supported on this '
+            'platform. Try Demo Mode instead.',
+      ));
+      return;
+    }
+
+    final permission = await _micSource.ensurePermission();
+    switch (permission) {
+      case MicPermissionState.unsupported:
+        emit(const SafeCallError(
+          message: 'Microphone capture is not supported on this '
+              'platform. Try Demo Mode instead.',
+        ));
+        return;
+      case MicPermissionState.permanentlyDenied:
+      case MicPermissionState.restricted:
+        emit(const SafeCallError(
+          message: 'Microphone access is blocked. Enable it in system '
+              'settings, or use Demo Mode.',
+          permanentlyDenied: true,
+        ));
+        return;
+      case MicPermissionState.denied:
+        emit(const SafeCallError(
+          message: 'Microphone permission was denied. Grant access to '
+              'run Live Mic, or use Demo Mode.',
+        ));
+        return;
+      case MicPermissionState.granted:
+        break;
+    }
+
     _resetSession();
-    _callStart = DateTime.now();
-    _startAudioFeed();
+    _activeSource = _micSource;
+
+    // Start streaming STT when configured. Failure degrades to
+    // acoustic-only — never blocks the session.
+    _sttLive = false;
+    if (_stt.isConfigured) {
+      try {
+        await _stt.start(sampleRate: _micSource.sampleRate);
+        _sttSub = _stt.events.listen(
+          (e) => e.isFinal
+              ? add(IncomingTranscriptSnippetEvent(
+                  speaker: 'Caller', text: e.text))
+              : add(IncomingTranscriptPartialEvent(e.text)),
+          onError: (_) {}, // STT errors degrade to acoustic-only.
+        );
+        _sttLive = true;
+      } catch (_) {
+        _sttLive = false;
+      }
+    }
+
+    try {
+      await _micSource.start();
+    } catch (_) {
+      await _teardownAudio();
+      emit(const SafeCallError(
+        message: 'Microphone failed to start. Check the device and '
+            'retry, or use Demo Mode.',
+      ));
+      return;
+    }
+
+    _sessionStart = DateTime.now();
+    _listenToSource(_micSource);
+    if (!emit.isDone) emit(_snapshot());
+  }
+
+  Future<void> _onStartDemo(
+    StartDemoSessionEvent event,
+    Emitter<SafeCallState> emit,
+  ) async {
+    _resetSession();
+    _activeSource = _demoSource;
+    _sessionStart = DateTime.now();
+    await _demoSource.start();
+    _listenToSource(_demoSource);
     emit(_snapshot());
   }
+
+  /// Subscribes the shared pipeline to [source]. The same handler runs
+  /// regardless of provenance — acoustic analysis, amplitude, STT
+  /// forwarding and digest folding are all source-agnostic.
+  void _listenToSource(IAudioStreamSource source) {
+    _audioSub?.cancel();
+    _audioSub = source.chunks.listen(
+      (chunk) => add(IncomingAudioChunkEvent(chunk)),
+      onError: (Object e) {
+        if (state is SafeCallMonitoring) {
+          add(const EndCallEvent());
+        }
+      },
+    );
+  }
+
+  // ── Pipeline events ──────────────────────────────────────────────
 
   void _onAudioChunk(
     IncomingAudioChunkEvent event,
     Emitter<SafeCallState> emit,
   ) {
-    if (state is! SafeCallMonitoring) return;
+    if (state is! SafeCallMonitoring && state is! SafeCallStarting) return;
 
-    var sumSq = 0.0;
-    for (final s in event.samples) {
-      sumSq += s * s;
-    }
-    _lastAmplitude =
-        sqrt(sumSq / max(1, event.samples.length)).clamp(0.0, 1.0);
+    final chunk = event.chunk;
 
-    final raw = _acousticService.analyze(event.samples);
+    // Genuine session digest over the exact bytes analyzed.
+    _audioBytes.add(chunk.pcm16Bytes);
+
+    // Forward to streaming STT in live mic sessions.
+    if (_sttLive) _stt.sendAudio(chunk.pcm16Bytes);
+
+    final rms = PcmCodec.rms(chunk.samples);
+    _lastAmplitude = _amplitudeSmoothing * rms +
+        (1 - _amplitudeSmoothing) * _lastAmplitude;
+
+    final raw = _acousticService.analyze(chunk.samples);
     _acoustic = _acoustic.lerpTo(raw, _acousticSmoothing);
     emit(_snapshot());
   }
@@ -112,6 +260,8 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   ) async {
     if (state is! SafeCallMonitoring) return;
 
+    _buffer.commit(event.text);
+    _partialTranscript = '';
     _transcript = [
       ..._transcript,
       TranscriptSnippet(
@@ -120,13 +270,36 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
         timestamp: DateTime.now(),
       ),
     ];
+    await _runSemanticAnalysis(emit);
+  }
 
-    // Analyze the accumulated caller speech as one document.
-    final callerSpeech = _transcript
-        .where((s) => s.speaker != 'You')
-        .map((s) => s.text)
-        .join(' ');
-    _semantic = await _semanticService.analyze(callerSpeech);
+  void _onTranscriptPartial(
+    IncomingTranscriptPartialEvent event,
+    Emitter<SafeCallState> emit,
+  ) {
+    if (state is! SafeCallMonitoring) return;
+
+    _buffer.updatePartial(event.text);
+    _partialTranscript = _buffer.partial;
+    emit(_snapshot());
+
+    // Debounced semantic pass over the rolling context — partials
+    // display instantly but analysis waits for text to settle.
+    _partialDebounce?.cancel();
+    _partialDebounce = Timer(_partialAnalysisDebounce, () {
+      if (!isClosed && state is SafeCallMonitoring) {
+        add(const AnalyzeTranscriptContextEvent());
+      }
+    });
+  }
+
+  /// Internal debounce target — keeps analysis off the per-partial
+  /// hot path.
+  Future<void> _runSemanticAnalysis(Emitter<SafeCallState> emit) async {
+    // Analyze the accumulated caller speech as one rolling document so
+    // phrases split across STT segments still resolve.
+    _semantic =
+        await _semanticService.analyze(_buffer.analysisContext);
     if (state is! SafeCallMonitoring || emit.isDone) return;
     emit(_snapshot());
   }
@@ -135,18 +308,18 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     SimulateDemoAttackEvent event,
     Emitter<SafeCallState> emit,
   ) {
-    if (state is! SafeCallMonitoring) return;
+    if (state is! SafeCallMonitoring || !_activeSourceIsDemo) return;
 
     if (_demoActive) {
-      // Toggle off — cancel pending injections; acoustic feed returns
-      // to the natural profile on the next chunk.
       _cancelDemoTimers();
       _demoActive = false;
+      _demoSource.setAttackMode(false);
       emit(_snapshot(demoActive: false));
       return;
     }
 
     _demoActive = true;
+    _demoSource.setAttackMode(true);
     emit(_snapshot(demoActive: true));
 
     for (var i = 0; i < _demoScript.length; i++) {
@@ -163,33 +336,47 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     }
   }
 
+  bool get _activeSourceIsDemo =>
+      _activeSource?.type == AudioSourceType.demo;
+
+  // ── Session end ──────────────────────────────────────────────────
+
   Future<void> _onEnd(
     EndCallEvent event,
     Emitter<SafeCallState> emit,
   ) async {
-    _stopSession();
+    final sourceType = _activeSource?.type ?? AudioSourceType.demo;
+    final transcriptionLabel = _transcriptionSourceLabel;
+    await _teardownAudio();
 
     IncidentReport? incident;
     if (_peakRisk == ThreatRiskLevel.highRisk) {
-      incident = _buildIncidentReport();
+      incident = _buildIncidentReport(sourceType, transcriptionLabel);
       await IncidentRepositoryLocator.instance.saveIncident(incident);
     }
     if (emit.isDone) return;
     emit(SafeCallEnded(peakRiskLevel: _peakRisk, incident: incident));
   }
 
-  /// Builds the forensic record for a call that ended at high risk.
-  IncidentReport _buildIncidentReport() {
+  /// Builds the incident record for a session that ended at high risk.
+  IncidentReport _buildIncidentReport(
+    AudioSourceType sourceType,
+    String transcriptionLabel,
+  ) {
     final report = _fusionEngine.fuse(_acoustic, _semantic);
-    final duration = _callStart == null
+    final duration = _sessionStart == null
         ? 0
-        : DateTime.now().difference(_callStart!).inSeconds;
+        : DateTime.now().difference(_sessionStart!).inSeconds;
     return IncidentReport(
       id: _nextIncidentId(),
       timestamp: DateTime.now(),
-      callerLabel: 'Unknown Caller (+20 10 ••• ••42)',
+      callerLabel: sourceType == AudioSourceType.microphone
+          ? 'Live Microphone Session'
+          : 'Unknown Caller (+20 10 ••• ••42)',
       callDurationSeconds: duration,
-      audioFingerprint: _audioFingerprint,
+      audioDigestSha256: _audioDigest,
+      audioSourceLabel: sourceType.incidentLabel,
+      transcriptionSourceLabel: transcriptionLabel,
       peakRiskScore: report.compositeRiskScore,
       riskLevel: _peakRisk,
       threatReasons: report.primaryThreatReasons,
@@ -206,25 +393,22 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     );
   }
 
+  /// Provenance label for the transcription that fed this session.
+  String get _transcriptionSourceLabel {
+    if (_activeSourceIsDemo) return 'Local Demo Transcript';
+    if (_sttLive) return _stt.providerLabel;
+    return 'None — acoustic analysis only';
+  }
+
+  /// Genuine SHA-256 over every normalized PCM16 byte streamed this
+  /// session — deterministic on web and native alike.
+  String get _audioDigest => sha256.convert(_audioBytes.takeBytes()).toString();
+
   String _nextIncidentId() =>
       'INC-${DateTime.now().year}-${(1000 + _rng.nextInt(9000))}';
 
-  /// 64-char hex fingerprint derived from the rolling 32-bit hash —
-  /// deterministic integrity evidence for the simulated audio stream.
-  /// Uses only ≤2^48 intermediates so it is exact on both JS and
-  /// native number representations.
-  String get _audioFingerprint {
-    final buf = StringBuffer();
-    var h = _audioHash & 0xFFFFFFFF;
-    for (var i = 0; i < 8; i++) {
-      buf.write(h.toRadixString(16).padLeft(8, '0'));
-      h = (h * 0x9e37 + i) & 0xFFFFFFFF;
-    }
-    return buf.toString();
-  }
-
   void _onReset(ResetCallEvent event, Emitter<SafeCallState> emit) {
-    _stopSession();
+    _teardownAudio();
     _resetSession();
     emit(const SafeCallInitial());
   }
@@ -241,35 +425,42 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
       semantic: _semantic,
       report: report,
       transcript: _transcript,
+      audioSourceType:
+          _activeSource?.type ?? AudioSourceType.demo,
       demoActive: demoActive ?? _demoActive,
       audioAmplitude: _lastAmplitude,
+      isTranscriptionLive: _sttLive,
+      partialTranscript: _partialTranscript,
     );
   }
 
-  void _startAudioFeed() {
-    _audioTimer?.cancel();
-    _audioTimer = Timer.periodic(_audioInterval, (_) {
-      if (isClosed) return;
-      add(IncomingAudioChunkEvent(_generateChunk(synthetic: _demoActive)));
-    });
+  /// Stops capture + STT without touching accumulated session state.
+  Future<void> _teardownAudio() async {
+    await _audioSub?.cancel();
+    _audioSub = null;
+    await _activeSource?.stop();
+    await _sttSub?.cancel();
+    _sttSub = null;
+    await _stt.stop();
+    _sttLive = false;
+    _cancelDemoTimers();
+    _partialDebounce?.cancel();
   }
 
   void _resetSession() {
     _transcript = const [];
+    _buffer.reset();
+    _partialTranscript = '';
     _acoustic = const AudioForensicMetrics.zero();
     _semantic = const SemanticThreatSignals.empty();
     _demoActive = false;
+    _sttLive = false;
     _lastAmplitude = 0;
     _peakRisk = ThreatRiskLevel.safe;
-    _callStart = null;
-    _audioHash = 0x811c9dc5;
+    _sessionStart = null;
+    _audioBytes.takeBytes(); // drain
     _acousticService.reset();
-  }
-
-  void _stopSession() {
-    _audioTimer?.cancel();
-    _audioTimer = null;
-    _cancelDemoTimers();
+    _demoSource.setAttackMode(false);
   }
 
   void _cancelDemoTimers() {
@@ -279,50 +470,10 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     _demoTimers.clear();
   }
 
-  // ── Simulated audio source ───────────────────────────────────────
-
-  /// Generates a synthetic PCM chunk.
-  ///
-  ///  - `synthetic: true`  → band-limited harmonic stack (~190/380/570
-  ///    Hz) with a hard HF cutoff and nearly static spectrum — the
-  ///    signature Engine A flags as a synthesized voice.
-  ///  - `synthetic: false` → broadband noise plus a wandering formant
-  ///    tone — spectrally dynamic, high rolloff, high ZCR.
-  List<double> _generateChunk({required bool synthetic}) {
-    final out = List<double>.filled(_chunkSize, 0);
-    for (var i = 0; i < _chunkSize; i++) {
-      final t = (_sampleOffset + i) / _sampleRate;
-      if (synthetic) {
-        out[i] = 0.50 * sin(2 * pi * 190 * t) +
-            0.28 * sin(2 * pi * 380 * t) +
-            0.15 * sin(2 * pi * 570 * t) +
-            (_rng.nextDouble() - 0.5) * 0.04;
-      } else {
-        final wander =
-            260 + 140 * sin(2 * pi * 1.7 * t) + 60 * sin(2 * pi * 3.9 * t);
-        out[i] = (_rng.nextDouble() - 0.5) * 0.55 +
-            0.35 * sin(2 * pi * wander * t) +
-            0.15 * sin(2 * pi * 3400 * t) * sin(2 * pi * 5 * t);
-      }
-    }
-    _sampleOffset += _chunkSize;
-    _foldChunkIntoFingerprint(out);
-    return out;
-  }
-
-  /// 32-bit rolling hash (×31) over quantized samples — deterministic
-  /// integrity fingerprint of everything streamed this call. Shift-add
-  /// multiply keeps intermediates ≤2^37 for exact web semantics.
-  void _foldChunkIntoFingerprint(List<double> chunk) {
-    for (final s in chunk) {
-      final byte = (s * 127).round() & 0xFF;
-      _audioHash = ((_audioHash << 5) - _audioHash + byte) & 0xFFFFFFFF;
-    }
-  }
-
   @override
   Future<void> close() {
-    _stopSession();
+    _teardownAudio();
     return super.close();
   }
 }
+

@@ -8,8 +8,8 @@ void main() {
   runApp(const VoxGuardApp());
 }
 
-/// Root application widget — VoxGuard, consumer-first AI scam
-/// interceptor and voice defense system.
+/// Root application widget — VoxGuard, consumer-first AI voice-threat
+/// monitor and scam-risk defense system.
 class VoxGuardApp extends StatelessWidget {
   const VoxGuardApp({super.key});
 

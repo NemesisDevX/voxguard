@@ -11,7 +11,9 @@ void main() {
         timestamp: DateTime(2026, 9, 20, 14, 30),
         callerLabel: 'Unknown Caller (+20 10 ••• ••42)',
         callDurationSeconds: 195,
-        audioFingerprint: 'ab' * 32,
+        audioDigestSha256: 'ab' * 32,
+        audioSourceLabel: 'Generated Demo Audio',
+        transcriptionSourceLabel: 'Local Demo Transcript',
         peakRiskScore: 0.92,
         riskLevel: ThreatRiskLevel.highRisk,
         threatReasons: const ['Financial transfer demand detected'],
@@ -55,7 +57,7 @@ void main() {
     test('produces a shareable text summary', () {
       final text = makeReport().toShareText();
       expect(text, contains('INC-2026-0001'));
-      expect(text, contains('92%'));
+      expect(text, contains('92/100'));
       expect(text, contains('forensic telemetry'));
     });
   });

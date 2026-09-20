@@ -1,4 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Microphone access for Live Mic protection sessions. Requested
+         at runtime only when the user starts a session. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <application
         android:label="voxguard"
         android:name="${applicationName}"

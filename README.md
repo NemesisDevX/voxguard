@@ -29,9 +29,9 @@ Voice-cloning scams now cost consumers billions annually. And yet, nearly every 
 
 A pure deepfake detector can be beaten with a clean recording of a real voice. A pure text classifier can be beaten by a scammer who simply changes the script. **Any single signal is a single point of failure.**
 
-VoxGuard's answer is **multi-signal threat fusion**: acoustic anomaly indicators of the voice *and* the semantic fingerprint of the conversation are scored simultaneously and fused into a composite **Threat Score (0–100)** in real time. A synthetic voice with a clean script is flagged. A real voice running a coercion script is flagged. Only a call that is clean on **both** axes stays green.
+VoxGuard's answer is **multi-signal threat fusion**: acoustic anomaly indicators of the voice *and* the semantic fingerprint of the conversation are scored simultaneously and fused into a composite **Threat Score (0–100)** in real time. Acoustic anomaly indicators can contribute to the Threat Score even when semantic scam indicators are absent — and vice versa. Only a call that is clean on **both** axes stays green.
 
-> VoxGuard is an assistive consumer safety tool — a risk *score*, not a probability, and not a validated forensic verdict.
+> VoxGuard is an assistive consumer safety tool — a risk *score*, not a probability, and not a validated forensic verdict. The acoustic engine is a **heuristic prototype**, not a scientifically validated deepfake classifier.
 
 ---
 
@@ -41,7 +41,9 @@ VoxGuard's answer is **multi-signal threat fusion**: acoustic anomaly indicators
 ┌──────────────────────────────────────────────────────────────────┐
 │                        VoxGuard Pipeline                         │
 │                                                                  │
-│  Incoming Audio ─────┐                    ┌─── Live Transcript    │
+│  Audio Sources        │                    ┌─── Live Transcript    │
+│  • Live Mic PCM       ├──► AssemblyAI ─────┤   (streaming, when    │
+│  • Demo PCM (labelled)│    streaming STT   │    STT configured)   │
 │                     ▼                    ▼                       │
 │           ┌──────────────────┐  ┌──────────────────────┐        │
 │           │ ENGINE A         │  │ ENGINE B             │        │
@@ -90,9 +92,16 @@ VoxGuard's answer is **multi-signal threat fusion**: acoustic anomaly indicators
 └──────────────────────────────────────────────────────────────────┘
 ```
 
+### Audio Sources — same pipeline, honest provenance
+
+Every session picks one source behind `IAudioStreamSource`; downstream analysis is identical either way:
+
+- **Live Mic** — real microphone capture (`record` package, mono 16 kHz PCM16), permission requested only when the user starts a session. PCM feeds the acoustic engine, the session SHA-256 digest, and — when configured — streaming STT.
+- **Demo Attack** — `DemoAudioSource` generates deterministic PCM and a scripted Egyptian-Arabic scam dialogue for judging. Always labelled `DEMO MODE` / `DEMO AUDIO`; never presented as captured audio.
+
 ### Engine A — Acoustic Forensics
 
-Real DSP on every incoming audio chunk (not heuristics-over-random):
+Real DSP on every incoming audio chunk (heuristic prototype — not a validated classifier):
 
 - **Spectral Flux** — iterative radix-2 FFT measures frame-to-frame spectral change. Synthesized voices are spectrally *static*.
 - **Spectral Rolloff** — the frequency containing 85% of spectral energy. TTS/vocoder output shows an abnormally hard high-frequency cutoff.
@@ -113,11 +122,14 @@ Real DSP on every incoming audio chunk (not heuristics-over-random):
 
 | Mode | What it does |
 |------|-------------|
-| **SafeCall** | In-app protected call channel. Streams audio through both engines live — waveform, 4-signal threat radar, composite banner, and a scripted demo attack for judges. |
+| **SafeCall — Live Mic** | Microphone protection session (`LIVE MIC` badge): real PCM → acoustic forensics → AssemblyAI streaming STT when configured → semantic analysis → fused Threat Score. Acoustic analysis keeps working even without STT credentials. |
+| **SafeCall — Demo Attack** | Deterministic judging scenario (`DEMO MODE`): generated PCM + scripted Egyptian-Arabic scam dialogue → same pipeline → evidence chips, highlighted phrases, HIGH RISK escalation, verification flow. |
 | **Live Shield** | Ambient microphone monitor for speakerphone and surrounding conversations. |
 | **Analyze Recording** | Upload call audio or voice notes for deep post-hoc forensic auditing. |
 
-Every high-risk session auto-persists an **Incident Report**: ID, timestamp, audio fingerprint, consumer-first "Why VoxGuard Flagged This Call" evidence, phrase-highlighted transcript, and recommended verification steps — viewable in the Incidents tab, with raw telemetry under a collapsible *Technical Evidence* section.
+Every high-risk session auto-persists an **Incident Report**: ID, timestamp, genuine **SHA-256 digest** of the analyzed PCM, audio/transcription source labels (*Live Microphone* vs *Generated Demo Audio*), consumer-first "Why VoxGuard Flagged This Call" evidence, phrase-highlighted transcript, and recommended verification steps — viewable in the Incidents tab, with raw telemetry under a collapsible *Technical Evidence* section.
+
+> **Privacy boundary:** raw microphone audio is processed in memory and never stored by VoxGuard. When live transcription is configured, PCM is streamed to the transcription provider for the duration of the session only. No audio or transcripts are sent to Family Shield — alert payloads carry an incident reference and risk band only.
 
 ---
 
@@ -190,6 +202,7 @@ flutter run                  # attached device
 # Full integrations via --dart-define:
 flutter run \
   --dart-define=GROQ_API_KEY=gsk_... \
+  --dart-define=ASSEMBLYAI_API_KEY=... \
   --dart-define=REVENUECAT_ANDROID_KEY=goog_... \
   --dart-define=VOXGUARD_ALERT_RELAY_URL=https://your-relay.example.com/alert
 ```
@@ -197,16 +210,19 @@ flutter run \
 | `--dart-define` | Service | Without it |
 |---|---|---|
 | `GROQ_API_KEY` | Llama-3 semantic analysis (development builds only — production secrets should be proxied server-side) | deterministic bilingual rule engine |
+| `ASSEMBLYAI_API_KEY` | Live Mic streaming transcription. The client mints short-lived session tokens via `GET /v3/token` — production apps should proxy that mint server-side rather than ship a permanent key | Live Mic runs acoustic-only; UI shows "Live transcription unavailable" |
 | `REVENUECAT_ANDROID_KEY` / `REVENUECAT_IOS_KEY` | real store checkout | sandbox purchase lifecycle |
 | `VOXGUARD_ALERT_RELAY_URL` | live Family Shield push via server relay | explicit Demo Mode broadcast |
 
-**Demo path**: Home → *Start SafeCall* → tap **Simulate Scam** (FAB) → Arabic demo dialogue streams in with phrase highlights + evidence chips → ThreatCore escalates SAFE → CAUTION → HIGH RISK → end the call → post-call sheet walks *why flagged → verify identity → demo family alert → incident report*.
+**Demo path**: Home → *Start SafeCall* → *Demo Attack* → tap **Simulate Scam** (FAB) → Arabic demo dialogue streams in with phrase highlights + evidence chips → ThreatCore escalates SAFE → CAUTION → HIGH RISK → end the call → post-call sheet walks *why flagged → verify identity → demo family alert → incident report*.
+
+**Live Mic path**: *Start SafeCall* → *Live Mic* → grant microphone permission → speak (or play suspicious audio on speakerphone) near the device → amplitude reacts, acoustic metrics update, transcript streams in when `ASSEMBLYAI_API_KEY` is set → semantic signals escalate the Threat Score.
 
 ### Testing & CI
 
 ```bash
 flutter analyze   # 0 issues
-flutter test      # 30/30 passing
+flutter test      # 41/41 passing
 flutter build web --release --base-href /voxguard/
 flutter build apk --debug
 ```

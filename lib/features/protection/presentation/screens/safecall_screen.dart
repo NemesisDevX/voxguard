@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -27,7 +28,7 @@ class SafeCallScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => SafeCallBloc()..add(const StartCallEvent()),
+      create: (_) => SafeCallBloc(),
       child: const _SafeCallView(),
     );
   }
@@ -77,6 +78,15 @@ class _SafeCallViewState extends State<_SafeCallView>
       listenWhen: (_, current) => current is SafeCallEnded,
       listener: (context, state) => Navigator.of(context).pop(state),
       builder: (context, state) {
+        if (state is SafeCallInitial || state is SafeCallError) {
+          return _ModePickerView(state: state);
+        }
+        if (state is SafeCallStarting) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
         final monitoring =
             state is SafeCallMonitoring ? state : null;
         final acoustic = monitoring?.acoustic;
@@ -87,16 +97,24 @@ class _SafeCallViewState extends State<_SafeCallView>
         final transcript = monitoring?.transcript ?? const <TranscriptSnippet>[];
         final demoActive = monitoring?.demoActive ?? false;
         final amplitude = monitoring?.audioAmplitude ?? 0.0;
+        final isDemo = monitoring?.isDemoMode ?? true;
+        final sttLive = monitoring?.isTranscriptionLive ?? false;
+        final partial = monitoring?.partialTranscript ?? '';
         final score = report.compositeRiskScore;
 
         return Scaffold(
           appBar: AppBar(
             title: const Text(AppStrings.safeCallTitle),
             actions: [
-              if (demoActive)
+              if (isDemo)
                 const Padding(
                   padding: EdgeInsets.only(right: 10),
                   child: Center(child: _DemoBadge()),
+                )
+              else
+                const Padding(
+                  padding: EdgeInsets.only(right: 10),
+                  child: Center(child: _LiveMicBadge()),
                 ),
               const Padding(
                 padding: EdgeInsets.only(right: 16),
@@ -122,9 +140,7 @@ class _SafeCallViewState extends State<_SafeCallView>
                         child: ThreatCore(
                           score: score,
                           amplitude: amplitude,
-                          // All audio in this build is generated PCM —
-                          // the badge keeps provenance honest.
-                          isDemoAudio: true,
+                          isDemoAudio: isDemo,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -133,6 +149,9 @@ class _SafeCallViewState extends State<_SafeCallView>
                         flaggedPhrases: semantic.flaggedPhrases,
                         evidence: semantic.evidenceCategories,
                         demoActive: demoActive,
+                        partial: partial,
+                        transcriptionLive: sttLive,
+                        isDemoSession: isDemo,
                       ),
                       const SizedBox(height: 16),
                       _WaveformCard(
@@ -179,22 +198,25 @@ class _SafeCallViewState extends State<_SafeCallView>
               ],
             ),
           ),
-          floatingActionButton: FloatingActionButton.extended(
-            onPressed: () => context
-                .read<SafeCallBloc>()
-                .add(const SimulateDemoAttackEvent()),
-            backgroundColor:
-                demoActive ? AppColors.statusDanger : AppColors.bgElevated,
-            foregroundColor: AppColors.textPrimary,
-            icon: Icon(
-              demoActive ? Icons.stop : Icons.science_outlined,
-            ),
-            label: Text(
-              demoActive
-                  ? AppStrings.stopSimulation
-                  : AppStrings.simulateScam,
-            ),
-          ),
+          floatingActionButton: isDemo
+              ? FloatingActionButton.extended(
+                  onPressed: () => context
+                      .read<SafeCallBloc>()
+                      .add(const SimulateDemoAttackEvent()),
+                  backgroundColor: demoActive
+                      ? AppColors.statusDanger
+                      : AppColors.bgElevated,
+                  foregroundColor: AppColors.textPrimary,
+                  icon: Icon(
+                    demoActive ? Icons.stop : Icons.science_outlined,
+                  ),
+                  label: Text(
+                    demoActive
+                        ? AppStrings.stopSimulation
+                        : AppStrings.simulateScam,
+                  ),
+                )
+              : null,
         );
       },
     );
@@ -283,12 +305,24 @@ class _TranscriptFeed extends StatefulWidget {
     required this.flaggedPhrases,
     required this.evidence,
     required this.demoActive,
+    required this.partial,
+    required this.transcriptionLive,
+    required this.isDemoSession,
   });
 
   final List<TranscriptSnippet> snippets;
   final List<String> flaggedPhrases;
   final List<EvidenceCategory> evidence;
   final bool demoActive;
+
+  /// Live uncommitted STT partial — rendered dimmed at the tail.
+  final String partial;
+
+  /// Whether a streaming STT provider is active this session.
+  final bool transcriptionLive;
+
+  /// Whether this is a demo session (scripted transcript).
+  final bool isDemoSession;
 
   @override
   State<_TranscriptFeed> createState() => _TranscriptFeedState();
@@ -315,6 +349,17 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
   void dispose() {
     _scrollController.dispose();
     super.dispose();
+  }
+
+  /// Honest empty-state copy per mode — never implies a live mic
+  /// transcript that isn't happening.
+  String get _emptyLabel {
+    if (widget.isDemoSession) {
+      return 'Demo transcript will appear here.';
+    }
+    return widget.transcriptionLive
+        ? 'Listening for speech…'
+        : 'Voice analysis active — live transcription unavailable.';
   }
 
   @override
@@ -392,22 +437,28 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
             firstChild: SizedBox(
               height: 132,
               width: double.infinity,
-              child: widget.snippets.isEmpty
-                  ? const Padding(
-                      padding: EdgeInsets.all(16),
+              child: widget.snippets.isEmpty && widget.partial.isEmpty
+                  ? Padding(
+                      padding: const EdgeInsets.all(16),
                       child: Text(
-                        AppStrings.transcriptEmpty,
+                        _emptyLabel,
                         style: AppTypography.bodyMedium,
                       ),
                     )
                   : ListView.builder(
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
-                      itemCount: widget.snippets.length,
-                      itemBuilder: (context, i) => _TranscriptLine(
-                        snippet: widget.snippets[i],
-                        flaggedPhrases: widget.flaggedPhrases,
-                      ),
+                      itemCount: widget.snippets.length +
+                          (widget.partial.isEmpty ? 0 : 1),
+                      itemBuilder: (context, i) {
+                        if (i == widget.snippets.length) {
+                          return _PartialLine(text: widget.partial);
+                        }
+                        return _TranscriptLine(
+                          snippet: widget.snippets[i],
+                          flaggedPhrases: widget.flaggedPhrases,
+                        );
+                      },
                     ),
             ),
             secondChild: const SizedBox(width: double.infinity),
@@ -638,6 +689,272 @@ class _CompositeBanner extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(detail, style: AppTypography.bodyMedium),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Dimmed in-flight STT partial at the tail of the transcript feed.
+class _PartialLine extends StatelessWidget {
+  const _PartialLine({required this.text});
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(
+            width: 48,
+            child: Text(
+              '…',
+              style: TextStyle(color: AppColors.textMuted),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              text,
+              textDirection:
+                  isRtlText(text) ? TextDirection.rtl : TextDirection.ltr,
+              style: AppTypography.bodyLarge.copyWith(
+                fontSize: 13.5,
+                color: AppColors.textMuted,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Mode picker (pre-session) ────────────────────────────────────────
+
+/// Pre-session mode selection — the explicit user intent that starts
+/// either a real microphone protection session or the demo.
+class _ModePickerView extends StatelessWidget {
+  const _ModePickerView({required this.state});
+
+  final SafeCallState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final error = state is SafeCallError ? state as SafeCallError : null;
+    return Scaffold(
+      appBar: AppBar(title: const Text(AppStrings.safeCallTitle)),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
+          children: [
+            const Icon(Icons.shield_outlined,
+                size: 56, color: AppColors.statusSafe),
+            const SizedBox(height: 16),
+            const Text(
+              'Start a Protection Session',
+              style: AppTypography.displaySmall,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'VoxGuard listens through your microphone for '
+              'suspicious voice and conversation patterns.',
+              style: AppTypography.bodyMedium,
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+            _ModeCard(
+              icon: Icons.mic,
+              title: 'Live Mic',
+              description:
+                  'Analyze real microphone audio — speakerphone calls '
+                  'or a voice played nearby.',
+              accent: AppColors.statusSafe,
+              badge: 'LIVE MIC',
+              onTap: () => context
+                  .read<SafeCallBloc>()
+                  .add(const StartLiveMicSessionEvent()),
+            ),
+            const SizedBox(height: 12),
+            _ModeCard(
+              icon: Icons.science_outlined,
+              title: 'Demo Attack',
+              description:
+                  'Run the scripted judging scenario — generated '
+                  'audio and demo transcript.',
+              accent: AppColors.accent,
+              badge: 'DEMO',
+              onTap: () => context
+                  .read<SafeCallBloc>()
+                  .add(const StartDemoSessionEvent()),
+            ),
+            if (error != null) ...[
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: AppColors.statusWarning.withValues(alpha: 0.10),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                      color: AppColors.statusWarning.withValues(alpha: 0.5)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.warning_amber_rounded,
+                        size: 18, color: AppColors.statusWarning),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(error.message,
+                          style: AppTypography.bodyMedium),
+                    ),
+                  ],
+                ),
+              ),
+              if (error.permanentlyDenied)
+                Padding(
+                  padding: const EdgeInsets.only(top: 10),
+                  child: TextButton.icon(
+                    onPressed: _openSettings,
+                    icon: const Icon(Icons.settings_outlined, size: 16),
+                    label: const Text('Open System Settings'),
+                  ),
+                ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _openSettings() {
+    // ignore: unawaited_futures
+    openAppSettings();
+  }
+}
+
+class _ModeCard extends StatelessWidget {
+  const _ModeCard({
+    required this.icon,
+    required this.title,
+    required this.description,
+    required this.accent,
+    required this.badge,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String title;
+  final String description;
+  final Color accent;
+  final String badge;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceCard,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: accent.withValues(alpha: 0.4)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(18),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: accent.withValues(alpha: 0.14),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(icon, color: accent, size: 24),
+                ),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Text(title, style: AppTypography.titleMedium),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 6, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: accent.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(
+                                  color: accent.withValues(alpha: 0.5)),
+                            ),
+                            child: Text(
+                              badge,
+                              style: TextStyle(
+                                fontSize: 8,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 1.0,
+                                color: accent,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Text(description, style: AppTypography.bodyMedium),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right,
+                    color: AppColors.textMuted),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// ── LIVE MIC badge ───────────────────────────────────────────────────
+
+class _LiveMicBadge extends StatelessWidget {
+  const _LiveMicBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: AppColors.statusDanger.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(
+            color: AppColors.statusDanger.withValues(alpha: 0.5)),
+      ),
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.mic, size: 11, color: AppColors.statusDanger),
+          SizedBox(width: 4),
+          Text(
+            'LIVE MIC',
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 1.1,
+              color: AppColors.statusDanger,
             ),
           ),
         ],
