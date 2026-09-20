@@ -11,6 +11,11 @@ import '../models/semantic_threat_signals.dart';
 /// delegated to a Llama-3 chat completion; otherwise — and on any API
 /// failure — a deterministic bilingual (EN / Egyptian-Arabic) rule
 /// engine produces the same signal shape locally.
+///
+/// **Security note:** a client-side Groq key is acceptable for
+/// development/demo builds only. Production deployments should proxy
+/// LLM calls through a server endpoint so no API secret ships inside
+/// the distributed app binary.
 final class SemanticThreatService {
   SemanticThreatService({http.Client? httpClient, String? apiKey})
       : _client = httpClient ?? http.Client(),

@@ -2,15 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../../../../core/constants/app_strings.dart';
-import '../../../../core/services/alerts/onesignal_alert_service.dart';
+import '../../../../core/services/alerts/family_contact_repository.dart';
+import '../../../../core/services/alerts/family_shield_alert_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/threat_phrase_highlighter.dart';
 import '../../../protection/domain/models/composite_threat_report.dart';
+import '../../../protection/domain/models/semantic_threat_signals.dart';
 import '../../../protection/domain/models/transcript_snippet.dart';
-import '../../../protection/domain/services/semantic_threat_service.dart';
 import '../../domain/models/incident_report.dart';
 
-/// Executive forensic viewer for a single intercepted incident.
+/// Forensic viewer for a single flagged incident — consumer-first
+/// evidence hierarchy with technical telemetry collapsed by default.
 class IncidentDetailScreen extends StatelessWidget {
   const IncidentDetailScreen({super.key, required this.incident});
 
@@ -29,10 +32,19 @@ class IncidentDetailScreen extends StatelessWidget {
       };
 
   Future<void> _broadcast(BuildContext context) async {
-    final result = await FamilyAlertLocator.instance
-        .triggerFamilyEmergencyAlert(
+    final contacts =
+        await FamilyContactLocator.instance.getFamilyContacts();
+    if (!context.mounted) return;
+    if (contacts.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('No family contacts configured.')),
+      );
+      return;
+    }
+    final result =
+        await FamilyAlertLocator.instance.triggerFamilyEmergencyAlert(
       incident: incident,
-      familyMemberIds: const ['family_member_1', 'family_member_2'],
+      familyMemberIds: [for (final c in contacts) c.externalId],
     );
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -57,11 +69,7 @@ class IncidentDetailScreen extends StatelessWidget {
         children: [
           _HeaderCard(incident: incident, color: _riskColor, label: _riskLabel),
           const SizedBox(height: 16),
-          _IntegrityCard(incident: incident),
-          const SizedBox(height: 16),
-          _AcousticCard(incident: incident),
-          const SizedBox(height: 16),
-          _SemanticCard(incident: incident),
+          _WhyFlaggedCard(incident: incident),
           const SizedBox(height: 16),
           _TranscriptCard(incident: incident),
           const SizedBox(height: 16),
@@ -70,6 +78,8 @@ class IncidentDetailScreen extends StatelessWidget {
             onBroadcast: () => _broadcast(context),
             onShare: () => _share(context),
           ),
+          const SizedBox(height: 16),
+          _TechnicalEvidenceSection(incident: incident),
           const SizedBox(height: 20),
           Text(
             incident.disclaimer,
@@ -182,15 +192,213 @@ class _HeaderCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                'Peak Risk ',
+                '${AppStrings.threatScoreLabel} ',
                 style: AppTypography.labelLarge
                     .copyWith(color: AppColors.textMuted),
               ),
               Text(
-                '${(incident.peakRiskScore * 100).round()}%',
+                '${(incident.peakRiskScore * 100).round()}/100',
                 style: AppTypography.statLarge.copyWith(color: color),
               ),
             ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── Why flagged — the consumer-facing explanation ────────────────────
+
+class _WhyFlaggedCard extends StatelessWidget {
+  const _WhyFlaggedCard({required this.incident});
+
+  final IncidentReport incident;
+
+  @override
+  Widget build(BuildContext context) {
+    final s = incident.semanticSignals;
+    return _Card(
+      title: 'WHY VOXGUARD FLAGGED THIS CALL',
+      icon: Icons.help_outline,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Strongest evidence — reasons the fusion engine produced.
+          for (final r in incident.threatReasons)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 3),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.flag_outlined,
+                      size: 14, color: AppColors.statusDanger),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text(r, style: AppTypography.bodyLarge)),
+                ],
+              ),
+            ),
+          if (s.evidenceCategories.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final e in s.evidenceCategories)
+                  _evidenceChip(e),
+              ],
+            ),
+          ],
+          if (incident.recommendedActions.isNotEmpty) ...[
+            const SizedBox(height: 14),
+            const Divider(height: 1, color: AppColors.borderSubtle),
+            const SizedBox(height: 12),
+            Text(
+              'RECOMMENDED NEXT STEPS',
+              style: AppTypography.labelSmall
+                  .copyWith(color: AppColors.textMuted),
+            ),
+            const SizedBox(height: 8),
+            for (final a in incident.recommendedActions.take(3))
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.check_circle_outline,
+                        size: 14, color: AppColors.statusSafe),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(a, style: AppTypography.bodyMedium),
+                    ),
+                  ],
+                ),
+              ),
+            const SizedBox(height: 12),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: AppColors.accent.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(
+                    color: AppColors.accent.withValues(alpha: 0.35)),
+              ),
+              child: const Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Icon(Icons.verified_user_outlined,
+                      size: 16, color: AppColors.accent),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      AppStrings.verifyIdentityBody,
+                      style: AppTypography.bodyMedium,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _evidenceChip(EvidenceCategory e) {
+    final color = switch (e) {
+      EvidenceCategory.impersonation ||
+      EvidenceCategory.moneyRequest =>
+        AppColors.statusDanger,
+      _ => AppColors.statusWarning,
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.55)),
+      ),
+      child: Text(
+        e.label,
+        style: AppTypography.labelSmall.copyWith(color: color, fontSize: 10),
+      ),
+    );
+  }
+}
+
+// ── Collapsible technical evidence ───────────────────────────────────
+
+class _TechnicalEvidenceSection extends StatefulWidget {
+  const _TechnicalEvidenceSection({required this.incident});
+
+  final IncidentReport incident;
+
+  @override
+  State<_TechnicalEvidenceSection> createState() =>
+      _TechnicalEvidenceSectionState();
+}
+
+class _TechnicalEvidenceSectionState extends State<_TechnicalEvidenceSection> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(16),
+            ),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              child: Row(
+                children: [
+                  const Icon(Icons.biotech_outlined,
+                      size: 16, color: AppColors.textMuted),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'TECHNICAL EVIDENCE',
+                      style: AppTypography.labelSmall,
+                    ),
+                  ),
+                  Icon(
+                    _expanded ? Icons.expand_less : Icons.expand_more,
+                    color: AppColors.textMuted,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 250),
+            crossFadeState: _expanded
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+              child: Column(
+                children: [
+                  _IntegrityCard(incident: widget.incident),
+                  const SizedBox(height: 10),
+                  _AcousticCard(incident: widget.incident),
+                  const SizedBox(height: 10),
+                  _SemanticCard(incident: widget.incident),
+                ],
+              ),
+            ),
+            secondChild: const SizedBox(width: double.infinity),
           ),
         ],
       ),
@@ -208,13 +416,13 @@ class _IntegrityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Card(
-      title: 'AUDIO HASH & INTEGRITY',
+      title: 'AUDIO FINGERPRINT',
       icon: Icons.fingerprint,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            incident.audioSha256,
+            incident.audioFingerprint,
             style: AppTypography.bodyMedium.copyWith(
               fontFamily: 'monospace',
               fontSize: 12,
@@ -224,10 +432,10 @@ class _IntegrityCard extends StatelessWidget {
           const SizedBox(height: 8),
           const Row(
             children: [
-              Icon(Icons.verified, size: 14, color: AppColors.statusSafe),
+              Icon(Icons.graphic_eq, size: 14, color: AppColors.textMuted),
               SizedBox(width: 6),
               Text(
-                '16 kHz PCM · integrity verified',
+                'Session audio fingerprint · 16 kHz PCM',
                 style: AppTypography.bodyMedium,
               ),
             ],
@@ -249,7 +457,7 @@ class _AcousticCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final m = incident.acousticMetrics;
     return _Card(
-      title: 'ACOUSTIC BREAKDOWN',
+      title: 'ACOUSTIC ANOMALY SIGNALS',
       icon: Icons.graphic_eq,
       child: Column(
         children: [
@@ -258,7 +466,7 @@ class _AcousticCard extends StatelessWidget {
               invertRisk: true),
           _metricRow('Zero-Crossing Rate', m.zeroCrossingRate,
               invertRisk: true),
-          _metricRow('Synthetic Voice Score', m.syntheticVoiceScore),
+          _metricRow('Acoustic Anomaly Score', m.syntheticVoiceScore),
         ],
       ),
     );
@@ -315,7 +523,7 @@ class _SemanticCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final s = incident.semanticSignals;
     return _Card(
-      title: 'SEMANTIC SIGNALS',
+      title: 'SEMANTIC THREAT SIGNALS',
       icon: Icons.psychology_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -342,22 +550,6 @@ class _SemanticCard extends StatelessWidget {
               ],
             ),
           ],
-          const SizedBox(height: 8),
-          for (final r in incident.threatReasons)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 2),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.flag_outlined,
-                      size: 13, color: AppColors.textMuted),
-                  const SizedBox(width: 6),
-                  Expanded(
-                    child: Text(r, style: AppTypography.bodyMedium),
-                  ),
-                ],
-              ),
-            ),
         ],
       ),
     );
@@ -457,12 +649,17 @@ class _TranscriptCard extends StatelessWidget {
             ),
             const SizedBox(height: 3),
             RichText(
-              textDirection: _isRtl(s.text)
+              textDirection: isRtlText(s.text)
                   ? TextDirection.rtl
                   : TextDirection.ltr,
               text: TextSpan(
                 style: AppTypography.bodyLarge.copyWith(fontSize: 13.5),
-                children: _highlightedSpans(s.text),
+                children: buildThreatSpans(
+                  s.text,
+                  incident.flaggedPhrases,
+                  baseStyle:
+                      AppTypography.bodyLarge.copyWith(fontSize: 13.5),
+                ),
               ),
             ),
           ],
@@ -470,73 +667,6 @@ class _TranscriptCard extends StatelessWidget {
       ),
     );
   }
-
-  bool _isRtl(String text) => text.isNotEmpty && text.codeUnitAt(0) > 0x0600;
-
-  /// Splits [text] into spans, painting impersonation/financial phrases
-  /// crimson and urgency/secrecy phrases amber.
-  List<TextSpan> _highlightedSpans(String text) {
-    final ranges = <_PhraseRange>[];
-    for (final phrase in incident.flaggedPhrases) {
-      var cursor = 0;
-      while (cursor < text.length) {
-        final hit = _indexOfPhrase(text, phrase, cursor);
-        if (hit < 0) break;
-        ranges.add(_PhraseRange(hit, hit + phrase.length, phrase));
-        cursor = hit + phrase.length;
-      }
-    }
-    if (ranges.isEmpty) return [TextSpan(text: text)];
-
-    ranges.sort((a, b) => a.start.compareTo(b.start));
-
-    final spans = <TextSpan>[];
-    var cursor = 0;
-    for (final r in ranges) {
-      if (r.start < cursor) continue; // overlap — skip
-      if (r.start > cursor) {
-        spans.add(TextSpan(text: text.substring(cursor, r.start)));
-      }
-      final color = _phraseColor(r.phrase);
-      spans.add(
-        TextSpan(
-          text: text.substring(r.start, r.end),
-          style: TextStyle(
-            color: color,
-            fontWeight: FontWeight.w700,
-            backgroundColor: color.withValues(alpha: 0.14),
-          ),
-        ),
-      );
-      cursor = r.end;
-    }
-    if (cursor < text.length) {
-      spans.add(TextSpan(text: text.substring(cursor)));
-    }
-    return spans;
-  }
-
-  int _indexOfPhrase(String text, String phrase, int from) {
-    if (phrase.codeUnits.every((c) => c < 128)) {
-      return text.toLowerCase().indexOf(phrase.toLowerCase(), from);
-    }
-    return text.indexOf(phrase, from);
-  }
-
-  Color _phraseColor(String phrase) {
-    if (SemanticThreatService.impersonationLexicon.contains(phrase) ||
-        SemanticThreatService.financialLexicon.contains(phrase)) {
-      return AppColors.statusDanger;
-    }
-    return AppColors.statusWarning;
-  }
-}
-
-class _PhraseRange {
-  const _PhraseRange(this.start, this.end, this.phrase);
-  final int start;
-  final int end;
-  final String phrase;
 }
 
 // ── Action buttons ───────────────────────────────────────────────────
@@ -554,6 +684,7 @@ class _ActionsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDemo = FamilyAlertLocator.instance.isDemoMode;
     return Column(
       children: [
         SizedBox(
@@ -562,9 +693,12 @@ class _ActionsCard extends StatelessWidget {
           child: ElevatedButton.icon(
             onPressed: onBroadcast,
             icon: const Icon(Icons.broadcast_on_personal, size: 20),
-            label: const Text(
-              'Broadcast to Family Shield',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+            label: Text(
+              isDemo
+                  ? AppStrings.sendDemoFamilyAlert
+                  : 'Broadcast to Family Shield',
+              style:
+                  const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
             ),
             style: ElevatedButton.styleFrom(
               backgroundColor: AppColors.statusDanger,
@@ -575,6 +709,14 @@ class _ActionsCard extends StatelessWidget {
             ),
           ),
         ),
+        if (isDemo)
+          const Padding(
+            padding: EdgeInsets.only(top: 6),
+            child: Text(
+              'Demo Mode — no real notification is sent',
+              style: AppTypography.bodyMedium,
+            ),
+          ),
         const SizedBox(height: 10),
         SizedBox(
           width: double.infinity,

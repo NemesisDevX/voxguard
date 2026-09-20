@@ -6,13 +6,15 @@ abstract final class AppStrings {
   static const String appName = 'VoxGuard';
 
   // ── Home ─────────────────────────────────────────────────────────
-  static const String shieldStatusReady = 'Shield Status: Ready & Monitoring';
-  static const String shieldSubtitle = 'Real-time voice defense active';
-  static const String quickActions = 'PROTECTION ACTIONS';
+  static const String shieldStatusReady = 'VoxGuard Ready';
+  static const String shieldSubtitle = 'Real-time voice defense standing by';
+  static const String quickActions = 'PROTECTION';
 
   static const String startSafeCall = 'Start SafeCall';
   static const String startSafeCallDesc =
-      'In-app protected call with real-time stream threat interceptor.';
+      'In-app protected call with live threat telemetry.';
+
+  static const String labsTitle = 'LABS';
 
   static const String liveShield = 'Live Shield';
   static const String liveShieldDesc =
@@ -20,7 +22,7 @@ abstract final class AppStrings {
 
   static const String analyzeRecording = 'Analyze Recording';
   static const String analyzeRecordingDesc =
-      'Upload call audio or voice note for deep forensic scan.';
+      'Upload call audio or a voice note for threat analysis.';
 
   static const String incidentLogTooltip = 'Incident log';
 
@@ -31,7 +33,7 @@ abstract final class AppStrings {
 
   // ── SafeCall HUD ─────────────────────────────────────────────────
   static const String safeCallTitle = 'SafeCall';
-  static const String safeCallActive = 'PROTECTED CALL ACTIVE';
+  static const String safeCallActive = 'PROTECTION SESSION ACTIVE';
   static const String unknownCaller = 'Unknown Caller';
   static const String maskedNumber = '+1 (•••) ••• ••42';
   static const String endCall = 'End';
@@ -51,15 +53,17 @@ abstract final class AppStrings {
   static const String bannerProtectedDetail = 'All signals nominal — no threat indicators';
   static const String bannerElevated = 'ELEVATED RISK';
   static const String bannerElevatedDetail = 'Suspicious pattern — monitoring closely';
-  static const String bannerThreat = 'THREAT DETECTED';
-  static const String bannerThreatDetail = 'High Risk — Impersonation Pattern Detected';
+  static const String bannerThreat = 'High-Risk Call Detected';
+  static const String bannerThreatDetail =
+      'Impersonation and financial demand patterns flagged';
+  static const String threatScoreLabel = 'Threat Score';
 
   static const String simulateScam = 'Simulate Scam';
-  static const String stopSimulation = 'Stop Simulation';
+  static const String stopSimulation = 'Stop Demo';
 
   static const String liveTranscript = 'LIVE TRANSCRIPT';
   static const String transcriptEmpty =
-      'Listening — transcription will appear here.';
+      'Transcript appears here during a protected call.';
   static const String speakerCaller = 'Caller';
   static const String speakerYou = 'You';
 
@@ -90,18 +94,35 @@ abstract final class AppStrings {
   static const String planSentinel = 'SENTINEL ACTIVE';
   static const String planFamily = 'FAMILY VAULT ACTIVE';
 
+  // ── Post-call verification flow ──────────────────────────────────
+  static const String postCallEnded = 'Protection session ended';
+  static const String postCallReview =
+      'Review the evidence before taking further action.';
+  static const String whyFlaggedTitle = 'Why VoxGuard Flagged This Call';
+  static const String verifyIdentityTitle = 'Verify Identity';
+  static const String verifyIdentityBody =
+      'Call the person back using a number you already trust — never '
+      'the number that just called you.';
+  static const String callTrustedContact = 'Call Trusted Contact';
+  static const String sendDemoFamilyAlert = 'Send Demo Family Alert';
+  static const String familyAlertSent = 'Demo alert broadcast to family';
+  static const String familySafePhrase =
+      'Tip: agree on a family safe phrase offline — ask the caller for it.';
+  static const String viewIncidentReport = 'View Incident Report';
+  static const String incidentLogged = 'High-risk call logged';
+
   // ── Post-intercept upsell ────────────────────────────────────────
-  static const String upsellTitle = 'Family Shield intercepted an attack';
+  static const String upsellTitle = 'A high-risk call was flagged';
   static const String upsellBody =
-      'Upgrade to Family Vault to auto-alert relatives the moment a '
-      'high-risk call is intercepted on any protected device.';
+      'Upgrade to Family Vault to automatically alert relatives when a '
+      'high-risk call is detected on a protected device.';
   static const String upsellCta = 'Upgrade to Family Vault';
   static const String upsellDismiss = 'Maybe later';
 
   // ── Placeholder tabs ─────────────────────────────────────────────
   static const String incidentsEmpty = 'No incidents recorded';
   static const String incidentsEmptyDesc =
-      'Blocked threats and flagged calls will appear here.';
+      'Flagged calls and incident reports will appear here.';
   static const String settingsPlaceholder = 'Settings';
   static const String settingsPlaceholderDesc =
       'Protection preferences, trusted contacts and alerts.';

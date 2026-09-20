@@ -2,14 +2,14 @@
 
 # 🛡️ VoxGuard
 
-### AI Voice Scam Interceptor & Real-Time Voice Defense System
+### AI Voice Scam Defense & Real-Time Threat Telemetry
 
 **Real-time multi-signal defense against audio deepfakes, voice impersonation, and coercion scams.**
 
 [![Flutter](https://img.shields.io/badge/Flutter-3.41-02569B?logo=flutter&logoColor=white)](https://flutter.dev)
 [![Dart](https://img.shields.io/badge/Dart-3.11-0175C2?logo=dart&logoColor=white)](https://dart.dev)
 [![License: MIT](https://img.shields.io/badge/License-MIT-10B981.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/Tests-27%2F27%20Passing-10B981)](https://github.com/NemesisDevX/voxguard/actions)
+[![Tests](https://img.shields.io/badge/Tests-30%2F30%20Passing-10B981)](https://github.com/NemesisDevX/voxguard/actions)
 [![CI/CD](https://img.shields.io/github/actions/workflow/status/NemesisDevX/voxguard/ci.yml?branch=main&label=CI%2FCD)](https://github.com/NemesisDevX/voxguard/actions)
 [![Platforms](https://img.shields.io/badge/Android%20%7C%20iOS%20%7C%20Web%20%7C%20Windows-1E2333)](https://github.com/NemesisDevX/voxguard)
 
@@ -29,7 +29,9 @@ Voice-cloning scams now cost consumers billions annually. And yet, nearly every 
 
 A pure deepfake detector can be beaten with a clean recording of a real voice. A pure text classifier can be beaten by a scammer who simply changes the script. **Any single signal is a single point of failure.**
 
-VoxGuard's answer is **multi-signal threat fusion**: the acoustic fingerprint of the voice *and* the semantic fingerprint of the conversation are scored simultaneously and fused into a composite risk verdict in real time. A synthetic voice with a clean script is flagged. A real voice running a coercion script is flagged. Only a call that is clean on **both** axes stays green.
+VoxGuard's answer is **multi-signal threat fusion**: acoustic anomaly indicators of the voice *and* the semantic fingerprint of the conversation are scored simultaneously and fused into a composite **Threat Score (0–100)** in real time. A synthetic voice with a clean script is flagged. A real voice running a coercion script is flagged. Only a call that is clean on **both** axes stays green.
+
+> VoxGuard is an assistive consumer safety tool — a risk *score*, not a probability, and not a validated forensic verdict.
 
 ---
 
@@ -68,16 +70,19 @@ VoxGuard's answer is **multi-signal threat fusion**: the acoustic fingerprint of
 │           └────────┬───────────────┬────────┘                    │
 │                  ▼               ▼                               │
 │        ┌──────────────┐  ┌──────────────────┐                   │
-│        │ Threat HUD   │  │ Forensic Incident│                   │
-│        │ (live meters │  │ Report persisted │                   │
-│        │  + banner)   │  │ (SHA-256, telemetry, transcript)     │
+│        │ ThreatCore   │  │ Incident Report  │                   │
+│        │ HUD (score   │  │ persisted        │                   │
+│        │  + evidence) │  │ (fingerprint,    │                   │
+│        │              │  │  telemetry,      │                   │
+│        │              │  │  transcript)     │                   │
 │        └──────────────┘  └────────┬─────────┘                   │
 │                                   ▼                              │
 │                        ┌────────────────────┐                   │
-│                        │ OneSignal Family   │                   │
-│                        │ Shield Broadcast   │                   │
-│                        │ (emergency push    │                   │
-│                        │  to relatives)     │                   │
+│                        │ Family Shield      │                   │
+│                        │ alert → server     │                   │
+│                        │ relay → OneSignal  │                   │
+│                        │ (demo mode without │                   │
+│                        │  relay endpoint)   │                   │
 │                        └────────────────────┘                   │
 │                                                                  │
 │  RevenueCat Subscription Engine ── entitlements gate premium     │
@@ -112,7 +117,7 @@ Real DSP on every incoming audio chunk (not heuristics-over-random):
 | **Live Shield** | Ambient microphone monitor for speakerphone and surrounding conversations. |
 | **Analyze Recording** | Upload call audio or voice notes for deep post-hoc forensic auditing. |
 
-Every high-risk interception auto-persists a **Forensic Incident Report**: ID, timestamps, audio integrity hash, per-engine telemetry, phrase-highlighted transcript, and recommended actions — viewable in the Incidents tab.
+Every high-risk session auto-persists an **Incident Report**: ID, timestamp, audio fingerprint, consumer-first "Why VoxGuard Flagged This Call" evidence, phrase-highlighted transcript, and recommended verification steps — viewable in the Incidents tab, with raw telemetry under a collapsible *Technical Evidence* section.
 
 ---
 
@@ -134,30 +139,34 @@ Built on `purchases_flutter` (RevenueCat) behind a decoupled `IPurchaseService` 
 - **`MockSandboxPurchaseService`** — full lifecycle simulation (checkout, entitlements, restore) on Web/Desktop and keyless debug sessions
 - **Conditional-import factory** — `purchases_flutter` is *never compiled* into web builds; every platform gets a working paywall
 
-High-conversion paywall: billing-cycle pill toggle (SAVE 35%), tier cards with a MOST POPULAR highlight, 7-day free trial banner, and post-interception upsells triggered at the exact moment a threat is witnessed.
+High-conversion paywall: billing-cycle pill toggle (SAVE 35%), tier cards with a MOST POPULAR highlight, 7-day free trial banner, and an upgrade path surfaced naturally inside the post-call verification flow after a high-risk session.
 
 ---
 
 ## OneSignal Family Shield *(OneSignal Award)*
 
-Privacy-by-design emergency broadcasting. When a call ends at high risk:
+Privacy-by-design emergency alerting. When a call ends at high risk, the post-call verification flow offers an optional family broadcast:
 
 ```
-High-Risk Intercept
+High-Risk Session Ends
       │
       ▼
-Forensic Incident persisted locally
+Incident Report persisted locally
       │
       ▼
-POST api.onesignal.com/notifications
-  ├── include_aliases.external_id → family members only
+POST → minimal server-side relay (VOXGUARD_ALERT_RELAY_URL)
+  ├── family_external_ids → configured contacts only
   ├── title: "🚨 VoxGuard Family Shield Alert"
-  ├── body:  "Potential scam call intercepted on Abdo's device.
-  │           Verify directly before sending funds."
-  └── data:  { incident_id, risk_level }
+  ├── body:  "A high-risk call was flagged on a protected
+  │           device. Verify directly before funds move."
+  └── incident_id + risk_level reference
+      │
+      ▼
+Relay holds OneSignal credentials → fans out via
+include_aliases.external_id push to relatives
 ```
 
-No raw audio, no transcript, no PII leaves the device — only an incident reference and risk band. Runs as a **pure-Dart REST client** (identical on Android/iOS/Web) with automatic **simulated-broadcast fallback** when `ONESIGNAL_APP_ID`/`ONESIGNAL_API_KEY` aren't configured.
+**Security boundary:** the OneSignal REST API key lives on the relay — never inside the Flutter client. The client payload carries no raw audio, no transcript, no PII — just an incident reference and risk band. Without a relay URL the app runs an explicitly-labelled **Demo Mode** broadcast (`IFamilyContactRepository` → `DemoFamilyContactRepository`), keeping the full journey demoable without shipping secrets.
 
 ---
 
@@ -182,23 +191,22 @@ flutter run                  # attached device
 flutter run \
   --dart-define=GROQ_API_KEY=gsk_... \
   --dart-define=REVENUECAT_ANDROID_KEY=goog_... \
-  --dart-define=ONESIGNAL_APP_ID=... \
-  --dart-define=ONESIGNAL_API_KEY=...
+  --dart-define=VOXGUARD_ALERT_RELAY_URL=https://your-relay.example.com/alert
 ```
 
 | `--dart-define` | Service | Without it |
 |---|---|---|
-| `GROQ_API_KEY` | Llama-3 semantic analysis | deterministic bilingual rule engine |
+| `GROQ_API_KEY` | Llama-3 semantic analysis (development builds only — production secrets should be proxied server-side) | deterministic bilingual rule engine |
 | `REVENUECAT_ANDROID_KEY` / `REVENUECAT_IOS_KEY` | real store checkout | sandbox purchase lifecycle |
-| `ONESIGNAL_APP_ID` / `ONESIGNAL_API_KEY` | live push broadcast | simulated broadcast |
+| `VOXGUARD_ALERT_RELAY_URL` | live Family Shield push via server relay | explicit Demo Mode broadcast |
 
-**Demo path**: Home → *Start SafeCall* → tap **Simulate Scam** (FAB) → watch the radar escalate 0% → ~100% → end the call → incident auto-logged → Family Shield upsell → Incidents tab → full forensic report.
+**Demo path**: Home → *Start SafeCall* → tap **Simulate Scam** (FAB) → Arabic demo dialogue streams in with phrase highlights + evidence chips → ThreatCore escalates SAFE → CAUTION → HIGH RISK → end the call → post-call sheet walks *why flagged → verify identity → demo family alert → incident report*.
 
 ### Testing & CI
 
 ```bash
 flutter analyze   # 0 issues
-flutter test      # 27/27 passing
+flutter test      # 30/30 passing
 flutter build web --release --base-href /voxguard/
 flutter build apk --debug
 ```
@@ -212,7 +220,7 @@ Every push to `main` runs the full pipeline — analyze → test → web + APK b
 - **Flutter 3.41 / Dart 3.11** — Material 3 dark design system (deep zinc `#0B0D13`, emerald/amber/crimson semantics)
 - **flutter_bloc** — `SafeCallBloc` (streaming threat telemetry), `PaywallBloc` (checkout lifecycle)
 - **purchases_flutter** — RevenueCat subscriptions + cross-platform sandbox
-- **http** — Groq chat completions + OneSignal REST broadcast
+- **http** — Groq chat completions + Family Shield relay broadcast
 - **equatable** — immutable domain models
 
 ## Forensic Disclaimer

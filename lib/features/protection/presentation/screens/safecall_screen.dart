@@ -7,11 +7,14 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/threat_phrase_highlighter.dart';
 import '../../domain/models/composite_threat_report.dart';
+import '../../domain/models/semantic_threat_signals.dart';
 import '../../domain/models/transcript_snippet.dart';
 import '../bloc/safecall_bloc.dart';
 import '../bloc/safecall_event.dart';
 import '../bloc/safecall_state.dart';
+import '../widgets/threat_core.dart';
 import '../widgets/threat_meter_card.dart';
 
 /// SafeCall active-call HUD.
@@ -77,18 +80,25 @@ class _SafeCallViewState extends State<_SafeCallView>
         final monitoring =
             state is SafeCallMonitoring ? state : null;
         final acoustic = monitoring?.acoustic;
-        final semantic = monitoring?.semantic;
+        final semantic =
+            monitoring?.semantic ?? const SemanticThreatSignals.empty();
         final report =
             monitoring?.report ?? const CompositeThreatReport.initial();
         final transcript = monitoring?.transcript ?? const <TranscriptSnippet>[];
         final demoActive = monitoring?.demoActive ?? false;
+        final amplitude = monitoring?.audioAmplitude ?? 0.0;
         final score = report.compositeRiskScore;
 
         return Scaffold(
           appBar: AppBar(
             title: const Text(AppStrings.safeCallTitle),
-            actions: const [
-              Padding(
+            actions: [
+              if (demoActive)
+                const Padding(
+                  padding: EdgeInsets.only(right: 10),
+                  child: Center(child: _DemoBadge()),
+                ),
+              const Padding(
                 padding: EdgeInsets.only(right: 16),
                 child: Center(child: _LiveBadge()),
               ),
@@ -107,12 +117,28 @@ class _SafeCallViewState extends State<_SafeCallView>
                             .read<SafeCallBloc>()
                             .add(const EndCallEvent()),
                       ),
+                      const SizedBox(height: 20),
+                      Center(
+                        child: ThreatCore(
+                          score: score,
+                          amplitude: amplitude,
+                          // All audio in this build is generated PCM —
+                          // the badge keeps provenance honest.
+                          isDemoAudio: true,
+                        ),
+                      ),
                       const SizedBox(height: 16),
-                      _TranscriptFeed(snippets: transcript),
+                      _TranscriptFeed(
+                        snippets: transcript,
+                        flaggedPhrases: semantic.flaggedPhrases,
+                        evidence: semantic.evidenceCategories,
+                        demoActive: demoActive,
+                      ),
                       const SizedBox(height: 16),
                       _WaveformCard(
                         animation: _waveController,
                         tint: AppColors.forThreat(score),
+                        amplitude: amplitude,
                       ),
                       const SizedBox(height: 24),
                       const Text(
@@ -131,19 +157,19 @@ class _SafeCallViewState extends State<_SafeCallView>
                       const SizedBox(height: 10),
                       ThreatMeterCard(
                         title: AppStrings.signalUrgency,
-                        value: semantic?.urgencyScore ?? 0,
+                        value: semantic.urgencyScore,
                         icon: Icons.priority_high,
                       ),
                       const SizedBox(height: 10),
                       ThreatMeterCard(
                         title: AppStrings.signalFinancial,
-                        value: semantic?.financialDemandScore ?? 0,
+                        value: semantic.financialDemandScore,
                         icon: Icons.payments_outlined,
                       ),
                       const SizedBox(height: 10),
                       ThreatMeterCard(
                         title: AppStrings.signalSecrecy,
-                        value: semantic?.secrecyScore ?? 0,
+                        value: semantic.secrecyScore,
                         icon: Icons.visibility_off_outlined,
                       ),
                     ],
@@ -252,9 +278,17 @@ class _CallerCard extends StatelessWidget {
 // ── Collapsible live transcript feed ─────────────────────────────────
 
 class _TranscriptFeed extends StatefulWidget {
-  const _TranscriptFeed({required this.snippets});
+  const _TranscriptFeed({
+    required this.snippets,
+    required this.flaggedPhrases,
+    required this.evidence,
+    required this.demoActive,
+  });
 
   final List<TranscriptSnippet> snippets;
+  final List<String> flaggedPhrases;
+  final List<EvidenceCategory> evidence;
+  final bool demoActive;
 
   @override
   State<_TranscriptFeed> createState() => _TranscriptFeedState();
@@ -316,6 +350,11 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
                       style: AppTypography.labelSmall,
                     ),
                   ),
+                  if (widget.demoActive)
+                    const Padding(
+                      padding: EdgeInsets.only(right: 8),
+                      child: _DemoBadge(compact: true),
+                    ),
                   if (widget.snippets.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -334,6 +373,17 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
               ),
             ),
           ),
+          if (widget.evidence.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
+              child: Wrap(
+                spacing: 6,
+                runSpacing: 6,
+                children: [
+                  for (final e in widget.evidence) _EvidenceChip(category: e),
+                ],
+              ),
+            ),
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 250),
             crossFadeState: _expanded
@@ -354,8 +404,10 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
                       controller: _scrollController,
                       padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
                       itemCount: widget.snippets.length,
-                      itemBuilder: (context, i) =>
-                          _TranscriptLine(snippet: widget.snippets[i]),
+                      itemBuilder: (context, i) => _TranscriptLine(
+                        snippet: widget.snippets[i],
+                        flaggedPhrases: widget.flaggedPhrases,
+                      ),
                     ),
             ),
             secondChild: const SizedBox(width: double.infinity),
@@ -367,13 +419,19 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
 }
 
 class _TranscriptLine extends StatelessWidget {
-  const _TranscriptLine({required this.snippet});
+  const _TranscriptLine({
+    required this.snippet,
+    required this.flaggedPhrases,
+  });
 
   final TranscriptSnippet snippet;
+  final List<String> flaggedPhrases;
 
   @override
   Widget build(BuildContext context) {
     final isCaller = snippet.speaker == AppStrings.speakerCaller;
+    final style = AppTypography.bodyLarge
+        .copyWith(fontSize: 13.5, color: AppColors.textPrimary);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -391,36 +449,98 @@ class _TranscriptLine extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(
-              snippet.text,
-              textDirection: _isRtl(snippet.text)
+            child: RichText(
+              textDirection: isRtlText(snippet.text)
                   ? TextDirection.rtl
                   : TextDirection.ltr,
-              style: AppTypography.bodyLarge
-                  .copyWith(fontSize: 13.5, color: AppColors.textPrimary),
+              text: TextSpan(
+                style: style,
+                children: buildThreatSpans(
+                  snippet.text,
+                  flaggedPhrases,
+                  baseStyle: style,
+                ),
+              ),
             ),
           ),
         ],
       ),
     );
   }
+}
 
-  bool _isRtl(String text) =>
-      text.isNotEmpty && text.codeUnitAt(0) > 0x0600;
+/// Evidence chip derived from [SemanticThreatSignals.evidenceCategories] —
+/// explains WHY the score moved without reading raw telemetry.
+class _EvidenceChip extends StatelessWidget {
+  const _EvidenceChip({required this.category});
+
+  final EvidenceCategory category;
+
+  @override
+  Widget build(BuildContext context) {
+    final (color, icon) = switch (category) {
+      EvidenceCategory.impersonation => (
+          AppColors.statusDanger,
+          Icons.person_search_outlined
+        ),
+      EvidenceCategory.moneyRequest => (
+          AppColors.statusDanger,
+          Icons.payments_outlined
+        ),
+      EvidenceCategory.urgency => (
+          AppColors.statusWarning,
+          Icons.priority_high
+        ),
+      EvidenceCategory.secrecy => (
+          AppColors.statusWarning,
+          Icons.visibility_off_outlined
+        ),
+    };
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.55)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 5),
+          Text(
+            category.label,
+            style: AppTypography.labelSmall
+                .copyWith(color: color, fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Live waveform visualizer ─────────────────────────────────────────
 
 class _WaveformCard extends StatelessWidget {
-  const _WaveformCard({required this.animation, required this.tint});
+  const _WaveformCard({
+    required this.animation,
+    required this.tint,
+    required this.amplitude,
+  });
 
   final Animation<double> animation;
   final Color tint;
+
+  /// Real RMS amplitude from the audio pipeline (demo PCM in this
+  /// build). Bars scale with it — motion reflects actual stream data,
+  /// not a decorative loop.
+  final double amplitude;
 
   static const int _barCount = 27;
 
   @override
   Widget build(BuildContext context) {
+    final amp = amplitude.clamp(0.0, 1.0);
     return Container(
       height: 84,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -439,12 +559,13 @@ class _WaveformCard extends StatelessWidget {
             children: List.generate(_barCount, (i) {
               final wave = sin(t * 2 + i * 0.55) * 0.5 +
                   sin(t * 3.1 + i * 1.3) * 0.5;
-              final h = 12 + (wave.abs() * 44);
+              final h = 8 + (wave.abs() * (14 + amp * 40));
               return Container(
                 width: 4,
                 height: h.clamp(6.0, 58.0),
                 decoration: BoxDecoration(
-                  color: tint.withValues(alpha: 0.35 + wave.abs() * 0.55),
+                  color: tint.withValues(
+                      alpha: 0.30 + wave.abs() * (0.25 + amp * 0.45)),
                   borderRadius: BorderRadius.circular(2),
                 ),
               );
@@ -472,19 +593,20 @@ class _CompositeBanner extends StatelessWidget {
     final (String headline, String detail, IconData icon) =
         switch (report.riskLevel) {
       ThreatRiskLevel.highRisk => (
-          '${AppStrings.bannerThreat}: $pct% High Risk',
-          report.primaryThreatReasons.firstOrNull ??
-              AppStrings.bannerThreatDetail,
+          AppStrings.bannerThreat,
+          '${AppStrings.threatScoreLabel}: $pct/100 — '
+              '${report.primaryThreatReasons.firstOrNull ??
+                  AppStrings.bannerThreatDetail}',
           Icons.gpp_maybe_outlined,
         ),
       ThreatRiskLevel.suspicious => (
-          '${AppStrings.bannerElevated}: $pct%',
+          '${AppStrings.bannerElevated}: $pct/100',
           report.primaryThreatReasons.firstOrNull ??
               AppStrings.bannerElevatedDetail,
           Icons.warning_amber_rounded,
         ),
       ThreatRiskLevel.safe => (
-          '${AppStrings.bannerProtected}: $pct%',
+          '${AppStrings.bannerProtected}: $pct/100',
           AppStrings.bannerProtectedDetail,
           Icons.verified_user_outlined,
         ),
@@ -516,6 +638,49 @@ class _CompositeBanner extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(detail, style: AppTypography.bodyMedium),
               ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+// ── DEMO badge — discoverable but unobtrusive ────────────────────────
+
+class _DemoBadge extends StatelessWidget {
+  const _DemoBadge({this.compact = false});
+
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: compact ? 7 : 10,
+        vertical: compact ? 3 : 5,
+      ),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.accent.withValues(alpha: 0.45)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            Icons.science_outlined,
+            size: compact ? 10 : 12,
+            color: AppColors.accent,
+          ),
+          const SizedBox(width: 4),
+          Text(
+            compact ? 'DEMO' : 'DEMO MODE',
+            style: TextStyle(
+              fontSize: compact ? 9 : 10,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 1.1,
+              color: AppColors.accent,
             ),
           ),
         ],

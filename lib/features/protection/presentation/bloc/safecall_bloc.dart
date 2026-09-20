@@ -67,6 +67,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
 
   int _sampleOffset = 0;
   bool _demoActive = false;
+  double _lastAmplitude = 0;
   ThreatRiskLevel _peakRisk = ThreatRiskLevel.safe;
   List<TranscriptSnippet> _transcript = const [];
 
@@ -92,6 +93,13 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     Emitter<SafeCallState> emit,
   ) {
     if (state is! SafeCallMonitoring) return;
+
+    var sumSq = 0.0;
+    for (final s in event.samples) {
+      sumSq += s * s;
+    }
+    _lastAmplitude =
+        sqrt(sumSq / max(1, event.samples.length)).clamp(0.0, 1.0);
 
     final raw = _acousticService.analyze(event.samples);
     _acoustic = _acoustic.lerpTo(raw, _acousticSmoothing);
@@ -181,7 +189,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
       timestamp: DateTime.now(),
       callerLabel: 'Unknown Caller (+20 10 ••• ••42)',
       callDurationSeconds: duration,
-      audioSha256: _audioFingerprint,
+      audioFingerprint: _audioFingerprint,
       peakRiskScore: report.compositeRiskScore,
       riskLevel: _peakRisk,
       threatReasons: report.primaryThreatReasons,
@@ -234,6 +242,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
       report: report,
       transcript: _transcript,
       demoActive: demoActive ?? _demoActive,
+      audioAmplitude: _lastAmplitude,
     );
   }
 
@@ -250,6 +259,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     _acoustic = const AudioForensicMetrics.zero();
     _semantic = const SemanticThreatSignals.empty();
     _demoActive = false;
+    _lastAmplitude = 0;
     _peakRisk = ThreatRiskLevel.safe;
     _callStart = null;
     _audioHash = 0x811c9dc5;

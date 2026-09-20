@@ -5,18 +5,17 @@ import '../../../protection/domain/models/composite_threat_report.dart';
 import '../../../protection/domain/models/semantic_threat_signals.dart';
 import '../../../protection/domain/models/transcript_snippet.dart';
 
-/// Immutable forensic record of a single intercepted call.
+/// Immutable record of a single flagged call session.
 ///
 /// Persisted to [IIncidentRepository] and rendered by the incident
-/// detail screen. Every field is evidence-grade telemetry captured at
-/// call time.
+/// detail screen. Telemetry is an assistive signal — see [disclaimer].
 final class IncidentReport extends Equatable {
   const IncidentReport({
     required this.id,
     required this.timestamp,
     required this.callerLabel,
     required this.callDurationSeconds,
-    required this.audioSha256,
+    required this.audioFingerprint,
     required this.peakRiskScore,
     required this.riskLevel,
     required this.threatReasons,
@@ -44,8 +43,9 @@ final class IncidentReport extends Equatable {
   /// Call length in seconds.
   final int callDurationSeconds;
 
-  /// Audio integrity fingerprint (SHA-256 or simulated equivalent).
-  final String audioSha256;
+  /// Deterministic fingerprint of the session audio stream (rolling
+  /// hash, 64 hex chars). Identifies the session's audio evidence.
+  final String audioFingerprint;
 
   /// Worst fused risk score observed during the call (0.0 – 1.0).
   final double peakRiskScore;
@@ -104,7 +104,7 @@ final class IncidentReport extends Equatable {
         'Duration: $durationLabel\n'
         'Risk: ${riskLevel.name} (${(peakRiskScore * 100).round()}%)\n'
         'Threats: $reasons\n'
-        'Audio SHA-256: $audioSha256\n'
+        'Audio fingerprint: $audioFingerprint\n'
         '\n$disclaimer';
   }
 
@@ -114,7 +114,7 @@ final class IncidentReport extends Equatable {
         timestamp,
         callerLabel,
         callDurationSeconds,
-        audioSha256,
+        audioFingerprint,
         peakRiskScore,
         riskLevel,
         threatReasons,

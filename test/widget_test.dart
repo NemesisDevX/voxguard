@@ -10,10 +10,7 @@ void main() {
     await tester.pump();
 
     expect(find.text('VoxGuard'), findsOneWidget);
-    expect(
-      find.text('Shield Status: Ready & Monitoring'),
-      findsOneWidget,
-    );
+    expect(find.text('VoxGuard Ready'), findsOneWidget);
     expect(find.text('Start SafeCall'), findsOneWidget);
     expect(find.text('Live Shield'), findsOneWidget);
     expect(find.text('Analyze Recording'), findsOneWidget);

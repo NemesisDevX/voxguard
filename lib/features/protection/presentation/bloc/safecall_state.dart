@@ -27,6 +27,7 @@ final class SafeCallMonitoring extends SafeCallState {
     required this.report,
     required this.transcript,
     this.demoActive = false,
+    this.audioAmplitude = 0,
   });
 
   /// Latest acoustic forensics snapshot (Engine A).
@@ -44,12 +45,18 @@ final class SafeCallMonitoring extends SafeCallState {
   /// Whether the scripted demo-attack injection is running.
   final bool demoActive;
 
+  /// RMS amplitude of the latest audio chunk (0–1). Drives the
+  /// ThreatCore inner pulse. Sourced from the audio pipeline — during
+  /// demo playback this is generated PCM and labelled as such.
+  final double audioAmplitude;
+
   SafeCallMonitoring copyWith({
     AudioForensicMetrics? acoustic,
     SemanticThreatSignals? semantic,
     CompositeThreatReport? report,
     List<TranscriptSnippet>? transcript,
     bool? demoActive,
+    double? audioAmplitude,
   }) {
     return SafeCallMonitoring(
       acoustic: acoustic ?? this.acoustic,
@@ -57,12 +64,13 @@ final class SafeCallMonitoring extends SafeCallState {
       report: report ?? this.report,
       transcript: transcript ?? this.transcript,
       demoActive: demoActive ?? this.demoActive,
+      audioAmplitude: audioAmplitude ?? this.audioAmplitude,
     );
   }
 
   @override
   List<Object?> get props =>
-      [acoustic, semantic, report, transcript, demoActive];
+      [acoustic, semantic, report, transcript, demoActive, audioAmplitude];
 }
 
 /// Call finished. Carries the worst risk level seen during the session

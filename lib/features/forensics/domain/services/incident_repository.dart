@@ -59,7 +59,7 @@ final class InMemoryIncidentRepository implements IIncidentRepository {
         timestamp: now.subtract(const Duration(hours: 3, minutes: 22)),
         callerLabel: 'Unknown Caller (+20 10 ••• ••42)',
         callDurationSeconds: 214,
-        audioSha256:
+        audioFingerprint:
             '9f2ac81b4e6d05f37c2a91d0e84b6f13a5c7d9e2b4f6081a3c5d7e9f0b2a4c6e',
         peakRiskScore: 0.97,
         riskLevel: ThreatRiskLevel.highRisk,
@@ -67,7 +67,7 @@ final class InMemoryIncidentRepository implements IIncidentRepository {
           'Financial transfer demand detected',
           'Secrecy & isolation pressure',
           'Identity impersonation claim: "أخوك"',
-          'Synthetic voice artifacts detected',
+          'Synthetic voice indicators elevated',
           'Coordinated scam pattern — amplified',
         ],
         acousticMetrics: const AudioForensicMetrics(
@@ -112,7 +112,7 @@ final class InMemoryIncidentRepository implements IIncidentRepository {
         timestamp: now.subtract(const Duration(days: 1, hours: 6)),
         callerLabel: 'Suspicious Contact (+1 888 ••• 0112)',
         callDurationSeconds: 87,
-        audioSha256:
+        audioFingerprint:
             'b71f4c2d9a0e53f6c8b1d4a7e0f3b6c9d2a5e8f1b4c7d0a3e6f9b2c5d8a1e4f7',
         peakRiskScore: 0.58,
         riskLevel: ThreatRiskLevel.suspicious,

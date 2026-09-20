@@ -7,7 +7,7 @@ import '../../domain/models/incident_report.dart';
 import '../../domain/services/incident_repository.dart';
 import 'incident_detail_screen.dart';
 
-/// "Incidents" tab — forensic history of intercepted calls.
+/// "Incidents" tab — history of flagged call sessions.
 class IncidentsHistoryScreen extends StatelessWidget {
   const IncidentsHistoryScreen({super.key});
 

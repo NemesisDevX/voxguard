@@ -129,4 +129,31 @@ void main() {
       expect(signals.impersonationClaims, isEmpty);
     });
   });
+
+  group('SemanticThreatSignals.evidenceCategories', () {
+    test('exposes all four evidence buckets for the demo scam script', () {
+      final signals = SemanticThreatService().analyzeLocally(
+        'أنا أخوك، حول لي 2,000 جنيه بسرعة على المحفظة، '
+        'متقولش لحد الموضوع خطير',
+      );
+
+      expect(
+        signals.evidenceCategories,
+        containsAll([
+          EvidenceCategory.impersonation,
+          EvidenceCategory.moneyRequest,
+          EvidenceCategory.urgency,
+          EvidenceCategory.secrecy,
+        ]),
+      );
+      expect(signals.flaggedPhrases, isNotEmpty);
+    });
+
+    test('is empty for benign signals', () {
+      expect(
+        const SemanticThreatSignals.empty().evidenceCategories,
+        isEmpty,
+      );
+    });
+  });
 }

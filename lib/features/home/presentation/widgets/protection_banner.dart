@@ -6,8 +6,8 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../paywall/domain/models/subscription_tier.dart';
 import '../../../paywall/domain/services/purchase_service_locator.dart';
 
-/// "Shield Status: Ready & Monitoring" banner with a subtle pulsating
-/// ring around the shield emblem.
+/// "VoxGuard Ready" status banner with a subtle pulsating ring around
+/// the shield emblem.
 class ProtectionBanner extends StatefulWidget {
   const ProtectionBanner({super.key});
 

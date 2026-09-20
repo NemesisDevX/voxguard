@@ -11,7 +11,7 @@ void main() {
         timestamp: DateTime(2026, 9, 20, 14, 30),
         callerLabel: 'Unknown Caller (+20 10 ••• ••42)',
         callDurationSeconds: 195,
-        audioSha256: 'ab' * 32,
+        audioFingerprint: 'ab' * 32,
         peakRiskScore: 0.92,
         riskLevel: ThreatRiskLevel.highRisk,
         threatReasons: const ['Financial transfer demand detected'],
