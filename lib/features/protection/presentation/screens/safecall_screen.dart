@@ -2,105 +2,64 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../domain/models/composite_threat_report.dart';
+import '../../domain/models/transcript_snippet.dart';
+import '../bloc/safecall_bloc.dart';
+import '../bloc/safecall_event.dart';
+import '../bloc/safecall_state.dart';
 import '../widgets/threat_meter_card.dart';
 
 /// SafeCall active-call HUD.
 ///
-/// Shows caller identity, a live waveform, the multi-signal threat
-/// radar and a composite threat banner. A floating simulation toggle
-/// drives the meters from safe → high risk for demos.
-class SafeCallScreen extends StatefulWidget {
+/// Hosts the [SafeCallBloc] session and binds the live threat radar,
+/// transcript feed and composite banner to its state.
+class SafeCallScreen extends StatelessWidget {
   const SafeCallScreen({super.key});
 
   @override
-  State<SafeCallScreen> createState() => _SafeCallScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (_) => SafeCallBloc()..add(const StartCallEvent()),
+      child: const _SafeCallView(),
+    );
+  }
 }
 
-class _SafeCallScreenState extends State<SafeCallScreen>
-    with TickerProviderStateMixin {
-  // Simulated scam-conversation targets (composite ≈ 87%).
-  static const double _scamSynthetic = 0.88;
-  static const double _scamUrgency = 0.93;
-  static const double _scamFinancial = 0.85;
-  static const double _scamSecrecy = 0.80;
+class _SafeCallView extends StatefulWidget {
+  const _SafeCallView();
 
-  final Random _rng = Random();
+  @override
+  State<_SafeCallView> createState() => _SafeCallViewState();
+}
 
+class _SafeCallViewState extends State<_SafeCallView>
+    with SingleTickerProviderStateMixin {
   late final AnimationController _waveController = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1800),
   )..repeat();
 
   Timer? _clockTimer;
-  Timer? _signalTimer;
-
   Duration _elapsed = Duration.zero;
-  bool _simulating = false;
-
-  double _synthetic = 0.08;
-  double _urgency = 0.06;
-  double _financial = 0.04;
-  double _secrecy = 0.05;
-
-  /// Weighted composite threat score shown in the banner.
-  double get _composite =>
-      (_synthetic + _urgency + _financial + _secrecy) / 4;
 
   @override
   void initState() {
     super.initState();
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      setState(() => _elapsed += const Duration(seconds: 1));
-    });
-    _signalTimer = Timer.periodic(const Duration(milliseconds: 450), (_) {
-      _tickSignals();
+      if (mounted) setState(() => _elapsed += const Duration(seconds: 1));
     });
   }
 
   @override
   void dispose() {
     _clockTimer?.cancel();
-    _signalTimer?.cancel();
     _waveController.dispose();
     super.dispose();
-  }
-
-  void _tickSignals() {
-    setState(() {
-      _synthetic = _approach(
-        _synthetic,
-        _simulating ? _scamSynthetic : _idleTarget(),
-      );
-      _urgency = _approach(
-        _urgency,
-        _simulating ? _scamUrgency : _idleTarget(),
-      );
-      _financial = _approach(
-        _financial,
-        _simulating ? _scamFinancial : _idleTarget(),
-      );
-      _secrecy = _approach(
-        _secrecy,
-        _simulating ? _scamSecrecy : _idleTarget(),
-      );
-    });
-  }
-
-  /// Low wandering baseline while the call is healthy.
-  double _idleTarget() => 0.05 + _rng.nextDouble() * 0.09;
-
-  double _approach(double current, double target) {
-    final rate = _simulating ? 0.22 : 0.15;
-    final noise = (_rng.nextDouble() - 0.5) * 0.02;
-    return (current + (target - current) * rate + noise).clamp(0.02, 0.97);
-  }
-
-  void _toggleSimulation() {
-    setState(() => _simulating = !_simulating);
   }
 
   String get _durationLabel {
@@ -111,81 +70,107 @@ class _SafeCallScreenState extends State<SafeCallScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.safeCallTitle),
-        actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: 16),
-            child: Center(child: _LiveBadge()),
-          ),
-        ],
-      ),
-      body: SafeArea(
-        child: Column(
-          children: [
-            Expanded(
-              child: ListView(
-                padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                children: [
-                  _CallerCard(
-                    durationLabel: _durationLabel,
-                    onEndCall: () => Navigator.of(context).maybePop(),
-                  ),
-                  const SizedBox(height: 16),
-                  _WaveformCard(
-                    animation: _waveController,
-                    tint: AppColors.forThreat(_composite),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    AppStrings.threatRadarTitle,
-                    style: AppTypography.labelSmall,
-                  ),
-                  const SizedBox(height: 12),
-                  ThreatMeterCard(
-                    title: AppStrings.signalSynthetic,
-                    value: _synthetic,
-                    icon: Icons.record_voice_over_outlined,
-                    style: ThreatMeterStyle.status,
-                    normalLabel: AppStrings.statusNormal,
-                    elevatedLabel: AppStrings.statusElevated,
-                  ),
-                  const SizedBox(height: 10),
-                  ThreatMeterCard(
-                    title: AppStrings.signalUrgency,
-                    value: _urgency,
-                    icon: Icons.priority_high,
-                  ),
-                  const SizedBox(height: 10),
-                  ThreatMeterCard(
-                    title: AppStrings.signalFinancial,
-                    value: _financial,
-                    icon: Icons.payments_outlined,
-                  ),
-                  const SizedBox(height: 10),
-                  ThreatMeterCard(
-                    title: AppStrings.signalSecrecy,
-                    value: _secrecy,
-                    icon: Icons.visibility_off_outlined,
-                  ),
-                ],
+    return BlocConsumer<SafeCallBloc, SafeCallState>(
+      listenWhen: (_, current) => current is SafeCallEnded,
+      listener: (context, _) => Navigator.of(context).maybePop(),
+      builder: (context, state) {
+        final monitoring =
+            state is SafeCallMonitoring ? state : null;
+        final acoustic = monitoring?.acoustic;
+        final semantic = monitoring?.semantic;
+        final report =
+            monitoring?.report ?? const CompositeThreatReport.initial();
+        final transcript = monitoring?.transcript ?? const <TranscriptSnippet>[];
+        final demoActive = monitoring?.demoActive ?? false;
+        final score = report.compositeRiskScore;
+
+        return Scaffold(
+          appBar: AppBar(
+            title: const Text(AppStrings.safeCallTitle),
+            actions: const [
+              Padding(
+                padding: EdgeInsets.only(right: 16),
+                child: Center(child: _LiveBadge()),
               ),
+            ],
+          ),
+          body: SafeArea(
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView(
+                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
+                    children: [
+                      _CallerCard(
+                        durationLabel: _durationLabel,
+                        onEndCall: () => context
+                            .read<SafeCallBloc>()
+                            .add(const EndCallEvent()),
+                      ),
+                      const SizedBox(height: 16),
+                      _TranscriptFeed(snippets: transcript),
+                      const SizedBox(height: 16),
+                      _WaveformCard(
+                        animation: _waveController,
+                        tint: AppColors.forThreat(score),
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        AppStrings.threatRadarTitle,
+                        style: AppTypography.labelSmall,
+                      ),
+                      const SizedBox(height: 12),
+                      ThreatMeterCard(
+                        title: AppStrings.signalSynthetic,
+                        value: acoustic?.syntheticVoiceScore ?? 0,
+                        icon: Icons.record_voice_over_outlined,
+                        style: ThreatMeterStyle.status,
+                        normalLabel: AppStrings.statusNormal,
+                        elevatedLabel: AppStrings.statusElevated,
+                      ),
+                      const SizedBox(height: 10),
+                      ThreatMeterCard(
+                        title: AppStrings.signalUrgency,
+                        value: semantic?.urgencyScore ?? 0,
+                        icon: Icons.priority_high,
+                      ),
+                      const SizedBox(height: 10),
+                      ThreatMeterCard(
+                        title: AppStrings.signalFinancial,
+                        value: semantic?.financialDemandScore ?? 0,
+                        icon: Icons.payments_outlined,
+                      ),
+                      const SizedBox(height: 10),
+                      ThreatMeterCard(
+                        title: AppStrings.signalSecrecy,
+                        value: semantic?.secrecyScore ?? 0,
+                        icon: Icons.visibility_off_outlined,
+                      ),
+                    ],
+                  ),
+                ),
+                _CompositeBanner(report: report),
+              ],
             ),
-            _CompositeBanner(score: _composite),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: _toggleSimulation,
-        backgroundColor:
-            _simulating ? AppColors.statusDanger : AppColors.bgElevated,
-        foregroundColor: AppColors.textPrimary,
-        icon: Icon(_simulating ? Icons.stop : Icons.science_outlined),
-        label: Text(
-          _simulating ? AppStrings.stopSimulation : AppStrings.simulateScam,
-        ),
-      ),
+          ),
+          floatingActionButton: FloatingActionButton.extended(
+            onPressed: () => context
+                .read<SafeCallBloc>()
+                .add(const SimulateDemoAttackEvent()),
+            backgroundColor:
+                demoActive ? AppColors.statusDanger : AppColors.bgElevated,
+            foregroundColor: AppColors.textPrimary,
+            icon: Icon(
+              demoActive ? Icons.stop : Icons.science_outlined,
+            ),
+            label: Text(
+              demoActive
+                  ? AppStrings.stopSimulation
+                  : AppStrings.simulateScam,
+            ),
+          ),
+        );
+      },
     );
   }
 }
@@ -264,6 +249,166 @@ class _CallerCard extends StatelessWidget {
   }
 }
 
+// ── Collapsible live transcript feed ─────────────────────────────────
+
+class _TranscriptFeed extends StatefulWidget {
+  const _TranscriptFeed({required this.snippets});
+
+  final List<TranscriptSnippet> snippets;
+
+  @override
+  State<_TranscriptFeed> createState() => _TranscriptFeedState();
+}
+
+class _TranscriptFeedState extends State<_TranscriptFeed> {
+  bool _expanded = true;
+  final ScrollController _scrollController = ScrollController();
+
+  @override
+  void didUpdateWidget(_TranscriptFeed oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.snippets.length != oldWidget.snippets.length) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_scrollController.hasClients) {
+          _scrollController
+              .jumpTo(_scrollController.position.maxScrollExtent);
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(16),
+            ),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.subtitles_outlined,
+                    size: 18,
+                    color: AppColors.accent,
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      AppStrings.liveTranscript,
+                      style: AppTypography.labelSmall,
+                    ),
+                  ),
+                  if (widget.snippets.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 8),
+                      child: Text(
+                        '${widget.snippets.length}',
+                        style: AppTypography.labelSmall
+                            .copyWith(color: AppColors.accent),
+                      ),
+                    ),
+                  Icon(
+                    _expanded ? Icons.expand_less : Icons.expand_more,
+                    color: AppColors.textMuted,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 250),
+            crossFadeState: _expanded
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: SizedBox(
+              height: 132,
+              width: double.infinity,
+              child: widget.snippets.isEmpty
+                  ? const Padding(
+                      padding: EdgeInsets.all(16),
+                      child: Text(
+                        AppStrings.transcriptEmpty,
+                        style: AppTypography.bodyMedium,
+                      ),
+                    )
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 14),
+                      itemCount: widget.snippets.length,
+                      itemBuilder: (context, i) =>
+                          _TranscriptLine(snippet: widget.snippets[i]),
+                    ),
+            ),
+            secondChild: const SizedBox(width: double.infinity),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _TranscriptLine extends StatelessWidget {
+  const _TranscriptLine({required this.snippet});
+
+  final TranscriptSnippet snippet;
+
+  @override
+  Widget build(BuildContext context) {
+    final isCaller = snippet.speaker == AppStrings.speakerCaller;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        textDirection: TextDirection.ltr,
+        children: [
+          SizedBox(
+            width: 48,
+            child: Text(
+              snippet.speaker,
+              style: AppTypography.labelSmall.copyWith(
+                color:
+                    isCaller ? AppColors.statusWarning : AppColors.statusSafe,
+              ),
+            ),
+          ),
+          Expanded(
+            child: Text(
+              snippet.text,
+              textDirection: _isRtl(snippet.text)
+                  ? TextDirection.rtl
+                  : TextDirection.ltr,
+              style: AppTypography.bodyLarge
+                  .copyWith(fontSize: 13.5, color: AppColors.textPrimary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  bool _isRtl(String text) =>
+      text.isNotEmpty && text.codeUnitAt(0) > 0x0600;
+}
+
 // ── Live waveform visualizer ─────────────────────────────────────────
 
 class _WaveformCard extends StatelessWidget {
@@ -314,32 +459,36 @@ class _WaveformCard extends StatelessWidget {
 // ── Composite threat banner ──────────────────────────────────────────
 
 class _CompositeBanner extends StatelessWidget {
-  const _CompositeBanner({required this.score});
+  const _CompositeBanner({required this.report});
 
-  final double score;
+  final CompositeThreatReport report;
 
   @override
   Widget build(BuildContext context) {
+    final score = report.compositeRiskScore;
     final pct = (score * 100).round();
     final color = AppColors.forThreat(score);
 
-    final (String headline, String detail, IconData icon) = score >= 0.7
-        ? (
-            '${AppStrings.bannerThreat}: $pct% High Risk',
-            AppStrings.bannerThreatDetail,
-            Icons.gpp_maybe_outlined,
-          )
-        : score >= 0.4
-            ? (
-                '${AppStrings.bannerElevated}: $pct%',
-                AppStrings.bannerElevatedDetail,
-                Icons.warning_amber_rounded,
-              )
-            : (
-                '${AppStrings.bannerProtected}: $pct%',
-                AppStrings.bannerProtectedDetail,
-                Icons.verified_user_outlined,
-              );
+    final (String headline, String detail, IconData icon) =
+        switch (report.riskLevel) {
+      ThreatRiskLevel.highRisk => (
+          '${AppStrings.bannerThreat}: $pct% High Risk',
+          report.primaryThreatReasons.firstOrNull ??
+              AppStrings.bannerThreatDetail,
+          Icons.gpp_maybe_outlined,
+        ),
+      ThreatRiskLevel.suspicious => (
+          '${AppStrings.bannerElevated}: $pct%',
+          report.primaryThreatReasons.firstOrNull ??
+              AppStrings.bannerElevatedDetail,
+          Icons.warning_amber_rounded,
+        ),
+      ThreatRiskLevel.safe => (
+          '${AppStrings.bannerProtected}: $pct%',
+          AppStrings.bannerProtectedDetail,
+          Icons.verified_user_outlined,
+        ),
+    };
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
@@ -378,6 +527,8 @@ class _CompositeBanner extends StatelessWidget {
 // ── LIVE badge ───────────────────────────────────────────────────────
 
 class _LiveBadge extends StatefulWidget {
+  const _LiveBadge();
+
   @override
   State<_LiveBadge> createState() => _LiveBadgeState();
 }

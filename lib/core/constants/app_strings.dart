@@ -57,6 +57,12 @@ abstract final class AppStrings {
   static const String simulateScam = 'Simulate Scam';
   static const String stopSimulation = 'Stop Simulation';
 
+  static const String liveTranscript = 'LIVE TRANSCRIPT';
+  static const String transcriptEmpty =
+      'Listening — transcription will appear here.';
+  static const String speakerCaller = 'Caller';
+  static const String speakerYou = 'You';
+
   // ── Placeholder tabs ─────────────────────────────────────────────
   static const String incidentsEmpty = 'No incidents recorded';
   static const String incidentsEmptyDesc =
