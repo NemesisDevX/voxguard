@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../paywall/domain/models/subscription_tier.dart';
+import '../../../paywall/domain/services/purchase_service_locator.dart';
 
 /// "Shield Status: Ready & Monitoring" banner with a subtle pulsating
 /// ring around the shield emblem.
@@ -56,8 +58,51 @@ class _ProtectionBannerState extends State<ProtectionBanner>
               ],
             ),
           ),
+          const SizedBox(width: 12),
+          const _PlanBadge(),
         ],
       ),
+    );
+  }
+}
+
+/// Live entitlement badge — flips from FREE TIER to the purchased plan
+/// the moment a checkout or restore completes.
+class _PlanBadge extends StatelessWidget {
+  const _PlanBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<String?>(
+      valueListenable: PurchaseServiceLocator.instance.activeTier,
+      builder: (context, tierId, _) {
+        final tier = SubscriptionTiers.byId(tierId);
+        final premium = tier != null && !tier.isFree;
+        final label = switch (tierId) {
+          'sentinel' => AppStrings.planSentinel,
+          'family_vault' => AppStrings.planFamily,
+          _ => AppStrings.planFree,
+        };
+        final color =
+            premium ? AppColors.statusSafe : AppColors.textMuted;
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+          decoration: BoxDecoration(
+            color: color.withValues(alpha: 0.12),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: color.withValues(alpha: 0.5)),
+          ),
+          child: Text(
+            label,
+            style: TextStyle(
+              fontSize: 9,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.8,
+              color: color,
+            ),
+          ),
+        );
+      },
     );
   }
 }

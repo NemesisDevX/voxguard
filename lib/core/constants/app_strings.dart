@@ -63,6 +63,41 @@ abstract final class AppStrings {
   static const String speakerCaller = 'Caller';
   static const String speakerYou = 'You';
 
+  // ── Paywall ──────────────────────────────────────────────────────
+  static const String paywallTitle =
+      'Upgrade Your Shield.\nProtect What Matters.';
+  static const String paywallSubtitle =
+      'Scam calls are evolving. Your defense should too.';
+  static const String securityBadge = 'Bank-Grade Encryption · Cancel Anytime';
+  static const String monthly = 'Monthly';
+  static const String annual = 'Annual';
+  static const String saveBadge = 'SAVE 35%';
+  static const String mostPopular = 'MOST POPULAR';
+  static const String trialBanner =
+      '7-Day Free Trial included. No charge today.';
+  static const String startTrial = 'Start 7-Day Free Trial';
+  static const String upgradeNow = 'Upgrade Now';
+  static const String continueFree = 'Continue with Free';
+  static const String terms = 'Terms of Service';
+  static const String privacy = 'Privacy Policy';
+  static const String restore = 'Restore Purchases';
+  static const String upgradeTooltip = 'Upgrade to Pro';
+  static const String plansLoadError = 'Could not load plans.';
+  static const String retry = 'Try Again';
+
+  // ── Plan badges ──────────────────────────────────────────────────
+  static const String planFree = 'FREE TIER';
+  static const String planSentinel = 'SENTINEL ACTIVE';
+  static const String planFamily = 'FAMILY VAULT ACTIVE';
+
+  // ── Post-intercept upsell ────────────────────────────────────────
+  static const String upsellTitle = 'Family Shield intercepted an attack';
+  static const String upsellBody =
+      'Upgrade to Family Vault to auto-alert relatives the moment a '
+      'high-risk call is intercepted on any protected device.';
+  static const String upsellCta = 'Upgrade to Family Vault';
+  static const String upsellDismiss = 'Maybe later';
+
   // ── Placeholder tabs ─────────────────────────────────────────────
   static const String incidentsEmpty = 'No incidents recorded';
   static const String incidentsEmptyDesc =

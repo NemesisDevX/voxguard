@@ -3,6 +3,9 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../paywall/presentation/screens/paywall_screen.dart';
+import '../../../paywall/presentation/widgets/family_shield_upsell_sheet.dart';
+import '../../../protection/domain/models/composite_threat_report.dart';
 import '../../../protection/presentation/screens/safecall_screen.dart';
 import '../widgets/action_card.dart';
 import '../widgets/protection_banner.dart';
@@ -18,10 +21,16 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tabIndex = 0;
 
-  void _openSafeCall() {
-    Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const SafeCallScreen()),
+  Future<void> _openSafeCall() async {
+    final peakRisk = await Navigator.of(context).push<ThreatRiskLevel>(
+      MaterialPageRoute<ThreatRiskLevel>(
+        builder: (_) => const SafeCallScreen(),
+      ),
     );
+    // A high-risk interception is the strongest upgrade trigger.
+    if (peakRisk == ThreatRiskLevel.highRisk && mounted) {
+      await showFamilyShieldUpsell(context);
+    }
   }
 
   void _showComingSoon(String feature) {
@@ -42,6 +51,14 @@ class _HomeScreenState extends State<HomeScreen> {
           ],
         ),
         actions: [
+          IconButton(
+            tooltip: AppStrings.upgradeTooltip,
+            icon: const Icon(
+              Icons.workspace_premium_outlined,
+              color: AppColors.statusWarning,
+            ),
+            onPressed: () => PaywallScreen.show(context),
+          ),
           IconButton(
             tooltip: AppStrings.incidentLogTooltip,
             icon: const Icon(Icons.history, color: AppColors.textMuted),

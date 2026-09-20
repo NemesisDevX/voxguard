@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../domain/models/audio_forensic_metrics.dart';
+import '../../domain/models/composite_threat_report.dart';
 import '../../domain/models/semantic_threat_signals.dart';
 import '../../domain/models/transcript_snippet.dart';
 import '../../domain/services/acoustic_forensics_service.dart';
@@ -64,6 +65,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
 
   int _sampleOffset = 0;
   bool _demoActive = false;
+  ThreatRiskLevel _peakRisk = ThreatRiskLevel.safe;
   List<TranscriptSnippet> _transcript = const [];
   AudioForensicMetrics _acoustic = const AudioForensicMetrics.zero();
   SemanticThreatSignals _semantic = const SemanticThreatSignals.empty();
@@ -146,7 +148,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
 
   void _onEnd(EndCallEvent event, Emitter<SafeCallState> emit) {
     _stopSession();
-    emit(const SafeCallEnded());
+    emit(SafeCallEnded(peakRiskLevel: _peakRisk));
   }
 
   void _onReset(ResetCallEvent event, Emitter<SafeCallState> emit) {
@@ -158,10 +160,14 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   // ── Session plumbing ─────────────────────────────────────────────
 
   SafeCallMonitoring _snapshot({bool? demoActive}) {
+    final report = _fusionEngine.fuse(_acoustic, _semantic);
+    if (report.riskLevel.index > _peakRisk.index) {
+      _peakRisk = report.riskLevel;
+    }
     return SafeCallMonitoring(
       acoustic: _acoustic,
       semantic: _semantic,
-      report: _fusionEngine.fuse(_acoustic, _semantic),
+      report: report,
       transcript: _transcript,
       demoActive: demoActive ?? _demoActive,
     );
@@ -180,6 +186,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     _acoustic = const AudioForensicMetrics.zero();
     _semantic = const SemanticThreatSignals.empty();
     _demoActive = false;
+    _peakRisk = ThreatRiskLevel.safe;
     _acousticService.reset();
   }
 

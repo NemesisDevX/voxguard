@@ -37,6 +37,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   http: ^1.2.0
   equatable: ^2.0.5
+  purchases_flutter: ^8.6.0
 
 dev_dependencies:
   flutter_test:

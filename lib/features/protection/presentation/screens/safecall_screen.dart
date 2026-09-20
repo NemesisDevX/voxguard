@@ -72,7 +72,8 @@ class _SafeCallViewState extends State<_SafeCallView>
   Widget build(BuildContext context) {
     return BlocConsumer<SafeCallBloc, SafeCallState>(
       listenWhen: (_, current) => current is SafeCallEnded,
-      listener: (context, _) => Navigator.of(context).maybePop(),
+      listener: (context, state) => Navigator.of(context)
+          .pop((state as SafeCallEnded).peakRiskLevel),
       builder: (context, state) {
         final monitoring =
             state is SafeCallMonitoring ? state : null;

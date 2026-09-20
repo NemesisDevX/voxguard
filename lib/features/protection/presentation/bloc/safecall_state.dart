@@ -64,7 +64,14 @@ final class SafeCallMonitoring extends SafeCallState {
       [acoustic, semantic, report, transcript, demoActive];
 }
 
-/// Call finished.
+/// Call finished. Carries the worst risk level seen during the session
+/// so the UI can trigger post-call actions (e.g. the Family Shield
+/// upsell after a high-risk interception).
 final class SafeCallEnded extends SafeCallState {
-  const SafeCallEnded();
+  const SafeCallEnded({this.peakRiskLevel = ThreatRiskLevel.safe});
+
+  final ThreatRiskLevel peakRiskLevel;
+
+  @override
+  List<Object?> get props => [peakRiskLevel];
 }
