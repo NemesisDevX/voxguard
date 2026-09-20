@@ -47,8 +47,13 @@ final class PushIdentityService implements IPushIdentityService {
   final _received = StreamController<FamilyAlertTap>.broadcast();
 
   bool _initialized = false;
-  bool _initializing = false;
+  Future<void>? _initFuture;
   String? _externalId;
+
+  /// The external ID successfully linked via `OneSignal.login` this
+  /// run. `registered` requires this — a push subscription whose
+  /// external_id is not linked cannot be targeted by the relay.
+  String? _linkedExternalId;
 
   /// `onesignal_flutter` ships Android + iOS implementations only.
   bool get _supported =>
@@ -95,26 +100,59 @@ final class PushIdentityService implements IPushIdentityService {
       _publish(PushRegistrationStatus.unsupported);
       return;
     }
-    // Idempotent: repeated calls must not stack duplicate observers
-    // or click/foreground listeners on the SDK.
-    if (_initialized || _initializing) {
+    if (_initialized) {
       await _refreshState();
       return;
     }
-    _initializing = true;
+    // One shared in-flight future: concurrent callers (app start,
+    // an early "Enable Family Alerts" tap) await the SAME
+    // initialization — listeners install exactly once, and a caller
+    // that arrives mid-init still lands on a fully initialized SDK.
+    final inFlight = _initFuture;
+    if (inFlight != null) {
+      await inFlight;
+      return;
+    }
+    final future = _doInitialize();
+    _initFuture = future;
+    try {
+      await future;
+    } finally {
+      _initFuture = null;
+    }
+  }
+
+  Future<void> _doInitialize() async {
     try {
       await _sdk.initialize(_appId);
       _initialized = true;
       _sdk.addSubscriptionObserver(_refreshState);
       _sdk.addClickListener(_onClick);
       _sdk.addForegroundListener(_onForeground);
+      // Link our identity up front — login is not gated on
+      // notification permission and the relay targets external_id.
+      await _linkIdentity();
       await _refreshState();
     } catch (e, st) {
       debugPrint('PushIdentityService.initialize failed: $e\n$st');
       _publish(PushRegistrationStatus.error,
           errorDetail: 'Push setup failed on this device.');
-    } finally {
-      _initializing = false;
+    }
+  }
+
+  /// Associates the local `vg_…` identity with the OneSignal user.
+  /// A completed `login` is the client-side linkage signal — the SDK
+  /// exposes no deeper server-state inspection. Failure clears
+  /// [_linkedExternalId] so `registered` can never be claimed.
+  Future<void> _linkIdentity() async {
+    try {
+      await _sdk.login(await voxGuardIdentity());
+      _linkedExternalId = _externalId;
+    } catch (e) {
+      _linkedExternalId = null;
+      debugPrint('PushIdentityService: identity link failed: $e');
+      _publish(PushRegistrationStatus.error,
+          errorDetail: 'Could not link your Family Shield ID.');
     }
   }
 
@@ -138,8 +176,10 @@ final class PushIdentityService implements IPushIdentityService {
         return;
       }
       // Bridge: the relay's include_aliases.external_id reaches this
-      // device only after login links our vg_… identity.
-      await _sdk.login(await voxGuardIdentity());
+      // device only after login links our vg_… identity. Normally
+      // already linked at init; re-link here so a previous transient
+      // login failure heals on the next explicit enable.
+      if (_linkedExternalId != _externalId) await _linkIdentity();
       await _refreshState();
     } catch (e, st) {
       debugPrint('PushIdentityService.enableAlerts failed: $e\n$st');
@@ -157,14 +197,13 @@ final class PushIdentityService implements IPushIdentityService {
       try {
         await _sdk.logout();
       } catch (_) {}
+      _linkedExternalId = null;
     }
     await _store.clear();
     _externalId = null;
     await voxGuardIdentity();
     if (_initialized) {
-      try {
-        await _sdk.login(_externalId!);
-      } catch (_) {}
+      await _linkIdentity();
     }
     await _refreshState();
   }
@@ -173,21 +212,26 @@ final class PushIdentityService implements IPushIdentityService {
   /// enable, and from the subscription observer (no polling).
   ///
   /// `registered` means genuinely addressable: permission granted,
-  /// subscription opted in, AND a non-empty OneSignal subscription
-  /// ID. Anything less is a pending state — an opted-in flag or a
-  /// bare permission grant alone does not make the device reachable.
+  /// subscription opted in, a non-empty OneSignal subscription ID,
+  /// AND the `vg_…` identity successfully linked via login — the
+  /// relay targets `external_id`, so an unlinked subscription is
+  /// unreachable even when everything else looks ready.
   Future<void> _refreshState() async {
     if (!_initialized) return;
     try {
       final granted = await _sdk.permissionGranted();
       final subId = _sdk.pushSubscriptionId;
       final optedIn = _sdk.pushOptedIn;
+      final linked = _linkedExternalId == _externalId;
       _registration.value = FamilyPushRegistration(
         status: !granted
             ? (await _sdk.canRequestPermission()
                 ? PushRegistrationStatus.permissionRequired
                 : PushRegistrationStatus.permissionDenied)
-            : (optedIn && subId != null && subId.isNotEmpty)
+            : (optedIn &&
+                    subId != null &&
+                    subId.isNotEmpty &&
+                    linked)
                 ? PushRegistrationStatus.registered
                 : PushRegistrationStatus.registering,
         voxguardExternalId: _externalId,

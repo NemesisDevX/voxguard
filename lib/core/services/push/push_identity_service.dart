@@ -67,19 +67,27 @@ final class FamilyAlertTap {
   final String? incidentId;
   final String? riskLevel;
 
-  /// Parses a notification's `additionalData`; returns null for
-  /// unrelated payloads so callers can ignore them safely. Every
-  /// field is type-checked — malformed values (numbers, lists,
-  /// nulls) never throw and never produce a half-valid event.
+  /// Risk bands shared with the relay contract — anything else is
+  /// not a routable Family Shield event.
+  static const _validRiskLevels = {'safe', 'suspicious', 'highRisk'};
+
+  /// Parses a notification's `additionalData`; returns null unless
+  /// ALL required routing metadata is valid — kind, a non-empty
+  /// string incident id, and a recognized risk level. Malformed or
+  /// unrelated payloads produce no event and never throw.
   static FamilyAlertTap? fromAdditionalData(Map<String, dynamic>? data) {
     if (data == null || data['kind'] != 'family_shield_alert') {
       return null;
     }
     final incidentId = data['incident_id'];
     final riskLevel = data['risk_level'];
+    if (incidentId is! String || incidentId.isEmpty) return null;
+    if (riskLevel is! String || !_validRiskLevels.contains(riskLevel)) {
+      return null;
+    }
     return FamilyAlertTap(
-      incidentId: incidentId is String ? incidentId : null,
-      riskLevel: riskLevel is String ? riskLevel : null,
+      incidentId: incidentId,
+      riskLevel: riskLevel,
     );
   }
 }

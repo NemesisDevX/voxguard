@@ -80,12 +80,18 @@ function corsOrigin(request, env) {
   } catch {
     return null; // origins with garbage ports/hosts fail parsing
   }
+  const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]']);
   const ok = allowed.some((a) => {
     try {
       const e = new URL(a);
-      return e.port
-        ? o.origin === e.origin // explicit port → exact origin match
-        : o.protocol === e.protocol && o.hostname === e.hostname;
+      // Local dev entries may intentionally match any port on
+      // localhost/127.0.0.1. Every other host requires an exact
+      // origin match — a port-less allowlist entry must NOT bless
+      // `https://prod.example.com:4444` or friends.
+      if (LOCAL_HOSTS.has(e.hostname)) {
+        return o.protocol === e.protocol && o.hostname === e.hostname;
+      }
+      return o.origin === e.origin;
     } catch {
       return false; // misconfigured allowlist entry — skip
     }

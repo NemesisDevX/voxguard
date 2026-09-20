@@ -55,8 +55,10 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
         _demoSource = demoSource ?? DemoAudioSource(),
         _stt = transcriptionService ?? AssemblyAiStreamingService(),
         super(const SafeCallInitial()) {
-    on<StartLiveMicSessionEvent>(_onStartLiveMic);
-    on<StartDemoSessionEvent>(_onStartDemo);
+    on<StartLiveMicSessionEvent>(
+        (e, emit) => _serialized(() => _onStartLiveMic(e, emit)));
+    on<StartDemoSessionEvent>(
+        (e, emit) => _serialized(() => _onStartDemo(e, emit)));
     on<IncomingAudioChunkEvent>(_onAudioChunk);
     on<IncomingTranscriptSnippetEvent>(_onTranscript);
     on<IncomingTranscriptPartialEvent>(_onTranscriptPartial);
@@ -64,8 +66,9 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
         (_, emit) => _runSemanticAnalysis(emit));
     on<TranscriptionStatusChangedEvent>(_onSttStatus);
     on<SimulateDemoAttackEvent>(_onSimulateDemo);
-    on<EndCallEvent>(_onEnd);
-    on<ResetCallEvent>(_onReset);
+    on<EndCallEvent>((e, emit) => _serialized(() => _onEnd(e, emit)));
+    on<ResetCallEvent>(
+        (e, emit) => _serialized(() => _onReset(e, emit)));
   }
 
   // ── Session constants ────────────────────────────────────────────
@@ -122,6 +125,28 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   AudioForensicMetrics _acoustic = const AudioForensicMetrics.zero();
   SemanticThreatSignals _semantic = const SemanticThreatSignals.empty();
 
+  /// Session-transition mutex. Bloc handlers are serialized per event
+  /// TYPE only — Start/Reset/End are different types and would
+  /// otherwise interleave mid-teardown. Every session-control handler
+  /// runs inside this tail so at most one transition — and one audio
+  /// source — exists at any moment.
+  Future<void> _transitionTail = Future.value();
+
+  Future<void> _serialized(Future<void> Function() work) {
+    final completer = Completer<void>();
+    final prev = _transitionTail;
+    _transitionTail = completer.future;
+    prev.whenComplete(() async {
+      try {
+        await work();
+        completer.complete();
+      } catch (e, st) {
+        completer.completeError(e, st);
+      }
+    });
+    return completer.future;
+  }
+
   // ── Session start ────────────────────────────────────────────────
 
   Future<void> _onStartLiveMic(
@@ -132,6 +157,12 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
       emit(const SafeCallStarting(
           audioSourceType: AudioSourceType.microphone));
     }
+
+    // Teardown the previous session BEFORE any validation — if mic
+    // permission is denied the user lands on an error state with no
+    // audio source still running underneath it.
+    await _teardownAudio();
+    _resetSession();
 
     if (!_micSource.isSupported) {
       emit(const SafeCallError(
@@ -167,11 +198,6 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
         break;
     }
 
-    // Teardown BEFORE reset — a start while another session is live
-    // (double-tap, demo→mic switch) must never leave two audio
-    // sources running.
-    await _teardownAudio();
-    _resetSession();
     _activeSource = _micSource;
 
     // Start streaming STT when configured. Failure degrades to
@@ -443,8 +469,15 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   String _nextIncidentId() =>
       'INC-${DateTime.now().year}-${(1000 + _rng.nextInt(9000))}';
 
-  void _onReset(ResetCallEvent event, Emitter<SafeCallState> emit) {
-    _teardownAudio();
+  /// Reset is a full session transition: bloc event handlers run
+  /// sequentially, so awaiting teardown here guarantees no new
+  /// session can start while the old source/STT are still closing.
+  /// `SafeCallInitial` is only emitted after teardown completes.
+  Future<void> _onReset(
+    ResetCallEvent event,
+    Emitter<SafeCallState> emit,
+  ) async {
+    await _teardownAudio();
     _resetSession();
     emit(const SafeCallInitial());
   }
@@ -481,6 +514,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     _sttStatusSub = null;
     await _stt.stop();
     _sttLive = false;
+    _activeSource = null;
     _cancelDemoTimers();
     _partialDebounce?.cancel();
   }

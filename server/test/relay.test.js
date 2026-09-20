@@ -249,6 +249,10 @@ test('CORS rejects lookalike origins that prefix-match allowlist '
     'https://nemesisdevx.github.io.attacker.dev',
     'not a url',
     'http://localhost:evil',
+    // Production hosts must match the allowlisted origin exactly —
+    // an unexpected port is not covered by a port-less entry.
+    'https://nemesisdevx.github.io:8443',
+    'http://nemesisdevx.github.io',
   ];
   for (const origin of lookalikes) {
     const res = await handleRequest(

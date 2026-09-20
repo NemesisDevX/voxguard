@@ -331,6 +331,56 @@ void main() {
       await bloc.close();
     });
 
+    test('demo → live mic with denied permission leaves demo '
+        'stopped, no active capture', () async {
+      final demo = SpyDemoSource();
+      final mic = FakeMicSource(permission: MicPermissionState.denied);
+      final bloc = SafeCallBloc(
+        demoSource: demo,
+        microphoneSource: mic,
+        transcriptionService: FakeSttService(),
+      );
+      bloc.add(const StartDemoSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+      expect(demo.startCalls, 1);
+
+      bloc.add(const StartLiveMicSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      // Permission denied — but the demo session was already fully
+      // stopped before the check; nothing keeps capturing.
+      expect(bloc.state, isA<SafeCallError>());
+      expect(demo.stopCalls, 1);
+      expect(mic.startCalls, 0);
+      await bloc.close();
+    });
+
+    test('reset → immediate start never overlaps sessions', () async {
+      final demo = SpyDemoSource();
+      final mic = FakeMicSource();
+      final stt = FakeSttService();
+      final bloc = SafeCallBloc(
+        demoSource: demo,
+        microphoneSource: mic,
+        transcriptionService: stt,
+      );
+      bloc.add(const StartDemoSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 40));
+
+      // Fire reset + restart back-to-back — handlers are serialized,
+      // so the demo teardown must fully precede the mic start.
+      bloc.add(const ResetCallEvent());
+      bloc.add(const StartLiveMicSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+
+      expect(demo.stopCalls, 1);
+      expect(mic.startCalls, 1);
+      expect(mic.stopCalls, 0);
+      final m = bloc.state as SafeCallMonitoring;
+      expect(m.audioSourceType, AudioSourceType.microphone);
+      await bloc.close();
+    });
+
     test('repeated start events do not stack sources', () async {
       final mic = FakeMicSource();
       final bloc = SafeCallBloc(

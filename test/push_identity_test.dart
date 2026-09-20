@@ -19,6 +19,10 @@ final class FakeOneSignalSdk implements IOneSignalSdk {
   var observerAdds = 0;
   var clickListenerAdds = 0;
   var foregroundListenerAdds = 0;
+  var initializeCalls = 0;
+  var loginFails = false;
+  Duration initializeDelay = Duration.zero;
+  final calls = <String>[];
 
   void Function()? _subObserver;
   void Function(Map<String, dynamic>)? _clickListener;
@@ -26,6 +30,9 @@ final class FakeOneSignalSdk implements IOneSignalSdk {
 
   @override
   Future<void> initialize(String appId) async {
+    initializeCalls++;
+    calls.add('initialize');
+    await Future<void>.delayed(initializeDelay);
     initialized = true;
     initializedAppId = appId;
   }
@@ -33,6 +40,8 @@ final class FakeOneSignalSdk implements IOneSignalSdk {
   @override
   Future<void> login(String externalId) async {
     loginCalls++;
+    calls.add('login');
+    if (loginFails) throw StateError('login rejected');
     loggedInAs = externalId;
   }
 
@@ -174,7 +183,7 @@ void main() {
       await s.enableAlerts();
 
       expect(sdk.requestPermissionCalls, 1);
-      expect(sdk.loginCalls, 1);
+      expect(sdk.loginCalls, 1); // linked once, at initialize()
       expect(sdk.loggedInAs, startsWith('vg_'));
 
       // Subscription arrives via observer (async in real life).
@@ -190,7 +199,8 @@ void main() {
       expect(reg.voxguardExternalId, sdk.loggedInAs);
     });
 
-    test('permission denied → permissionDenied, no login', () async {
+    test('permission denied → permissionDenied, never registered',
+        () async {
       sdk.permission = false;
       sdk.canRequest = false;
       final s = service();
@@ -200,7 +210,10 @@ void main() {
 
       expect(s.registration.value.status,
           PushRegistrationStatus.permissionDenied);
-      expect(sdk.loginCalls, 0);
+      // Identity was linked at init (permission-independent), but no
+      // usable subscription exists — the device is NOT registered.
+      expect(s.registration.value.status,
+          isNot(PushRegistrationStatus.registered));
     });
 
     test('subscription opt-out updates state without restart', () async {
@@ -294,6 +307,70 @@ void main() {
     });
   });
 
+  group('identity linkage', () {
+    test('login runs at initialize, before any permission request',
+        () async {
+      sdk.permission = false;
+      final s = service();
+      await s.initialize();
+      // Identity is linked during init — login is NOT gated on
+      // notification permission.
+      expect(sdk.calls.indexOf('initialize'),
+          lessThan(sdk.calls.indexOf('login')));
+      expect(sdk.requestPermissionCalls, 0);
+      expect(sdk.loggedInAs, startsWith('vg_'));
+    });
+
+    test('registered requires the external id to be linked', () async {
+      sdk.permission = true;
+      sdk.subscriptionId = 'os-sub-1';
+      sdk.optedIn = true;
+      sdk.loginFails = true; // login() throws during init
+      final s = service();
+      await s.initialize();
+
+      // Everything else is ready — but unlinked external_id means the
+      // relay cannot target this device: never "registered".
+      expect(s.registration.value.status,
+          isNot(PushRegistrationStatus.registered));
+
+      // Link heals on the next explicit enable.
+      sdk.loginFails = false;
+      await s.enableAlerts();
+      expect(s.registration.value.status,
+          PushRegistrationStatus.registered);
+      expect(sdk.loggedInAs, s.registration.value.voxguardExternalId);
+    });
+
+    test('concurrent initialize calls share one SDK init', () async {
+      sdk.initializeDelay = const Duration(milliseconds: 40);
+      final s = service();
+      await Future.wait([s.initialize(), s.initialize(), s.initialize()]);
+      expect(sdk.initializeCalls, 1);
+      expect(sdk.observerAdds, 1);
+      expect(sdk.clickListenerAdds, 1);
+    });
+
+    test('enableAlerts during in-flight initialize still completes',
+        () async {
+      sdk.initializeDelay = const Duration(milliseconds: 40);
+      sdk.permission = true;
+      sdk.subscriptionId = 'os-sub-1';
+      sdk.optedIn = true;
+      final s = service();
+
+      final init = s.initialize(); // in flight
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      await s.enableAlerts(); // must await the same init, not bail
+      await init;
+
+      expect(sdk.initializeCalls, 1);
+      expect(sdk.requestPermissionCalls, 1);
+      expect(s.registration.value.status,
+          PushRegistrationStatus.registered);
+    });
+  });
+
   group('alert tap metadata', () {
     test('valid family_shield payload parses; unrelated ignored', () async {
       final s = service();
@@ -320,32 +397,40 @@ void main() {
       expect(FamilyAlertTap.fromAdditionalData({'kind': 'x'}), isNull);
     });
 
-    test('malformed metadata fields never throw', () {
-      // OneSignal can deliver arbitrary JSON types — every one of
-      // these must parse safely to null fields instead of crashing.
-      final parsed = FamilyAlertTap.fromAdditionalData({
-        'kind': 'family_shield_alert',
-        'incident_id': 123,
-        'risk_level': <String>[],
-      });
-      expect(parsed, isNotNull);
-      expect(parsed!.incidentId, isNull);
-      expect(parsed.riskLevel, isNull);
-
-      expect(
-        FamilyAlertTap.fromAdditionalData({
-          'kind': null,
-          'incident_id': 'INC-1',
-        }),
-        isNull,
-      );
-      expect(
-        FamilyAlertTap.fromAdditionalData({
+    test('malformed metadata produces no event, never throws', () {
+      // Required routing fields must ALL be valid — a partial or
+      // mistyped payload is not a routable Family Shield event.
+      const bad = <Map<String, dynamic>>[
+        {
           'kind': 'family_shield_alert',
-          'incident_id': {'nested': true},
-        }),
-        isNotNull,
-      );
+          'incident_id': 123,
+          'risk_level': 'highRisk',
+        },
+        {
+          'kind': 'family_shield_alert',
+          'incident_id': 'INC-1',
+          'risk_level': <String>[],
+        },
+        {
+          'kind': 'family_shield_alert',
+          'incident_id': '',
+          'risk_level': 'highRisk',
+        },
+        {
+          'kind': 'family_shield_alert',
+          'incident_id': 'INC-1',
+          'risk_level': 'extreme',
+        },
+        {'kind': 'family_shield_alert'},
+        {'kind': null, 'incident_id': 'INC-1'},
+      ];
+      for (final payload in bad) {
+        expect(
+          FamilyAlertTap.fromAdditionalData(payload),
+          isNull,
+          reason: 'payload=$payload must not produce an event',
+        );
+      }
     });
 
     test('foreground arrival emits alertReceived, never alertTaps',
