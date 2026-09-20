@@ -4,8 +4,10 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../features/forensics/domain/models/incident_report.dart';
+import '../family/received_family_alert_repository.dart';
 import '../push/onesignal_push_identity_service.dart';
 import 'family_alert_service.dart';
+import 'family_contact_repository.dart';
 
 /// Family Shield broadcast client.
 ///
@@ -83,9 +85,19 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
       );
     }
 
+    // Real mode enforces the identity contract at the network
+    // boundary: only well-formed `vg_…` ids may be targeted — demo
+    // ids or malformed values are dropped, never sent to the relay.
+    final recipients = isRelayConfigured
+        ? [
+            for (final id in familyMemberIds)
+              if (FamilyContactRules.externalIdPattern.hasMatch(id)) id,
+          ]
+        : familyMemberIds;
+
     // Real mode + empty Trusted Circle → send nothing. Demo ids are
     // never substituted as a fallback.
-    if (isRelayConfigured && familyMemberIds.isEmpty) {
+    if (isRelayConfigured && recipients.isEmpty) {
       return const AlertDispatchResult(
         status: AlertDispatchStatus.noRecipients,
         detail: 'Add someone to your Trusted Circle before sending '
@@ -94,7 +106,7 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
     }
 
     final payload =
-        _buildPayload(incident, familyMemberIds, await _senderIdentity());
+        _buildPayload(incident, recipients, await _senderIdentity());
 
     if (!isRelayConfigured) {
       // Demo Mode broadcast — deterministic, offline-safe.
@@ -102,7 +114,7 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
       return AlertDispatchResult(
         status: AlertDispatchStatus.simulated,
         detail:
-            'Demo alert broadcast to ${familyMemberIds.length} family member(s).',
+            'Demo alert broadcast to ${recipients.length} family member(s).',
       );
     }
 
@@ -125,7 +137,7 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
         return AlertDispatchResult(
           status: AlertDispatchStatus.accepted,
           detail: 'Alert accepted for delivery to '
-              '${familyMemberIds.length} family member(s).',
+              '${recipients.length} family member(s).',
         );
       }
       // Relay rejected the request (auth or payload) vs. the relay or
@@ -171,6 +183,83 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
       'body': 'A high-risk call was flagged on a protected device. '
           'Verify directly with your relative before any funds move.',
     };
+  }
+
+  /// Sends a `family_shield_response` back to the alerting device.
+  /// Local resolution is owned by the caller — a network failure here
+  /// must not roll back the user's local state.
+  @override
+  Future<AlertDispatchResult> sendFamilyShieldResponse({
+    required String incidentId,
+    required AlertResolution resolution,
+    required String targetExternalId,
+  }) async {
+    if (!_enabled.value) {
+      return const AlertDispatchResult(
+        status: AlertDispatchStatus.disabled,
+        detail: 'Family Shield is disabled.',
+      );
+    }
+    if (!FamilyContactRules.externalIdPattern.hasMatch(targetExternalId)) {
+      return const AlertDispatchResult(
+        status: AlertDispatchStatus.rejected,
+        detail: 'Response target is not a valid Family Shield ID.',
+      );
+    }
+    final payload = {
+      'kind': 'family_shield_response',
+      'incident_id': incidentId,
+      'resolution': resolution.name,
+      'responder_external_id': await _senderIdentity(),
+      'target_external_id': targetExternalId,
+    };
+
+    if (!isRelayConfigured) {
+      debugPrint('[FamilyShield·demo-response] ${jsonEncode(payload)}');
+      return const AlertDispatchResult(
+        status: AlertDispatchStatus.simulated,
+        detail: 'Demo — response simulated, nothing left this device.',
+      );
+    }
+
+    try {
+      final response = await _client
+          .post(
+            Uri.parse(_relayUrl),
+            headers: {
+              'Content-Type': 'application/json; charset=utf-8',
+              if (_relayToken.isNotEmpty)
+                'Authorization': 'Bearer $_relayToken',
+            },
+            body: jsonEncode(payload),
+          )
+          .timeout(_timeout);
+
+      if (response.statusCode == 200 || response.statusCode == 202) {
+        return const AlertDispatchResult(
+          status: AlertDispatchStatus.accepted,
+          detail: 'Family update sent.',
+        );
+      }
+      if (response.statusCode == 400 ||
+          response.statusCode == 401 ||
+          response.statusCode == 403 ||
+          response.statusCode == 429) {
+        return AlertDispatchResult(
+          status: AlertDispatchStatus.rejected,
+          detail: 'Relay rejected the response (${response.statusCode}).',
+        );
+      }
+      return AlertDispatchResult(
+        status: AlertDispatchStatus.unavailable,
+        detail: 'Alert service unavailable (${response.statusCode}).',
+      );
+    } on Exception {
+      return const AlertDispatchResult(
+        status: AlertDispatchStatus.unavailable,
+        detail: 'Network error — response could not be sent.',
+      );
+    }
   }
 }
 

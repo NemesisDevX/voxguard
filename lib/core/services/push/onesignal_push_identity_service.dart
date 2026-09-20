@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../family/family_shield_response.dart';
 import 'identity_store.dart';
 import 'onesignal_sdk.dart';
 import 'push_identity_service.dart';
@@ -45,6 +46,9 @@ final class PushIdentityService implements IPushIdentityService {
   );
   final _taps = StreamController<FamilyAlertTap>.broadcast();
   final _received = StreamController<FamilyAlertTap>.broadcast();
+  final _responseTaps = StreamController<FamilyShieldResponse>.broadcast();
+  final _responseReceived =
+      StreamController<FamilyShieldResponse>.broadcast();
 
   bool _initialized = false;
   Future<void>? _initFuture;
@@ -71,6 +75,13 @@ final class PushIdentityService implements IPushIdentityService {
 
   @override
   Stream<FamilyAlertTap> get alertReceived => _received.stream;
+
+  @override
+  Stream<FamilyShieldResponse> get responseTaps => _responseTaps.stream;
+
+  @override
+  Stream<FamilyShieldResponse> get responseReceived =>
+      _responseReceived.stream;
 
   static final _identityPattern = RegExp(r'^vg_[0-9a-f]{32}$');
 
@@ -252,16 +263,29 @@ final class PushIdentityService implements IPushIdentityService {
   }
 
   void _onClick(Map<String, dynamic> additionalData) {
+    // Route by kind — a resolution response is not a danger alert.
     final tap = FamilyAlertTap.fromAdditionalData(additionalData);
-    if (tap != null) _taps.add(tap); // unrelated payloads ignored
+    if (tap != null) {
+      _taps.add(tap);
+      return;
+    }
+    final response =
+        FamilyShieldResponse.fromAdditionalData(additionalData);
+    if (response != null) _responseTaps.add(response);
   }
 
   void _onForeground(Map<String, dynamic> additionalData) {
-    // Foreground ARRIVAL is not a tap — it emits on the separate
-    // alertReceived stream so P0.2C navigation can hook only real
+    // Foreground ARRIVAL is not a tap — alert receipts emit on the
+    // separate alertReceived stream so navigation hooks only real
     // user interaction. Default display is preserved by the adapter.
     final received = FamilyAlertTap.fromAdditionalData(additionalData);
-    if (received != null) _received.add(received);
+    if (received != null) {
+      _received.add(received);
+      return;
+    }
+    final response =
+        FamilyShieldResponse.fromAdditionalData(additionalData);
+    if (response != null) _responseReceived.add(response);
   }
 
   void _publish(PushRegistrationStatus status, {String? errorDetail}) {

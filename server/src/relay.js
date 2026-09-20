@@ -16,12 +16,12 @@
 
 export const MAX_RECIPIENTS = 5; // Family Vault model — hard cap, no fan-out abuse.
 const MAX_INCIDENT_ID_LEN = 64;
-const MAX_ID_LEN = 64;
 const MAX_TITLE_LEN = 100;
 const MAX_BODY_LEN = 300;
 
-const VALID_KINDS = new Set(['family_shield_alert']);
+const VALID_KINDS = new Set(['family_shield_alert', 'family_shield_response']);
 const VALID_RISK_LEVELS = new Set(['safe', 'suspicious', 'highRisk']);
+const VALID_RESOLUTIONS = new Set(['safe', 'stillSuspicious']);
 
 // Conservative identifier charset — letters, digits, _-:.@ only.
 const SAFE_ID = /^[A-Za-z0-9_\-.:@]{1,64}$/;
@@ -133,6 +133,11 @@ export function validateAlertPayload(body) {
   ) {
     return { ok: false, error: 'invalid incident_id' };
   }
+
+  if (body.kind === 'family_shield_response') {
+    return validateResponsePayload(body, incidentId);
+  }
+
   if (!VALID_RISK_LEVELS.has(body.risk_level)) {
     return { ok: false, error: 'invalid risk_level' };
   }
@@ -150,12 +155,9 @@ export function validateAlertPayload(body) {
     return { ok: false, error: `at most ${MAX_RECIPIENTS} recipients` };
   }
   for (const id of ids) {
-    if (
-      typeof id !== 'string' ||
-      id.length === 0 ||
-      id.length > MAX_ID_LEN ||
-      !SAFE_ID.test(id)
-    ) {
+    // Real Family Shield recipients are VoxGuard `vg_…` identities —
+    // demo ids or arbitrary aliases never cross this boundary.
+    if (typeof id !== 'string' || !SENDER_ID.test(id)) {
       return { ok: false, error: 'invalid recipient id' };
     }
   }
@@ -172,6 +174,7 @@ export function validateAlertPayload(body) {
   return {
     ok: true,
     value: {
+      kind: 'family_shield_alert',
       incidentId,
       riskLevel: body.risk_level,
       senderExternalId: body.sender_external_id,
@@ -184,22 +187,65 @@ export function validateAlertPayload(body) {
   };
 }
 
+/**
+ * A `family_shield_response` targets exactly one device — the
+ * original sender. No fan-out, no client-controlled copy, no PII.
+ */
+function validateResponsePayload(body, incidentId) {
+  if (!VALID_RESOLUTIONS.has(body.resolution)) {
+    return { ok: false, error: 'invalid resolution' };
+  }
+  if (
+    typeof body.responder_external_id !== 'string' ||
+    !SENDER_ID.test(body.responder_external_id)
+  ) {
+    return { ok: false, error: 'invalid responder_external_id' };
+  }
+  if (
+    typeof body.target_external_id !== 'string' ||
+    !SENDER_ID.test(body.target_external_id)
+  ) {
+    return { ok: false, error: 'invalid target_external_id' };
+  }
+  return {
+    ok: true,
+    value: {
+      kind: 'family_shield_response',
+      incidentId,
+      resolution: body.resolution,
+      responderExternalId: body.responder_external_id,
+      recipients: [body.target_external_id],
+      title: 'VoxGuard Family Shield Update',
+      body: 'A trusted person responded to your safety alert.',
+    },
+  };
+}
+
 /** Builds the OneSignal request body — safe metadata only. */
 export function toOneSignalPayload(alert, appId) {
+  const data =
+    alert.kind === 'family_shield_response'
+      ? {
+          kind: 'family_shield_response',
+          incident_id: alert.incidentId,
+          resolution: alert.resolution,
+          responder_external_id: alert.responderExternalId,
+        }
+      : {
+          kind: 'family_shield_alert',
+          incident_id: alert.incidentId,
+          risk_level: alert.riskLevel,
+          // Which trusted contact's device raised the alert — opaque
+          // vg_… identity only, never a name or phone number.
+          sender_external_id: alert.senderExternalId,
+        };
   return {
     app_id: appId,
     headings: { en: alert.title },
     contents: { en: alert.body },
     include_aliases: { external_id: alert.recipients },
     target_channel: 'push',
-    data: {
-      kind: 'family_shield_alert',
-      incident_id: alert.incidentId,
-      risk_level: alert.riskLevel,
-      // Which trusted contact's device raised the alert — opaque
-      // vg_… identity only, never a name or phone number.
-      sender_external_id: alert.senderExternalId,
-    },
+    data,
   };
 }
 

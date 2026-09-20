@@ -27,13 +27,15 @@ function alertRequest(body, { auth = 'Bearer relay-tok', origin } = {}) {
 }
 
 const SENDER_ID = `vg_${'a'.repeat(32)}`;
+const RECIP_A = `vg_${'1'.repeat(32)}`;
+const RECIP_B = `vg_${'2'.repeat(32)}`;
 
 const VALID_BODY = {
   kind: 'family_shield_alert',
   incident_id: 'INC-2026-9001',
   risk_level: 'highRisk',
   sender_external_id: SENDER_ID,
-  family_external_ids: ['fam_maya', 'fam_omar'],
+  family_external_ids: [RECIP_A, RECIP_B],
   title: 'VoxGuard Family Shield',
   body: 'A high-risk call was flagged.',
 };
@@ -70,7 +72,7 @@ test('valid alert → 202 + correct OneSignal payload + Key auth', async () => {
   const payload = JSON.parse(init.body);
   assert.equal(payload.app_id, 'test-app-id');
   assert.deepEqual(payload.include_aliases, {
-    external_id: ['fam_maya', 'fam_omar'],
+    external_id: [RECIP_A, RECIP_B],
   });
   assert.equal(payload.target_channel, 'push');
   assert.deepEqual(payload.headings, { en: 'VoxGuard Family Shield' });
@@ -165,7 +167,10 @@ test(`more than ${MAX_RECIPIENTS} recipients → 400`, async () => {
   const res = await handleRequest(
     alertRequest({
       ...VALID_BODY,
-      family_external_ids: Array.from({ length: 6 }, (_, i) => `f${i}`),
+      family_external_ids: Array.from(
+        { length: 6 },
+        (_, i) => `vg_${String(i).repeat(32)}`,
+      ),
     }),
     ENV,
     okFetch({}),
@@ -330,13 +335,13 @@ test('duplicate recipients are deduped before forwarding', async () => {
   await handleRequest(
     alertRequest({
       ...VALID_BODY,
-      family_external_ids: ['vg_a', 'vg_a', 'vg_b'],
+      family_external_ids: [RECIP_A, RECIP_A, RECIP_B],
     }),
     ENV,
     okFetch(captured),
   );
   const payload = JSON.parse(captured.init.body);
-  assert.deepEqual(payload.include_aliases.external_id, ['vg_a', 'vg_b']);
+  assert.deepEqual(payload.include_aliases.external_id, [RECIP_A, RECIP_B]);
 });
 
 test('recipients surviving dedupe still respect the cap', async () => {
@@ -344,7 +349,14 @@ test('recipients surviving dedupe still respect the cap', async () => {
   const ok = await handleRequest(
     alertRequest({
       ...VALID_BODY,
-      family_external_ids: ['a1', 'a1', 'a2', 'a3', 'a4', 'a5'],
+      family_external_ids: [
+        RECIP_A,
+        RECIP_A,
+        RECIP_B,
+        `vg_${'3'.repeat(32)}`,
+        `vg_${'4'.repeat(32)}`,
+        `vg_${'5'.repeat(32)}`,
+      ],
     }),
     ENV,
     okFetch({}),
@@ -352,6 +364,104 @@ test('recipients surviving dedupe still respect the cap', async () => {
   // Still 400: cap applies to the request as sent, pre-dedupe —
   // a caller submitting 6 ids is a malformed request regardless.
   assert.equal(ok.status, 400);
+});
+
+test('non-vg recipient ids are rejected — demo ids never relay', async () => {
+  const env = { ...ENV, RELAY_CLIENT_TOKEN: 'recip-tok' };
+  for (const id of [
+    'demo_family_maya',
+    'demo_family_omar',
+    'fam_maya',
+    'bad id!',
+    `vg_${'A'.repeat(32)}`,
+    `vg_${'a'.repeat(31)}`,
+  ]) {
+    const res = await handleRequest(
+      alertRequest(
+        { ...VALID_BODY, family_external_ids: [id] },
+        { auth: 'Bearer recip-tok' },
+      ),
+      env,
+      okFetch({}),
+    );
+    assert.equal(res.status, 400, `recipient=${id} must be rejected`);
+  }
+});
+
+// ── family_shield_response ─────────────────────────────────────────
+
+const RESPONSE_BODY = {
+  kind: 'family_shield_response',
+  incident_id: 'INC-2026-9001',
+  resolution: 'safe',
+  responder_external_id: RECIP_A,
+  target_external_id: SENDER_ID,
+};
+
+test('valid response event → 202, single target, generic copy', async () => {
+  const captured = {};
+  const res = await handleRequest(
+    alertRequest(RESPONSE_BODY, { auth: 'Bearer resp-tok' }),
+    { ...ENV, RELAY_CLIENT_TOKEN: 'resp-tok' },
+    okFetch(captured),
+  );
+  assert.equal(res.status, 202);
+  const payload = JSON.parse(captured.init.body);
+  // Targets exactly the original sender — no fan-out.
+  assert.deepEqual(payload.include_aliases.external_id, [SENDER_ID]);
+  assert.deepEqual(payload.data, {
+    kind: 'family_shield_response',
+    incident_id: 'INC-2026-9001',
+    resolution: 'safe',
+    responder_external_id: RECIP_A,
+  });
+  // Copy is server-fixed and PII-free — never client-supplied text.
+  assert.equal(payload.headings.en, 'VoxGuard Family Shield Update');
+  assert.equal(
+    payload.contents.en,
+    'A trusted person responded to your safety alert.',
+  );
+});
+
+test('malformed response fields → 400', async () => {
+  const env = { ...ENV, RELAY_CLIENT_TOKEN: 'resp2-tok' };
+  const bad = [
+    { ...RESPONSE_BODY, resolution: 'unresolved' },
+    { ...RESPONSE_BODY, resolution: 'confirmed' },
+    { ...RESPONSE_BODY, responder_external_id: 'not-vg' },
+    { ...RESPONSE_BODY, target_external_id: 'demo_family_maya' },
+    { ...RESPONSE_BODY, target_external_id: ['x'] },
+    { ...RESPONSE_BODY, incident_id: '' },
+  ];
+  for (const body of bad) {
+    const res = await handleRequest(
+      alertRequest(body, { auth: 'Bearer resp2-tok' }),
+      env,
+      okFetch({}),
+    );
+    assert.equal(res.status, 400, JSON.stringify(body));
+  }
+});
+
+test('response event ignores client-supplied PII fields', async () => {
+  const captured = {};
+  await handleRequest(
+    alertRequest(
+      {
+        ...RESPONSE_BODY,
+        responder_name: 'Maya',
+        responder_phone: '+15551234567',
+        note: 'call me',
+      },
+      { auth: 'Bearer resp3-tok' },
+    ),
+    { ...ENV, RELAY_CLIENT_TOKEN: 'resp3-tok' },
+    okFetch(captured),
+  );
+  const raw = captured.init.body;
+  assert.ok(!raw.includes('Maya'));
+  assert.ok(!raw.includes('15551234567'));
+  assert.ok(!raw.includes('call me'));
 });
 
 // ── Unit-level validation ────────────────────────────────────────────

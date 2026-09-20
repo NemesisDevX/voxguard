@@ -34,7 +34,9 @@ void main() {
     recommendedActions: const ['End the call immediately'],
   );
 
-  const members = ['demo_family_maya', 'demo_family_omar'];
+  /// Real-mode recipients must be `vg_…` identities — the relay and
+  /// client both reject anything else.
+  final members = ['vg_${'1' * 32}', 'vg_${'2' * 32}'];
 
   /// Injectable sender identity — tests never touch the real
   /// OneSignal locator.

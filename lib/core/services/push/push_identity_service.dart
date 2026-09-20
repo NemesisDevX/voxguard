@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../family/family_shield_response.dart';
+
 /// Lifecycle of this device's Family Shield push registration.
 enum PushRegistrationStatus {
   /// No `ONESIGNAL_APP_ID` configured — receiver setup unavailable.
@@ -126,6 +128,15 @@ abstract interface class IPushIdentityService {
   /// foreground. Diagnostics/state only — receiving a notification is
   /// NOT a user interaction and must never trigger navigation.
   Stream<FamilyAlertTap> get alertReceived;
+
+  /// Taps on `family_shield_response` notifications — a trusted
+  /// person's resolution arriving back at the alerting device.
+  /// Separate from [alertTaps]: a response is not a new danger alert.
+  Stream<FamilyShieldResponse> get responseTaps;
+
+  /// Response notifications received in the foreground — persisted
+  /// so the incident detail can show the human resolution layer.
+  Stream<FamilyShieldResponse> get responseReceived;
 
   /// This device's `vg_…` identity (created on first use, persisted).
   /// Available even when push itself isn't configured.

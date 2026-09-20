@@ -122,9 +122,25 @@ final class FamilyContactRules {
   /// Family Shield External IDs are exactly `vg_<32 lowercase hex>`.
   static final externalIdPattern = RegExp(r'^vg_[0-9a-f]{32}$');
 
+  /// Local contact ids minted by this app (`fc_` + 16 hex chars).
+  static final localIdPattern = RegExp(r'^fc_[0-9a-f]{16}$');
+
+  /// Trusted phone numbers are local metadata — bounded length only.
+  static const maxPhoneLength = 32;
+
   /// The Trusted Circle is hard-capped at 5 — same bound the relay
   /// enforces on `family_external_ids`.
   static const maxContacts = 5;
+
+  /// A persisted/external contact is only trusted when every field
+  /// passes — corrupted rows are skipped, never repaired into fake
+  /// contacts.
+  static bool isWellFormed(FamilyContact c) =>
+      localIdPattern.hasMatch(c.id) &&
+      c.name.trim().isNotEmpty &&
+      externalIdPattern.hasMatch(c.externalId) &&
+      (c.trustedPhone == null ||
+          c.trustedPhone!.length <= maxPhoneLength);
 
   static void validateFields({
     required String name,
@@ -141,7 +157,8 @@ final class FamilyContactRules {
         'app (Settings → Family Shield Receiver).',
       );
     }
-    if (trustedPhone != null && trustedPhone.length > 32) {
+    if (trustedPhone != null &&
+        trustedPhone.length > FamilyContactRules.maxPhoneLength) {
       throw const FamilyContactException('Phone number is too long.');
     }
   }
@@ -167,7 +184,10 @@ final class PersistedFamilyContactRepository
   final SharedPreferences? _prefs;
 
   final _list = ValueNotifier<List<FamilyContact>>(const []);
-  bool _loaded = false;
+
+  /// Shared in-flight load — concurrent first readers await the same
+  /// persistence read instead of observing a premature empty list.
+  Future<void>? _loadFuture;
 
   /// Dev/test recipient override for the two-device smoke test —
   /// `VOXGUARD_TEST_FAMILY_EXTERNAL_ID` dart-define or the debug
@@ -186,24 +206,43 @@ final class PersistedFamilyContactRepository
             : externalId.trim();
   }
 
-  static String? get _override =>
-      _runtimeOverride ?? (_envOverride.isEmpty ? null : _envOverride);
+  /// The dev/test override only counts when it is a real `vg_…`
+  /// identity — a malformed value is ignored rather than sent to the
+  /// relay.
+  static String? get _override {
+    final v = _runtimeOverride ?? (_envOverride.isEmpty ? null : _envOverride);
+    return v != null && FamilyContactRules.externalIdPattern.hasMatch(v)
+        ? v
+        : null;
+  }
 
   Future<SharedPreferences> get _store =>
       _prefs != null ? Future.value(_prefs) : SharedPreferences.getInstance();
 
-  Future<void> _ensureLoaded() async {
-    if (_loaded) return;
-    _loaded = true;
+  Future<void> _ensureLoaded() => _loadFuture ??= _doLoad();
+
+  Future<void> _doLoad() async {
     final raw = (await _store).getString(_key);
     if (raw == null) return;
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! List) return;
-      _list.value = [
-        for (final e in decoded)
-          if (e is Map<String, dynamic>) ?FamilyContact.fromJson(e),
-      ];
+      // Sanitize: keep only well-formed contacts, dedupe by external
+      // id, never load more than the cap. Corrupted rows are skipped.
+      final seen = <String>{};
+      final list = <FamilyContact>[];
+      for (final e in decoded) {
+        if (e is! Map<String, dynamic>) continue;
+        final c = FamilyContact.fromJson(e);
+        if (c == null ||
+            !FamilyContactRules.isWellFormed(c) ||
+            !seen.add(c.externalId)) {
+          continue;
+        }
+        if (list.length >= FamilyContactRules.maxContacts) break;
+        list.add(c);
+      }
+      _list.value = list;
     } on FormatException {
       // Corrupted payload → start clean rather than crash.
       _list.value = const [];

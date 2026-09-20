@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 
 import '../../../features/forensics/domain/models/incident_report.dart';
+import '../family/received_family_alert_repository.dart';
 
 /// Coarse outcome of a family-shield broadcast attempt — what the UI
 /// may truthfully tell the user.
@@ -70,5 +71,15 @@ abstract interface class IFamilyAlertService {
   Future<AlertDispatchResult> triggerFamilyEmergencyAlert({
     required IncidentReport incident,
     required List<String> familyMemberIds,
+  });
+
+  /// Returns a privacy-minimal resolution update to the device that
+  /// raised [incidentId] — the receiver becomes `responder`, the
+  /// original sender is the `target`. Opaque ids only; no names,
+  /// phone numbers, or free text ever cross the boundary.
+  Future<AlertDispatchResult> sendFamilyShieldResponse({
+    required String incidentId,
+    required AlertResolution resolution,
+    required String targetExternalId,
   });
 }

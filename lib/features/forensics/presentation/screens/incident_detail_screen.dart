@@ -4,6 +4,8 @@ import 'package:flutter/services.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/services/alerts/family_contact_repository.dart';
 import '../../../../core/services/alerts/family_shield_alert_service.dart';
+import '../../../../core/services/family/family_shield_response.dart';
+import '../../../../core/services/family/received_family_alert_repository.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/threat_phrase_highlighter.dart';
@@ -67,6 +69,7 @@ class IncidentDetailScreen extends StatelessWidget {
         children: [
           _HeaderCard(incident: incident, color: _riskColor, label: _riskLabel),
           const SizedBox(height: 16),
+          _FamilyResponsesCard(incidentId: incident.id),
           _WhyFlaggedCard(incident: incident),
           const SizedBox(height: 16),
           _TranscriptCard(incident: incident),
@@ -90,6 +93,92 @@ class IncidentDetailScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+// ── Family Shield human resolutions ──────────────────────────────────
+
+/// Human verification layer — trusted contacts' responses to this
+/// incident's Family Shield alert. Strictly separate from the AI
+/// assessment: a "marked safe" here never alters the risk score.
+class _FamilyResponsesCard extends StatelessWidget {
+  const _FamilyResponsesCard({required this.incidentId});
+
+  final String incidentId;
+
+  @override
+  Widget build(BuildContext context) {
+    return ValueListenableBuilder<List<FamilyShieldResponse>>(
+      valueListenable: FamilyShieldResponseLocator.instance.responses,
+      builder: (context, responses, _) {
+        final mine =
+            [for (final r in responses) if (r.incidentId == incidentId) r];
+        if (mine.isEmpty) return const SizedBox.shrink();
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16),
+          child: _Card(
+            title: 'FAMILY SHIELD RESPONSES',
+            icon: Icons.group_outlined,
+            child: Column(
+              children: [
+                for (final r in mine) _ResponseRow(response: r),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _ResponseRow extends StatelessWidget {
+  const _ResponseRow({required this.response});
+
+  final FamilyShieldResponse response;
+
+  @override
+  Widget build(BuildContext context) {
+    final isSafe = response.resolution == AlertResolution.safe;
+    return FutureBuilder<String>(
+      future: _responderName(),
+      builder: (context, snap) {
+        final name = snap.data ?? 'A trusted person';
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Row(
+            children: [
+              Icon(
+                isSafe
+                    ? Icons.verified_user_outlined
+                    : Icons.warning_amber_outlined,
+                size: 18,
+                color: isSafe
+                    ? AppColors.statusSafe
+                    : AppColors.statusWarning,
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  isSafe
+                      ? '$name marked this situation safe'
+                      : '$name is still concerned',
+                  style: AppTypography.bodyMedium,
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<String> _responderName() async {
+    final contacts =
+        await FamilyContactLocator.instance.getFamilyContacts();
+    for (final c in contacts) {
+      if (c.externalId == response.responderExternalId) return c.name;
+    }
+    return 'A trusted person';
   }
 }
 
