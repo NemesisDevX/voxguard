@@ -1,11 +1,11 @@
 {
-    "name": "voxguard",
-    "short_name": "voxguard",
+    "name": "VoxGuard",
+    "short_name": "VoxGuard",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0B0D13",
+    "theme_color": "#0B0D13",
+    "description": "Consumer-first voice scam risk defense — acoustic anomaly indicators plus conversation-risk analysis during user-started protection sessions.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

@@ -33,9 +33,10 @@ class ThreatCore extends StatefulWidget {
   final double size;
 
   /// Display state for a score — the single source of truth for the
-  /// label used across the HUD.
+  /// label used across the HUD. "Safe" is a score band, never a
+  /// guarantee — the score is a composite risk signal, not a verdict.
   static String stateLabel(double score) => switch (score) {
-        < 0.40 => 'SAFE — PROTECTED',
+        < 0.40 => 'SAFE',
         < 0.75 => 'CAUTION',
         _ => 'HIGH RISK',
       };
@@ -52,6 +53,20 @@ class _ThreatCoreState extends State<ThreatCore>
   )..repeat(reverse: true);
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Respect the platform reduced-motion setting: the ambient
+    // breathing pulse stops entirely; score transitions still render
+    // instantly (no tween) so state stays truthful.
+    final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (reduce && _breath.isAnimating) {
+      _breath.stop();
+    } else if (!reduce && !_breath.isAnimating) {
+      _breath.repeat(reverse: true);
+    }
+  }
+
+  @override
   void dispose() {
     _breath.dispose();
     super.dispose();
@@ -61,83 +76,95 @@ class _ThreatCoreState extends State<ThreatCore>
   Widget build(BuildContext context) {
     final color = AppColors.forThreat(widget.score);
     final score100 = (widget.score * 100).round().clamp(0, 100);
+    final reduceMotion =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+
+    Widget core(double animatedScore, double pulse, double amp) =>
+        SizedBox(
+          width: widget.size,
+          height: widget.size,
+          child: CustomPaint(
+            painter: _CorePainter(
+              score: animatedScore,
+              color: color,
+              pulse: pulse,
+              amplitude: amp,
+            ),
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  RichText(
+                    text: TextSpan(
+                      children: [
+                        TextSpan(
+                          text: '$score100',
+                          style: AppTypography.displaySmall.copyWith(
+                            color: color,
+                            fontSize: 52,
+                          ),
+                        ),
+                        TextSpan(
+                          text: ' /100',
+                          style: AppTypography.titleMedium.copyWith(
+                            color: AppColors.textMuted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'THREAT SCORE',
+                    style: AppTypography.labelSmall.copyWith(
+                      color: AppColors.textMuted,
+                      fontSize: 9,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  AnimatedSwitcher(
+                    duration: reduceMotion
+                        ? Duration.zero
+                        : const Duration(milliseconds: 300),
+                    child: Text(
+                      ThreatCore.stateLabel(widget.score),
+                      key: ValueKey(ThreatCore.stateLabel(widget.score)),
+                      style: AppTypography.labelSmall.copyWith(
+                        color: color,
+                        fontSize: 11,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+
+    // Reduced-motion: render the final state directly — no ambient
+    // breathing loop, no score tween.
+    final Widget animatedCore = reduceMotion
+        ? core(widget.score, 1.0, 0.0)
+        : AnimatedBuilder(
+            animation: _breath,
+            builder: (context, _) {
+              final breath = 0.5 + 0.5 * _breath.value;
+              final amp = widget.amplitude.clamp(0.0, 1.0);
+              final pulse = 1.0 + breath * 0.015 + amp * 0.10;
+              return TweenAnimationBuilder<double>(
+                tween: Tween(begin: 0, end: widget.score),
+                duration: const Duration(milliseconds: 500),
+                curve: Curves.easeOutCubic,
+                builder: (context, animatedScore, _) =>
+                    core(animatedScore, pulse, amp),
+              );
+            },
+          );
 
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        AnimatedBuilder(
-          animation: _breath,
-          builder: (context, _) {
-            final breath = 0.5 + 0.5 * _breath.value; // 0..1 slow sine-ish
-            final amp = widget.amplitude.clamp(0.0, 1.0);
-            final pulse = 1.0 + breath * 0.015 + amp * 0.10;
-            return TweenAnimationBuilder<double>(
-              tween: Tween(begin: 0, end: widget.score),
-              duration: const Duration(milliseconds: 500),
-              curve: Curves.easeOutCubic,
-              builder: (context, animatedScore, _) {
-                return SizedBox(
-                  width: widget.size,
-                  height: widget.size,
-                  child: CustomPaint(
-                    painter: _CorePainter(
-                      score: animatedScore,
-                      color: color,
-                      pulse: pulse,
-                      amplitude: amp,
-                    ),
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          RichText(
-                            text: TextSpan(
-                              children: [
-                                TextSpan(
-                                  text: '$score100',
-                                  style: AppTypography.displaySmall.copyWith(
-                                    color: color,
-                                    fontSize: 52,
-                                  ),
-                                ),
-                                TextSpan(
-                                  text: ' /100',
-                                  style: AppTypography.titleMedium.copyWith(
-                                    color: AppColors.textMuted,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            'THREAT SCORE',
-                            style: AppTypography.labelSmall.copyWith(
-                              color: AppColors.textMuted,
-                              fontSize: 9,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          AnimatedSwitcher(
-                            duration: const Duration(milliseconds: 300),
-                            child: Text(
-                              ThreatCore.stateLabel(widget.score),
-                              key: ValueKey(ThreatCore.stateLabel(widget.score)),
-                              style: AppTypography.labelSmall.copyWith(
-                                color: color,
-                                fontSize: 11,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-        ),
+        animatedCore,
         if (widget.isDemoAudio) ...[
           const SizedBox(height: 8),
           Container(

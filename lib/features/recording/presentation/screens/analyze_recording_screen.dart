@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/utils/threat_phrase_highlighter.dart';
 import '../../../forensics/presentation/screens/incident_detail_screen.dart';
 import '../../../paywall/domain/models/entitlement_state.dart';
 import '../../../paywall/domain/models/subscription_tier.dart';
@@ -894,6 +895,10 @@ class _TranscriptCard extends StatelessWidget {
             ),
             child: Text(
               text,
+              textDirection: isRtlText(text)
+                  ? TextDirection.rtl
+                  : TextDirection.ltr,
+              textAlign: isRtlText(text) ? TextAlign.right : null,
               style: AppTypography.bodyMedium.copyWith(height: 1.5),
             ),
           ),

@@ -14,12 +14,6 @@ abstract final class AppStrings {
   static const String startSafeCallDesc =
       'In-app protected call with live threat telemetry.';
 
-  static const String labsTitle = 'LABS';
-
-  static const String liveShield = 'Live Shield';
-  static const String liveShieldDesc =
-      'Ambient mic monitor for speakerphone & surrounding calls.';
-
   static const String analyzeRecording = 'Analyze Recording';
   static const String analyzeRecordingDesc =
       'Upload call audio or a voice note for threat analysis.';
@@ -126,12 +120,4 @@ abstract final class AppStrings {
       'Tip: agree on a family safe phrase offline — ask the caller for it.';
   static const String viewIncidentReport = 'View Incident Report';
   static const String incidentLogged = 'High-risk call logged';
-
-  // ── Placeholder tabs ─────────────────────────────────────────────
-  static const String incidentsEmpty = 'No incidents recorded';
-  static const String incidentsEmptyDesc =
-      'Flagged calls and incident reports will appear here.';
-  static const String settingsPlaceholder = 'Settings';
-  static const String settingsPlaceholderDesc =
-      'Protection preferences, trusted contacts and alerts.';
 }

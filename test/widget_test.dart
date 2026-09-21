@@ -16,7 +16,9 @@ void main() {
     expect(find.text('VoxGuard'), findsOneWidget);
     expect(find.text('VoxGuard Ready'), findsOneWidget);
     expect(find.text('Start SafeCall'), findsOneWidget);
-    expect(find.text('Live Shield'), findsOneWidget);
+    // Live Shield is unimplemented — the release UI must not
+    // advertise it; it exists only in README roadmap docs.
+    expect(find.text('Live Shield'), findsNothing);
     expect(find.text('Analyze Recording'), findsOneWidget);
   });
 }

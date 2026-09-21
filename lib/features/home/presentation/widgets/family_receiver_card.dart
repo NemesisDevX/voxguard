@@ -50,8 +50,10 @@ class _FamilyReceiverCardState extends State<FamilyReceiverCard> {
                   const Icon(Icons.family_restroom,
                       color: AppColors.accent, size: 20),
                   const SizedBox(width: 8),
-                  Text('Family Shield Receiver',
-                      style: AppTypography.titleMedium),
+                  Flexible(
+                    child: Text('Family Shield Receiver',
+                        style: AppTypography.titleMedium),
+                  ),
                 ],
               ),
               const SizedBox(height: 6),

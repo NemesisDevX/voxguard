@@ -30,12 +30,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _openSafeCall() => launchSafeCall(context);
 
-  void _showComingSoon(String feature) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('$feature — coming soon')),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,7 +38,12 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             Icon(Icons.shield, color: AppColors.statusSafe, size: 26),
             SizedBox(width: 10),
-            Text(AppStrings.appName),
+            Flexible(
+              child: Text(
+                AppStrings.appName,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
           ],
         ),
         actions: [
@@ -67,7 +66,7 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _tabIndex,
         children: [
-          _ShieldTab(onSafeCall: _openSafeCall, onComingSoon: _showComingSoon),
+          _ShieldTab(onSafeCall: _openSafeCall),
           const IncidentsHistoryScreen(),
           const _SettingsTab(),
         ],
@@ -101,10 +100,9 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _ShieldTab extends StatelessWidget {
-  const _ShieldTab({required this.onSafeCall, required this.onComingSoon});
+  const _ShieldTab({required this.onSafeCall});
 
   final VoidCallback onSafeCall;
-  final ValueChanged<String> onComingSoon;
 
   @override
   Widget build(BuildContext context) {
@@ -120,34 +118,11 @@ class _ShieldTab extends StatelessWidget {
 
           const SizedBox(height: 32),
 
-          // Secondary, unfinished capabilities live in Labs — visually
-          // demoted so they never compete with the hero path.
-          Row(
-            children: [
-              const Expanded(
-                child: Text(
-                  AppStrings.labsTitle,
-                  style: AppTypography.labelSmall,
-                ),
-              ),
-              Text(
-                'EXPERIMENTAL',
-                style: AppTypography.labelSmall.copyWith(
-                  fontSize: 9,
-                  color: AppColors.textMuted.withValues(alpha: 0.7),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          _LabTile(
-            icon: Icons.hearing,
-            title: AppStrings.liveShield,
-            description: AppStrings.liveShieldDesc,
-            onTap: () => onComingSoon(AppStrings.liveShield),
-          ),
-          const SizedBox(height: 8),
-          _LabTile(
+          // Secondary product path — Analyze Recording is a real,
+          // shipped feature, so it sits beside the hero rather than
+          // in an "experimental" bucket. Unfinished capabilities
+          // (e.g. Live Shield) do not appear in the release UI.
+          _ActionTile(
             icon: Icons.upload_file_outlined,
             title: AppStrings.analyzeRecording,
             description: AppStrings.analyzeRecordingDesc,
@@ -239,9 +214,9 @@ class _HeroSafeCallCard extends StatelessWidget {
   }
 }
 
-/// Compact secondary tile for Labs features.
-class _LabTile extends StatelessWidget {
-  const _LabTile({
+/// Compact secondary tile for real product paths beside the hero.
+class _ActionTile extends StatelessWidget {
+  const _ActionTile({
     required this.icon,
     required this.title,
     required this.description,
@@ -420,7 +395,9 @@ class _SubscriptionCard extends StatelessWidget {
                       .copyWith(fontSize: 12),
                 ),
                 const SizedBox(height: 10),
-                Row(
+                Wrap(
+                  spacing: 16,
+                  runSpacing: 4,
                   children: [
                     TextButton(
                       onPressed: () => PaywallScreen.show(context),
@@ -437,7 +414,6 @@ class _SubscriptionCard extends StatelessWidget {
                       ),
                     ),
                     if (!isUnavailable) ...[
-                      const SizedBox(width: 16),
                       TextButton(
                         onPressed: () => _restore(context, service),
                         style: TextButton.styleFrom(
@@ -454,7 +430,6 @@ class _SubscriptionCard extends StatelessWidget {
                       ),
                     ],
                     if (entitlement.managementUrl != null) ...[
-                      const SizedBox(width: 16),
                       TextButton(
                         onPressed: () => launchUrl(
                           entitlement.managementUrl!,

@@ -126,12 +126,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                             : null),
                   ),
                   Expanded(
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        for (var i = 0; i < _pageCount; i++)
-                          _Dot(active: i == _page),
-                      ],
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          for (var i = 0; i < _pageCount; i++)
+                            _Dot(active: i == _page),
+                        ],
+                      ),
                     ),
                   ),
                   widget.reviewMode

@@ -270,6 +270,18 @@ flutter build apk --debug
 
 Every push to `main` runs the full pipeline — analyze → Flutter tests → relay tests → web + APK builds → auto-deploy to GitHub Pages → APK artifact upload (see `.github/workflows/ci.yml`). The CI badge above reflects the live result.
 
+### Release & submission docs
+
+| Doc | Contents |
+|-----|----------|
+| `docs/STORE_METADATA.md` | Store listing copy, subscription descriptions, reviewer notes |
+| `docs/SHIPATON_SUBMISSION.md` | Shipaton 2026 requirements + category narratives |
+| `docs/DEMO_SCRIPT.md` | <2 min timestamped demo video script |
+| `docs/ONESIGNAL_CAMPAIGN.md` | "Keep Them Coming Back" campaign spec + deploy checklist |
+| `docs/REVENUECAT_SETUP.md` / `docs/REVENUECAT_QA.md` | Store configuration + real-device purchase QA |
+| `docs/FINAL_QA.md` / `docs/FINAL_RELEASE_STATUS.md` | Hardware QA matrix + external blocker report |
+| `submission/` | 1024×1024 icon + 1179×2556 screenshots |
+
 ---
 
 ## Tech Stack

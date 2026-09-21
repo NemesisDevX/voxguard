@@ -65,9 +65,34 @@ Color threatPhraseColor(String phrase) {
   return AppColors.statusWarning;
 }
 
-/// True when [text] begins with an Arabic codepoint — drives RTL
-/// rendering in transcript bubbles.
-bool isRtlText(String text) => text.isNotEmpty && text.codeUnitAt(0) > 0x0600;
+/// True when the first *strong-directional* character in [text] is
+/// RTL (Arabic/Hebrew blocks + presentation forms). Neutral
+/// punctuation, digits and Latin lead-ins are skipped so mixed
+/// strings like `"أخوك" — transfer now` still resolve correctly and
+/// numbers/technical IDs are never force-reversed.
+bool isRtlText(String text) {
+  const scanLimit = 64;
+  final units = text.codeUnits;
+  final limit = units.length < scanLimit ? units.length : scanLimit;
+  for (var i = 0; i < limit; i++) {
+    final c = units[i];
+    // RTL strong ranges: Hebrew, Arabic, Arabic Supplement,
+    // Arabic Extended-A, Arabic Presentation Forms A & B.
+    if ((c >= 0x0590 && c <= 0x05FF) ||
+        (c >= 0x0600 && c <= 0x06FF) ||
+        (c >= 0x0750 && c <= 0x077F) ||
+        (c >= 0x08A0 && c <= 0x08FF) ||
+        (c >= 0xFB50 && c <= 0xFDFF) ||
+        (c >= 0xFE70 && c <= 0xFEFF)) {
+      return true;
+    }
+    // LTR strong: Latin letters/digits settle direction first.
+    if ((c >= 0x41 && c <= 0x5A) || (c >= 0x61 && c <= 0x7A)) {
+      return false;
+    }
+  }
+  return false;
+}
 
 int _indexOfPhrase(String text, String phrase, int from) {
   if (phrase.codeUnits.every((c) => c < 128)) {

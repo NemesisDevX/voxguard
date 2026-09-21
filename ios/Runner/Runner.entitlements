@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD plist 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<!-- Required for Family Shield push delivery via OneSignal.
+	     Xcode must reference this file (Signing & Capabilities →
+	     Push Notifications) before archive/upload. -->
+	<key>aps-environment</key>
+	<string>development</string>
+</dict>
+</plist>

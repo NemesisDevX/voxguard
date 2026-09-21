@@ -4,6 +4,7 @@ import 'package:voxguard/features/protection/domain/models/composite_threat_repo
 import 'package:voxguard/features/protection/domain/models/semantic_threat_signals.dart';
 import 'package:voxguard/features/protection/domain/services/semantic_threat_service.dart';
 import 'package:voxguard/features/protection/domain/services/threat_fusion_engine.dart';
+import 'package:voxguard/core/utils/threat_phrase_highlighter.dart';
 
 void main() {
   final engine = ThreatFusionEngine();
@@ -156,4 +157,30 @@ void main() {
       );
     });
   });
+
+  group('isRtlText — first strong direction wins', () {
+    test('Arabic lead → rtl', () {
+      expect(isRtlText('حول الفلوس دلوقتي'), isTrue);
+    });
+
+    test('English lead → ltr', () {
+      expect(isRtlText('Transfer the money now'), isFalse);
+    });
+
+    test('neutral punctuation/digits before Arabic still → rtl', () {
+      expect(isRtlText('"123" — حول الفلوس'), isTrue);
+      expect(isRtlText('"أخوك" — transfer now'), isTrue);
+    });
+
+    test('neutral lead then English → ltr (IDs never flip)', () {
+      expect(isRtlText('INC-2026-0001 flagged'), isFalse);
+      expect(isRtlText('(vg_abc123) verified'), isFalse);
+    });
+
+    test('empty and symbol-only strings stay ltr', () {
+      expect(isRtlText(''), isFalse);
+      expect(isRtlText('123 — !!!'), isFalse);
+    });
+  });
 }
+

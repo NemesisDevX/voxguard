@@ -1,9 +1,31 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }
+
+// Release signing is configured externally — android/key.properties
+// (gitignored) or VOXGUARD_* environment variables. Credentials never
+// enter the repository, and a release build must NEVER silently fall
+// back to the debug key: requesting a release artifact without
+// credentials fails loudly so a debug-signed binary can never ship
+// as "release".
+val keystorePropertiesFile = rootProject.file("key.properties")
+val keystoreProperties = Properties().apply {
+    if (keystorePropertiesFile.exists()) {
+        FileInputStream(keystorePropertiesFile).use { load(it) }
+    }
+}
+fun signingProperty(name: String): String? =
+    keystoreProperties.getProperty(name) ?: System.getenv(name)
+
+val releaseSigningReady = listOf(
+    "storeFile", "storePassword", "keyAlias", "keyPassword",
+).all { !signingProperty(it).isNullOrBlank() }
 
 android {
     namespace = "com.voxguard.app"
@@ -20,22 +42,53 @@ android {
     }
 
     defaultConfig {
-        // TODO: Specify your own unique Application ID (https://developer.android.com/studio/build/application-id.html).
         applicationId = "com.voxguard.app"
-        // You can update the following values to match your application needs.
-        // For more information, see: https://flutter.dev/to/review-gradle-config.
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }
 
+    signingConfigs {
+        if (releaseSigningReady) {
+            create("release") {
+                val storePath = signingProperty("storeFile")!!
+                val file = File(storePath)
+                storeFile = if (file.isAbsolute) file
+                    else rootProject.file(storePath)
+                storePassword = signingProperty("storePassword")
+                keyAlias = signingProperty("keyAlias")
+                keyPassword = signingProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            if (releaseSigningReady) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+            // When credentials are absent the release buildType has
+            // no signing config at all — the task-graph guard below
+            // refuses the build before an unsigned/debug artifact
+            // could be produced.
         }
+    }
+}
+
+// Fail loudly only when a release task is actually requested — debug
+// builds, tests and `flutter run` never touch this check.
+gradle.taskGraph.whenReady {
+    val wantsRelease = allTasks.any {
+        it.path.contains("release", ignoreCase = true)
+    }
+    if (wantsRelease && !releaseSigningReady) {
+        throw GradleException(
+            "BLOCKED_EXTERNAL — release keystore required. Provide " +
+                "android/key.properties (storeFile, storePassword, " +
+                "keyAlias, keyPassword) or the matching VOXGUARD_* " +
+                "environment variables. See docs/FINAL_RELEASE_STATUS.md."
+        )
     }
 }
 

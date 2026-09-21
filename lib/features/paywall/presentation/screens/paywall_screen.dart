@@ -118,19 +118,24 @@ class _PaywallContent extends StatelessWidget {
               const Spacer(),
               if (isDemo)
                 const _DemoBadge()
-              else ...[
+              else if (!isUnavailable) ...[
+                // No billing happens on the unavailable backend —
+                // so the badge stays honest by staying absent.
                 const Icon(
                   Icons.lock_outline,
                   size: 13,
                   color: AppColors.statusSafe,
                 ),
                 const SizedBox(width: 6),
-                const Text(
-                  AppStrings.securityBadge,
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: AppColors.textMuted,
-                    letterSpacing: 0.2,
+                const Flexible(
+                  child: Text(
+                    AppStrings.securityBadge,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.textMuted,
+                      letterSpacing: 0.2,
+                    ),
                   ),
                 ),
               ],
