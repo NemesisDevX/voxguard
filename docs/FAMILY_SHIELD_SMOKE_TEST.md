@@ -36,7 +36,7 @@ flutter run --dart-define=ONESIGNAL_APP_ID=<app-id>
 3. Wait for status **"Ready to receive alerts"**.
 4. Tap **Copy Family Shield ID** — looks like `vg_8f3a…92`.
 
-## Device A — the protected device
+## Device A — the monitored device
 
 ```bash
 flutter run \

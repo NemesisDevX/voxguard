@@ -114,11 +114,11 @@ final class RevenueCatPurchaseService implements IPurchaseService {
     switch (defaultTargetPlatform) {
       case TargetPlatform.android:
         return _androidKey;
-      // RevenueCat issues a single Apple `appl_` key covering both
-      // iOS and macOS.
       case TargetPlatform.iOS:
-      case TargetPlatform.macOS:
         return _iosKey;
+      // Real-store scope is Android/iOS only this release — macOS
+      // has no configured/validated RevenueCat app, so no key
+      // resolves and the factory routes it to the Demo Store.
       default:
         return '';
     }

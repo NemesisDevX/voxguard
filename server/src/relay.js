@@ -178,12 +178,12 @@ export function validateAlertPayload(body) {
   // is never described as a "high-risk call".
   const text = body.body ??
     (body.analysis_scope === 'partial'
-      ? 'Elevated acoustic signals were flagged on a protected device. ' +
+      ? 'Elevated acoustic signals were flagged on a monitored device. ' +
         'Verify with your family member directly.'
       : body.risk_level === 'highRisk'
-        ? 'A high-risk call was flagged on a protected device. ' +
+        ? 'A high-risk call was flagged on a monitored device. ' +
           'Verify with your family member directly.'
-        : 'A suspicious-call warning was flagged on a protected device. ' +
+        : 'A suspicious-call warning was flagged on a monitored device. ' +
           'Verify with your family member directly.');
   if (typeof title !== 'string' || title.length > MAX_TITLE_LEN) {
     return { ok: false, error: 'invalid title' };

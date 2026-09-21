@@ -84,10 +84,10 @@ abstract final class SubscriptionTiers {
     isPopular: true,
     features: [
       'Everything in Quick Check',
-      'Automatic Live Mic transcription & conversation-risk analysis',
-      'Enhanced recording transcription',
+      'Automatic Live Mic transcription & enhanced recording '
+          'transcription — when infrastructure is configured',
+      'Transcript-backed conversation-risk analysis',
       'Fused multi-signal threat scoring',
-      'Incident report export',
     ],
   );
 
@@ -102,7 +102,7 @@ abstract final class SubscriptionTiers {
     features: [
       'Everything in Sentinel Shield',
       'Send Family Shield alerts to your Trusted Circle',
-      'Up to 5 trusted contacts',
+      'Up to 5 locally-saved Trusted Circle contacts',
       'Safety responses loop back privately',
     ],
   );

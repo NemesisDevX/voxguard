@@ -107,7 +107,7 @@ only. Nothing is persisted.
     "vg_aabbccddeeff00112233445566778899"
   ],
   "title": "VoxGuard Family Shield",
-  "body": "A high-risk call was flagged on a protected device. Verify with your family member directly."
+  "body": "A high-risk call was flagged on a monitored device. Verify with your family member directly."
 }
 ```
 

@@ -8,21 +8,24 @@ fully functional (and honest about it) without any of this.
 
 ```
 IPurchaseService (lib/features/paywall/domain/services/)
-  ├─ RevenueCatPurchaseService   real store, Android/iOS/macOS
+  ├─ RevenueCatPurchaseService   real store, Android/iOS
   ├─ MockSandboxPurchaseService  labeled demo store — web/desktop
-  │                              + keyless debug builds
+  │                              (incl. macOS) + keyless debug builds
   └─ UnavailablePurchaseService  release builds with no key —
                                  paywall locks, nothing faked
 ```
 
-`PurchaseServiceFactory` picks the backend at first use:
+`PurchaseServiceFactory` picks the backend at first use. Real-store
+purchasing is scoped to **Android and iOS only** for this release —
+macOS has no configured or validated RevenueCat app, so it follows
+the Desktop Demo Store path:
 
 | Condition | Backend |
 |---|---|
-| Android/iOS/macOS + `REVENUECAT_*_KEY` set | `RevenueCatPurchaseService` |
-| Same platforms, debug, no key | `MockSandboxPurchaseService` (DEMO STORE badge) |
-| Same platforms, release, no key | `UnavailablePurchaseService` (truthful lock) |
-| Web / Windows / Linux | `MockSandboxPurchaseService` |
+| Android/iOS + `REVENUECAT_*_KEY` set | `RevenueCatPurchaseService` |
+| Android/iOS, debug, no key | `MockSandboxPurchaseService` (DEMO STORE badge) |
+| Android/iOS, release, no key | `UnavailablePurchaseService` (truthful lock) |
+| Web / Windows / Linux / macOS | `MockSandboxPurchaseService` |
 
 `PurchaseServiceLocator.instance` is the singleton every consumer
 resolves — bloc, gates, and UI share one entitlement stream.

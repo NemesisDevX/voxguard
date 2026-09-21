@@ -99,14 +99,11 @@ abstract final class AppStrings {
       'That plan is not available in this store.';
 
   // ── Entitlement gates ────────────────────────────────────────────
-  static const String sentinelUnlocksTranscription =
-      'Sentinel Shield adds automatic transcription and '
-      'conversation-risk analysis.';
   static const String familyVaultUnlocksAlerts =
       'Family Vault lets you send safety alerts to your Trusted Circle.';
   static const String acousticProtectionActive =
-      'Acoustic protection active. Automatic conversation analysis is '
-      'available with Sentinel Shield.';
+      'Acoustic protection active. Transcript-backed conversation '
+      'analysis unlocks with Sentinel Shield.';
 
   // ── Plan badges ──────────────────────────────────────────────────
   static const String planFree = 'FREE TIER';
@@ -129,14 +126,6 @@ abstract final class AppStrings {
       'Tip: agree on a family safe phrase offline — ask the caller for it.';
   static const String viewIncidentReport = 'View Incident Report';
   static const String incidentLogged = 'High-risk call logged';
-
-  // ── Post-intercept upsell ────────────────────────────────────────
-  static const String upsellTitle = 'A high-risk call was flagged';
-  static const String upsellBody =
-      'Upgrade to Family Vault to automatically alert relatives when a '
-      'high-risk call is detected on a protected device.';
-  static const String upsellCta = 'Upgrade to Family Vault';
-  static const String upsellDismiss = 'Maybe later';
 
   // ── Placeholder tabs ─────────────────────────────────────────────
   static const String incidentsEmpty = 'No incidents recorded';

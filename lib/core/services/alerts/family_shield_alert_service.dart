@@ -213,13 +213,13 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
   static String _alertBody(IncidentReport incident) {
     if (incident.analysisIsPartial) {
       return 'Elevated acoustic signals were flagged in a recording '
-          'on a protected device. Conversation-risk signals were not '
+          'on a monitored device. Conversation-risk signals were not '
           'analyzed — verify directly with your relative.';
     }
     return incident.riskLevel == ThreatRiskLevel.highRisk
-        ? 'A high-risk call was flagged on a protected device. '
+        ? 'A high-risk call was flagged on a monitored device. '
             'Verify directly with your relative before any funds move.'
-        : 'A suspicious-call warning was flagged on a protected '
+        : 'A suspicious-call warning was flagged on a monitored '
             'device. Verify directly with your relative before any '
             'funds move.';
   }

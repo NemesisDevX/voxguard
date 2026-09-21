@@ -78,7 +78,7 @@ final class ThreatFusionEngine {
       );
     }
     if (acoustic.isSyntheticElevated) {
-      reasons.add('Synthetic voice artifacts detected');
+      reasons.add('Synthetic-voice indicators elevated');
     }
     if (coordinatedAttack) {
       reasons.add('Coordinated scam pattern — amplified');

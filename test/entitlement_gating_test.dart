@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart' as http_testing;
@@ -89,45 +90,101 @@ void main() {
   });
 
   group('purchase backend selection', () {
-    test('mobile + key → real store backend', () {
-      final svc = createPurchaseServiceFor(
-        isMobileStorePlatform: true,
-        hasRevenueCatKey: true,
-        isReleaseBuild: true,
-      );
-      expect(svc, isA<RevenueCatPurchaseService>());
-      expect(svc.backendMode, PurchaseBackendMode.realStore);
+    for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+      test('${platform.name} + key → real store backend', () {
+        final svc = createPurchaseServiceFor(
+          platform: platform,
+          hasRevenueCatKey: true,
+          isReleaseBuild: true,
+        );
+        expect(svc, isA<RevenueCatPurchaseService>());
+        expect(svc.backendMode, PurchaseBackendMode.realStore);
+      });
+
+      test('${platform.name} RELEASE without key → unavailable, '
+          'never demo', () {
+        final svc = createPurchaseServiceFor(
+          platform: platform,
+          hasRevenueCatKey: false,
+          isReleaseBuild: true,
+        );
+        expect(svc, isA<UnavailablePurchaseService>());
+        expect(svc.backendMode, PurchaseBackendMode.unavailable);
+      });
+
+      test('${platform.name} DEBUG without key → labelled demo '
+          'store', () {
+        final svc = createPurchaseServiceFor(
+          platform: platform,
+          hasRevenueCatKey: false,
+          isReleaseBuild: false,
+        );
+        expect(svc, isA<MockSandboxPurchaseService>());
+        expect(svc.backendMode, PurchaseBackendMode.demoStore);
+      });
+    }
+
+    test('macOS never resolves to the real store — even with a key '
+        'and in release', () {
+      // Real-store purchasing is scoped to Android/iOS this release:
+      // macOS has no configured or validated RevenueCat app, so it
+      // must take the labelled Demo Store path.
+      for (final isRelease in [true, false]) {
+        final svc = createPurchaseServiceFor(
+          platform: TargetPlatform.macOS,
+          hasRevenueCatKey: true,
+          isReleaseBuild: isRelease,
+        );
+        expect(svc, isA<MockSandboxPurchaseService>());
+        expect(svc.backendMode, PurchaseBackendMode.demoStore);
+      }
     });
 
-    test('mobile RELEASE without key → unavailable, never demo',
-        () {
-      final svc = createPurchaseServiceFor(
-        isMobileStorePlatform: true,
-        hasRevenueCatKey: false,
-        isReleaseBuild: true,
+    test('desktop/web-style platforms → demo store', () {
+      for (final platform in [
+        TargetPlatform.windows,
+        TargetPlatform.linux,
+        TargetPlatform.fuchsia,
+      ]) {
+        final svc = createPurchaseServiceFor(
+          platform: platform,
+          hasRevenueCatKey: true,
+          isReleaseBuild: true,
+        );
+        expect(svc, isA<MockSandboxPurchaseService>());
+        expect(svc.backendMode, PurchaseBackendMode.demoStore);
+      }
+    });
+  });
+
+  group('SubscriptionTiers — metadata claims only real behavior', () {
+    Iterable<String> allTierCopy() sync* {
+      for (final t in SubscriptionTiers.catalog) {
+        yield t.name;
+        yield t.subtitle;
+        yield* t.features;
+      }
+    }
+
+    test('no tier claims unimplemented or unenforced features', () {
+      final banned = RegExp(
+        r'live shield|interceptor|intercept|protected device|'
+        r'device management|shared threat log|shared log|unlimited|'
+        r'/month|per month|quota|\$\d|automatic.{0,20}alert|'
+        r'synthetic voice detection',
+        caseSensitive: false,
       );
-      expect(svc, isA<UnavailablePurchaseService>());
-      expect(svc.backendMode, PurchaseBackendMode.unavailable);
+      for (final copy in allTierCopy()) {
+        expect(copy, isNot(matches(banned)), reason: '"$copy"');
+      }
     });
 
-    test('mobile DEBUG without key → labelled demo store', () {
-      final svc = createPurchaseServiceFor(
-        isMobileStorePlatform: true,
-        hasRevenueCatKey: false,
-        isReleaseBuild: false,
-      );
-      expect(svc, isA<MockSandboxPurchaseService>());
-      expect(svc.backendMode, PurchaseBackendMode.demoStore);
-    });
-
-    test('non-store platform → demo store', () {
-      final svc = createPurchaseServiceFor(
-        isMobileStorePlatform: false,
-        hasRevenueCatKey: false,
-        isReleaseBuild: true,
-      );
-      expect(svc, isA<MockSandboxPurchaseService>());
-      expect(svc.backendMode, PurchaseBackendMode.demoStore);
+    test('no tier publishes a hard-coded price', () {
+      final priceLike = RegExp(r'[$€£]\s?\d|\d+\s?(EGP|USD|EUR)',
+          caseSensitive: false);
+      for (final copy in allTierCopy()) {
+        expect(copy, isNot(matches(priceLike)), reason: '"$copy"');
+      }
     });
   });
 

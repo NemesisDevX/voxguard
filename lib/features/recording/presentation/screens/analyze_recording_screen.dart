@@ -805,7 +805,9 @@ class _AcousticCard extends StatelessWidget {
           Row(
             children: [
               Text(
-                partial ? 'Acoustic anomaly score' : 'Synthetic voice',
+                partial
+                    ? 'Acoustic anomaly score'
+                    : 'Synthetic voice indicators',
                 style: AppTypography.bodyMedium,
               ),
               const Spacer(),

@@ -50,12 +50,16 @@ VoxGuard's answer is **multi-signal threat fusion**: acoustic anomaly indicators
 │           │ Acoustic         │  │ Semantic Threat      │        │
 │           │ Forensics        │  │ Engine               │        │
 │           │                  │  │                      │        │
-│           │ • Spectral Flux  │  │ • Groq Llama-3 API   │        │
-│           │ • Spectral       │  │ • Deterministic EN+AR│        │
-│           │   Rolloff (HF    │  │   fallback rules     │        │
-│           │   cutoff)        │  │ • Urgency / FinDemand│        │
-│           │ • Zero-Crossing  │  │ • Secrecy / Isolation│        │
-│           │   Rate           │  │ • Impersonation      │        │
+│           │ • Spectral Flux  │  │ • Deterministic EN+AR│        │
+│           │ • Spectral       │  │   rule engine        │        │
+│           │   Rolloff (HF    │  │   (production path,  │        │
+│           │   cutoff)        │  │   on-device)         │        │
+│           │ • Zero-Crossing  │  │ • Urgency / FinDemand│        │
+│           │   Rate           │  │ • Secrecy / Isolation│        │
+│           │                  │  │ • Impersonation      │        │
+│           │                  │  │                      │        │
+│           │                  │  │ (Groq = dev-only     │        │
+│           │                  │  │  experiment, gated)  │        │
 │           └────────┬─────────┘  └──────────┬───────────┘        │
 │                  │ syntheticScore    combinedScore              │
 │                  ▼                    ▼                          │
@@ -88,7 +92,8 @@ VoxGuard's answer is **multi-signal threat fusion**: acoustic anomaly indicators
 │                        └────────────────────┘                   │
 │                                                                  │
 │  RevenueCat Subscription Engine ── entitlements gate premium     │
-│  tiers (Sentinel Shield / Family Vault) across all platforms.    │
+│  tiers (Sentinel Shield / Family Vault) — real store on          │
+│  Android/iOS; labelled Demo Store on Web/Desktop.                │
 └──────────────────────────────────────────────────────────────────┘
 ```
 
@@ -147,19 +152,31 @@ After picking a file, the user makes an explicit choice — nothing is uploaded 
 
 ## Monetization Architecture *(HAMM Award)*
 
-| | **Quick Check** (Free) | **Sentinel Shield** | **Family Vault** |
-|---|---|---|---|
-| Price | $0 | $9.99/mo · $79.99/yr | $19.99/mo · $149.99/yr |
-| Call analyses | 5 / month | **Unlimited** | Unlimited |
-| SafeCall + Live Shield | Standard | ✅ Full | ✅ Full |
-| Dual-engine fusion | — | ✅ | ✅ |
-| Protected devices | 1 | 1 | **Up to 5** |
-| Family Shield broadcast | — | — | ✅ OneSignal alerts |
-| Shared threat log | — | — | ✅ |
+The enforced product model — the same matrix `ProductAccess` and the paywall apply in code:
+
+**Quick Check — Free**
+- Live Mic acoustic anomaly monitoring
+- On-device recording analysis
+- Manual transcript check — analyzed locally
+- Local incident history
+- Receive & respond to Family Shield alerts
+
+**Sentinel Shield** — everything above plus:
+- Automatic Live Mic transcription when infrastructure is configured
+- Transcript-backed conversation-risk analysis
+- Enhanced recording transcription
+- Fused multi-signal Threat Score
+
+**Family Vault** — everything above plus:
+- Real outbound Family Shield alerts (explicitly user-triggered)
+- Up to 5 locally-saved Trusted Circle contacts
+- Human safety-resolution loop (private Safe / Still Suspicious responses)
+
+Real prices come from the store's **current RevenueCat Offering** — the paywall renders each package's localized `priceString`; no production price is hard-coded anywhere. The Demo Store's simulated prices are always labelled as simulation in-app, and real-store purchasing for this release is scoped to **Android and iOS** — Web/Desktop builds run the explicitly-labelled Demo Store.
 
 Built on `purchases_flutter` (RevenueCat) behind a decoupled `IPurchaseService` interface — three backends, picked by `PurchaseServiceFactory` at first use:
 
-- **`RevenueCatPurchaseService`** — real store checkout on Android/iOS/macOS, keyed via `--dart-define=REVENUECAT_ANDROID_KEY=...`
+- **`RevenueCatPurchaseService`** — real store checkout on Android/iOS, keyed via `--dart-define=REVENUECAT_ANDROID_KEY=...`
 - **`MockSandboxPurchaseService`** — full lifecycle simulation on Web/Desktop and keyless *debug* sessions; the paywall labels itself **DEMO STORE** with "no real charge" copy
 - **`UnavailablePurchaseService`** — keyless *release* builds lock the paywall truthfully ("Subscriptions aren't configured in this build") rather than faking purchases
 - **Conditional-import factory** — `purchases_flutter` is *never compiled* into web builds; every platform gets a working paywall
