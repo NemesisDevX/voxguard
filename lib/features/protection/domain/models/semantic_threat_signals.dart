@@ -82,6 +82,49 @@ final class SemanticThreatSignals extends Equatable {
     return out;
   }
 
+  Map<String, dynamic> toJson() => {
+        'urgency_score': urgencyScore,
+        'financial_demand_score': financialDemandScore,
+        'secrecy_score': secrecyScore,
+        'detected_keywords': detectedKeywords,
+        'impersonation_claims': impersonationClaims,
+      };
+
+  /// Strict decode — bounded strings, in-range scores, capped lists.
+  static SemanticThreatSignals? fromJson(Map<String, dynamic> json) {
+    double? f(Object? v) =>
+        v is num && v >= 0 && v <= 1 && v.isFinite ? v.toDouble() : null;
+    List<String>? s(Object? v) {
+      if (v is! List || v.length > 64) return null;
+      final out = <String>[];
+      for (final e in v) {
+        if (e is! String || e.length > 200) return null;
+        out.add(e);
+      }
+      return out;
+    }
+
+    final urgency = f(json['urgency_score']);
+    final financial = f(json['financial_demand_score']);
+    final secrecy = f(json['secrecy_score']);
+    final keywords = s(json['detected_keywords']);
+    final claims = s(json['impersonation_claims']);
+    if (urgency == null ||
+        financial == null ||
+        secrecy == null ||
+        keywords == null ||
+        claims == null) {
+      return null;
+    }
+    return SemanticThreatSignals(
+      urgencyScore: urgency,
+      financialDemandScore: financial,
+      secrecyScore: secrecy,
+      detectedKeywords: keywords,
+      impersonationClaims: claims,
+    );
+  }
+
   @override
   List<Object?> get props => [
         urgencyScore,

@@ -38,6 +38,32 @@ final class AudioForensicMetrics extends Equatable {
   /// Whether the synthetic-voice indicator is in the elevated band.
   bool get isSyntheticElevated => syntheticVoiceScore >= 0.70;
 
+  Map<String, dynamic> toJson() => {
+        'spectral_flux': spectralFlux,
+        'spectral_rolloff_ratio': spectralRolloffRatio,
+        'zero_crossing_rate': zeroCrossingRate,
+        'synthetic_voice_score': syntheticVoiceScore,
+      };
+
+  /// Strict decode — any malformed field rejects the whole record.
+  static AudioForensicMetrics? fromJson(Map<String, dynamic> json) {
+    double? f(Object? v) =>
+        v is num && v >= 0 && v <= 1 && v.isFinite ? v.toDouble() : null;
+    final flux = f(json['spectral_flux']);
+    final rolloff = f(json['spectral_rolloff_ratio']);
+    final zcr = f(json['zero_crossing_rate']);
+    final synth = f(json['synthetic_voice_score']);
+    if (flux == null || rolloff == null || zcr == null || synth == null) {
+      return null;
+    }
+    return AudioForensicMetrics(
+      spectralFlux: flux,
+      spectralRolloffRatio: rolloff,
+      zeroCrossingRate: zcr,
+      syntheticVoiceScore: synth,
+    );
+  }
+
   /// Linear interpolation between two metric snapshots — used to smooth
   /// meter updates as chunks stream in.
   AudioForensicMetrics lerpTo(AudioForensicMetrics other, double t) {

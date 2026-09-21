@@ -50,7 +50,12 @@ final class FamilyAlertCoordinator {
   final IIncidentRepository _incidents;
 
   final _subs = <StreamSubscription<Object>>[];
-  final _navigatedKeys = <String>{};
+  final _navigatedAlertKeys = <String>{};
+
+  /// `incident|responder` → the resolution last surfaced to the user.
+  /// Dedupes only the CURRENT duplicate state: `safe → safe` is a
+  /// redelivery, `safe → stillSuspicious → safe` surfaces all three.
+  final _lastSurfacedResponse = <String, AlertResolution>{};
   FamilyAlertTap? _pendingAlertTap;
   FamilyShieldResponse? _pendingResponseTap;
   bool _flushScheduled = false;
@@ -127,7 +132,7 @@ final class FamilyAlertCoordinator {
       return;
     }
     final dedupeKey = 'alert|${event.senderExternalId}|${event.incidentId}';
-    if (!_navigatedKeys.add(dedupeKey)) return;
+    if (!_navigatedAlertKeys.add(dedupeKey)) return;
     final alert = stored ??
         await _alerts.lookup(
             '${event.senderExternalId}|${event.incidentId}') ??
@@ -149,13 +154,12 @@ final class FamilyAlertCoordinator {
       _scheduleFlush();
       return;
     }
-    // Resolution is part of the dedupe key: a CHANGED resolution from
-    // the same responder is a new event worth surfacing, while an
-    // identical redelivery must not open the screen twice.
-    final dedupeKey =
-        'resp|${response.responderExternalId}|${response.incidentId}'
-        '|${response.resolution.name}';
-    if (!_navigatedKeys.add(dedupeKey)) return;
+    // Dedupe only a consecutive/current duplicate: a genuinely changed
+    // resolution (even back to a previously-seen value) is surfaced.
+    final key =
+        'resp|${response.responderExternalId}|${response.incidentId}';
+    if (_lastSurfacedResponse[key] == response.resolution) return;
+    _lastSurfacedResponse[key] = response.resolution;
     final incident =
         await _incidents.getIncidentById(response.incidentId);
     final contacts = await _contacts.getFamilyContacts();

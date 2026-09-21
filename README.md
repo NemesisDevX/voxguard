@@ -127,9 +127,18 @@ Real DSP on every incoming audio chunk (heuristic prototype — not a validated 
 | **SafeCall — Live Mic** | Microphone protection session (`LIVE MIC` badge): real PCM → acoustic forensics → AssemblyAI streaming STT when configured → semantic analysis → fused Threat Score. Acoustic analysis keeps working even without STT credentials. |
 | **SafeCall — Demo Attack** | Deterministic judging scenario (`DEMO MODE`): generated PCM + scripted Egyptian-Arabic scam dialogue → same pipeline → evidence chips, highlighted phrases, HIGH RISK escalation, verification flow. |
 | **Live Shield** *(planned)* | Ambient microphone monitor for speakerphone and surrounding conversations — not yet implemented. |
-| **Analyze Recording** *(planned)* | Upload call audio or voice notes for deep post-hoc forensic auditing — not yet implemented. |
+| **Analyze Recording** | Upload a call recording or voice note (WAV/MP3/M4A/AAC/OGG/OPUS/FLAC, ≤25 MB / ≤15 min) → normalized to the same 16 kHz mono PCM16 the live pipeline uses → chunked acoustic forensics → optional relay-based transcription + semantic analysis → fused verdict, or an honest **Partial Analysis** when conversation signals weren't analyzed. |
 
-Every high-risk session auto-persists an **Incident Report**: ID, timestamp, genuine **SHA-256 digest** of the analyzed PCM, audio/transcription source labels (*Live Microphone* vs *Generated Demo Audio*), consumer-first "Why VoxGuard Flagged This Call" evidence, phrase-highlighted transcript, and recommended verification steps — viewable in the Incidents tab, with raw telemetry under a collapsible *Technical Evidence* section.
+Every high-risk session auto-persists an **Incident Report**: ID, timestamp, genuine **SHA-256 digest** of the analyzed PCM, audio/transcription source labels (*Live Microphone* / *Generated Demo Audio* / *Uploaded Recording*), consumer-first "Why VoxGuard Flagged This Call" evidence, phrase-highlighted transcript, and recommended verification steps — viewable in the Incidents tab, with raw telemetry under a collapsible *Technical Evidence* section.
+
+### Analyze Recording — privacy modes
+
+After picking a file, the user makes an explicit choice — nothing is uploaded on selection alone:
+
+- **Keep audio on this device** — local decode + acoustic analysis only; zero network calls. An optional *user-provided transcript* field lets a privacy-conscious user paste text they already have for semantic analysis (clearly labelled `User-provided transcript`).
+- **Include conversation analysis** — the recording is sent through the VoxGuard transcription relay (`VOXGUARD_RECORDING_TRANSCRIPTION_URL`) to the configured speech-to-text provider; VoxGuard does not permanently store it. Requires an explicit tap and shows the upload stage only in this mode. If the relay isn't configured, the option is disabled with an explanation and acoustic analysis remains available.
+
+**Partial results are never a "safe" verdict.** Conversation-risk signals carry 65% of the fused score, so an acoustic-only run renders *Partial Analysis* + the acoustic anomaly score — no composite Threat Score, no green SAFE badge. Flagged results persist as real local incidents (`PersistedIncidentRepository`, SharedPreferences JSON, capped at 50); the original audio file itself is never copied into VoxGuard storage — only the report and the PCM SHA-256 survive.
 
 > **Privacy boundary:** raw microphone audio is processed in memory and never stored by VoxGuard. When live transcription is configured, PCM is streamed to the transcription provider for the duration of the session only. No audio or transcripts are sent to Family Shield — alert payloads carry an incident reference and risk band only.
 
@@ -222,6 +231,7 @@ flutter run \
 | `VOXGUARD_RELAY_TOKEN` | shared relay client token (`Bearer` auth). **Required when the deployed relay enforces it** — the relay rejects unauthenticated requests with 401. Demo-grade abuse resistance, not a truly private mobile secret | relay returns 401 (alert not sent) |
 | `ONESIGNAL_APP_ID` | enables Family Shield push registration via the OneSignal Flutter SDK — an App ID is a client-safe identifier, not the REST secret | receiver card shows "Push not configured"; app runs normally |
 | `VOXGUARD_TEST_FAMILY_EXTERNAL_ID` | dev-only recipient override — a real `vg_…` id from a second device for the two-device push smoke test | persisted Trusted Circle used |
+| `VOXGUARD_RECORDING_TRANSCRIPTION_URL` | prerecorded transcription relay base URL (`POST/GET /transcription/jobs` on the same Worker) — provider key stays server-side | enhanced transcription mode disabled; acoustic-only analysis remains |
 
 **Demo path**: Home → *Start SafeCall* → *Demo Attack* → tap **Simulate Scam** (FAB) → Arabic demo dialogue streams in with phrase highlights + evidence chips → ThreatCore escalates SAFE → CAUTION → HIGH RISK → end the call → post-call sheet walks *why flagged → verify identity → demo family alert → incident report*.
 

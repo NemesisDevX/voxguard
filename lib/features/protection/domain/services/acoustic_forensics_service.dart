@@ -14,7 +14,18 @@ import '../models/audio_forensic_metrics.dart';
 /// The service is stateful only in that it tracks the previous chunk's
 /// magnitude spectrum to compute spectral flux; call [reset] between
 /// calls.
-final class AcousticForensicsService {
+///
+/// [IAcousticAnalyzer] is the narrow seam recording analysis depends
+/// on — tests substitute a counting fake without touching the FFT.
+abstract interface class IAcousticAnalyzer {
+  /// Clears inter-chunk state (call when a new call/session starts).
+  void reset();
+
+  /// Analyzes a mono PCM chunk (normalized -1.0 – 1.0 samples).
+  AudioForensicMetrics analyze(List<double> samples);
+}
+
+final class AcousticForensicsService implements IAcousticAnalyzer {
   AcousticForensicsService({this.sampleRate = 16000});
 
   /// Sample rate of the incoming PCM stream.
@@ -23,10 +34,12 @@ final class AcousticForensicsService {
   List<double>? _previousMagnitudes;
 
   /// Clears inter-chunk state (call when a new call/session starts).
+  @override
   void reset() => _previousMagnitudes = null;
 
   /// Analyzes a mono PCM chunk (normalized -1.0 – 1.0 samples) and
   /// returns the forensic feature snapshot.
+  @override
   AudioForensicMetrics analyze(List<double> samples) {
     if (samples.isEmpty) return const AudioForensicMetrics.zero();
 

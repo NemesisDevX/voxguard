@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../protection/domain/models/audio_forensic_metrics.dart';
 import '../../../protection/domain/models/composite_threat_report.dart';
@@ -159,14 +162,102 @@ final class InMemoryIncidentRepository implements IIncidentRepository {
   }
 }
 
+/// Real local persistence — SharedPreferences-backed JSON. Incidents
+/// survive app restart; only report metadata is stored (never audio).
+/// Bounded at [maxIncidents], newest-first, deduped/upserted by id,
+/// and corrupt rows are skipped on load rather than crashing.
+final class PersistedIncidentRepository implements IIncidentRepository {
+  PersistedIncidentRepository({
+    SharedPreferences? prefs,
+    int maxIncidents = 50,
+  })  : _prefs = prefs,
+        _maxIncidents = maxIncidents {
+    _loadFuture = _doLoad();
+  }
+
+  static const _key = 'voxguard.incidents_v1';
+
+  final SharedPreferences? _prefs;
+  final int _maxIncidents;
+  final ValueNotifier<List<IncidentReport>> _incidents =
+      ValueNotifier<List<IncidentReport>>(const []);
+  late final Future<void> _loadFuture;
+
+  Future<void> _doLoad() async {
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      final raw = prefs.getString(_key);
+      if (raw == null || raw.isEmpty) return;
+      final decoded = jsonDecode(raw);
+      if (decoded is! List) return;
+      final loaded = <IncidentReport>[];
+      for (final row in decoded) {
+        if (loaded.length >= _maxIncidents) break;
+        if (row is! Map) continue;
+        final report = IncidentReport.fromJson(
+          Map<String, dynamic>.from(row),
+        );
+        if (report == null) continue; // corrupt row — skip safely
+        if (loaded.any((i) => i.id == report.id)) continue;
+        loaded.add(report);
+      }
+      _incidents.value = loaded;
+    } catch (_) {
+      _incidents.value = const []; // unreadable → honest empty history
+    }
+  }
+
+  @override
+  Future<List<IncidentReport>> getAllIncidents() async {
+    await _loadFuture;
+    return List.unmodifiable(_incidents.value);
+  }
+
+  @override
+  Future<IncidentReport?> getIncidentById(String id) async {
+    for (final i in await getAllIncidents()) {
+      if (i.id == id) return i;
+    }
+    return null;
+  }
+
+  @override
+  Future<void> saveIncident(IncidentReport incident) async {
+    await _loadFuture;
+    // Upsert by id — the same id never produces a duplicate entry.
+    final list = _incidents.value.toList()
+      ..removeWhere((i) => i.id == incident.id)
+      ..insert(0, incident); // newest first
+    while (list.length > _maxIncidents) {
+      list.removeLast(); // bounded cap
+    }
+    _incidents.value = List.unmodifiable(list);
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      await prefs.setString(
+        _key,
+        jsonEncode([for (final i in list) i.toJson()]),
+      );
+    } catch (_) {
+      // Persistence failure must not break the in-memory flow.
+    }
+  }
+
+  @override
+  ValueListenable<List<IncidentReport>> get incidents => _incidents;
+}
+
 /// Process-wide accessor for the incident store.
 final class IncidentRepositoryLocator {
   IncidentRepositoryLocator._();
 
   static IIncidentRepository? _instance;
 
+  /// Production default — real local persistence. A fresh install
+  /// honestly shows an empty history (sample fixtures stay behind
+  /// `InMemoryIncidentRepository` for demo/tests only).
   static IIncidentRepository get instance =>
-      _instance ??= InMemoryIncidentRepository();
+      _instance ??= PersistedIncidentRepository();
 
   @visibleForTesting
   static set instance(IIncidentRepository repo) => _instance = repo;

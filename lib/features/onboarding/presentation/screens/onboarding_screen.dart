@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -19,12 +21,19 @@ class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({
     super.key,
     this.onCompleted,
+    this.onStartSafeCall,
     this.reviewMode = false,
     this.pushService,
   });
 
   /// Called when the user finishes/skips onboarding (first-run mode).
   final VoidCallback? onCompleted;
+
+  /// "Start SafeCall" owner. When provided (StartupGate wiring), the
+  /// caller owns completion + launch so the post-call sheet keeps a
+  /// mounted context after this screen unmounts. When null (directly
+  /// pushed instances), the screen completes then launches itself.
+  final Future<void> Function()? onStartSafeCall;
   final bool reviewMode;
 
   /// Injectable for tests; defaults to the process-wide push service.
@@ -49,11 +58,30 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.dispose();
   }
 
-  void _finish() => widget.onCompleted?.call();
+  bool _finishing = false;
 
-  Future<void> _startSafeCall() async {
+  void _finish() {
+    if (_finishing) return;
+    _finishing = true;
+    widget.onCompleted?.call();
+  }
+
+  void _startSafeCall() {
+    if (_finishing) return;
+    _finishing = true;
+    final launch = widget.onStartSafeCall;
+    if (launch != null) {
+      // The caller (StartupGate) owns completion and launches from a
+      // context that survives this screen's unmount — the post-call
+      // safety sheet can then always present.
+      launch().whenComplete(() => _finishing = false);
+      return;
+    }
     _finish();
-    if (mounted) await launchSafeCall(context);
+    if (mounted) {
+      unawaited(launchSafeCall(context)
+          .whenComplete(() => _finishing = false));
+    }
   }
 
   Future<void> _enableAlerts() async {
@@ -332,15 +360,27 @@ class _PermissionsPage extends StatelessWidget {
         ValueListenableBuilder<FamilyPushRegistration>(
           valueListenable: push.registration,
           builder: (context, reg, _) {
+            // The permission prompt can only be requested when the OS
+            // can actually show one. Denied/unconfigured/unsupported
+            // states disable the action instead of firing a no-op —
+            // denied users are directed to system Settings.
+            final canRequest = switch (reg.status) {
+              PushRegistrationStatus.permissionRequired ||
+              PushRegistrationStatus.error => true,
+              _ => false,
+            };
             final label = switch (reg.status) {
               PushRegistrationStatus.registered =>
                 'Family Alerts enabled',
               PushRegistrationStatus.permissionDenied =>
-                'Notifications denied — enable later in Settings',
+                'Notifications are off — you can enable them later '
+                    'from your device\'s Settings app',
               PushRegistrationStatus.unsupported =>
-                'Push not supported on this platform',
+                'Push alerts aren\'t supported on this platform',
               PushRegistrationStatus.notConfigured =>
-                'Push not configured on this build',
+                'Push alerts aren\'t configured in this build',
+              PushRegistrationStatus.registering =>
+                'Enabling notifications…',
               _ => null,
             };
             return Column(
@@ -349,10 +389,7 @@ class _PermissionsPage extends StatelessWidget {
                 SizedBox(
                   width: double.infinity,
                   child: OutlinedButton.icon(
-                    onPressed:
-                        reg.status == PushRegistrationStatus.registered
-                            ? null
-                            : onEnableAlerts,
+                    onPressed: canRequest ? onEnableAlerts : null,
                     icon: const Icon(Icons.notifications_outlined),
                     label: const Text('Enable Family Alerts'),
                   ),

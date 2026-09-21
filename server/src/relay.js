@@ -14,6 +14,8 @@
  *           target_channel: "push", data: {...} }
  */
 
+import { handleTranscriptionRequest } from './transcription.js';
+
 export const MAX_RECIPIENTS = 5; // Family Vault model — hard cap, no fan-out abuse.
 const MAX_INCIDENT_ID_LEN = 64;
 const MAX_TITLE_LEN = 100;
@@ -108,8 +110,9 @@ function corsHeaders(request, env) {
   if (!origin) return {};
   return {
     'Access-Control-Allow-Origin': origin,
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Access-Control-Allow-Methods': 'POST, GET, OPTIONS',
+    'Access-Control-Allow-Headers':
+      'Content-Type, Authorization, X-Audio-Format',
     'Vary': 'Origin',
   };
 }
@@ -262,6 +265,15 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: cors });
   }
+
+  // Prerecorded-transcription relay routes (/transcription/*).
+  if (url.pathname.startsWith('/transcription/')) {
+    const res = await handleTranscriptionRequest(
+      request, env, fetchImpl, cors,
+    );
+    if (res) return res;
+  }
+
   if (request.method !== 'POST' || url.pathname !== '/alert') {
     return jsonResponse(404, { error: 'not found' }, cors);
   }

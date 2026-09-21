@@ -45,6 +45,8 @@ dependencies:
   onesignal_flutter: 5.6.11
   shared_preferences: 2.5.3
   url_launcher: ^6.3.2
+  file_picker: 13.1.0
+  audio_decoder: 0.8.1
 
 dev_dependencies:
   flutter_test:

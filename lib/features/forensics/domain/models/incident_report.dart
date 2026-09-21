@@ -26,6 +26,7 @@ final class IncidentReport extends Equatable {
     required this.transcriptSnippets,
     required this.recommendedActions,
     this.disclaimer = legalDisclaimer,
+    this.analysisIsPartial = false,
   });
 
   /// Standard legal disclaimer rendered on every report.
@@ -81,6 +82,11 @@ final class IncidentReport extends Equatable {
   /// Legal disclaimer rendered on the report footer.
   final String disclaimer;
 
+  /// True when this record was produced by an acoustic-only analysis
+  /// (no conversation-risk signals) — the UI labels it partial rather
+  /// than a full fused verdict.
+  final bool analysisIsPartial;
+
   /// `MM:SS` duration label.
   String get durationLabel {
     final m = (callDurationSeconds ~/ 60).toString().padLeft(2, '0');
@@ -120,6 +126,121 @@ final class IncidentReport extends Equatable {
         '\n$disclaimer';
   }
 
+  static final _idPattern = RegExp(r'^[A-Za-z0-9_\-.:@]{1,64}$');
+  static final _shaPattern = RegExp(r'^[0-9a-f]{64}$');
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'timestamp': timestamp.toIso8601String(),
+        'caller_label': callerLabel,
+        'call_duration_seconds': callDurationSeconds,
+        'audio_digest_sha256': audioDigestSha256,
+        'audio_source_label': audioSourceLabel,
+        'transcription_source_label': transcriptionSourceLabel,
+        'peak_risk_score': peakRiskScore,
+        'risk_level': riskLevel.name,
+        'threat_reasons': threatReasons,
+        'acoustic_metrics': acousticMetrics.toJson(),
+        'semantic_signals': semanticSignals.toJson(),
+        'transcript_snippets':
+            [for (final s in transcriptSnippets) s.toJson()],
+        'recommended_actions': recommendedActions,
+        'disclaimer': disclaimer,
+        'analysis_is_partial': analysisIsPartial,
+      };
+
+  /// Strict decode — every field validated; a malformed row is
+  /// skipped by the repository rather than crashing startup.
+  static IncidentReport? fromJson(Map<String, dynamic> json) {
+    String? boundedStr(Object? v, int max) =>
+        v is String && v.isNotEmpty && v.length <= max ? v : null;
+    List<String>? strList(Object? v, int maxItems, int maxLen) {
+      if (v is! List || v.length > maxItems) return null;
+      final out = <String>[];
+      for (final e in v) {
+        if (e is! String || e.length > maxLen) return null;
+        out.add(e);
+      }
+      return out;
+    }
+
+    final id = json['id'];
+    final ts = DateTime.tryParse('${json['timestamp'] ?? ''}');
+    final caller = boundedStr(json['caller_label'], 200);
+    final duration = json['call_duration_seconds'];
+    final digest = json['audio_digest_sha256'];
+    final audioSrc = boundedStr(json['audio_source_label'], 200);
+    final sttSrc = boundedStr(json['transcription_source_label'], 200);
+    final score = json['peak_risk_score'];
+    final level = json['risk_level'];
+    final reasons = strList(json['threat_reasons'], 32, 300);
+    final actions = strList(json['recommended_actions'], 16, 300);
+    final acoustic =
+        json['acoustic_metrics'] is Map<String, dynamic>
+            ? AudioForensicMetrics.fromJson(
+                json['acoustic_metrics'] as Map<String, dynamic>)
+            : null;
+    final semantic =
+        json['semantic_signals'] is Map<String, dynamic>
+            ? SemanticThreatSignals.fromJson(
+                json['semantic_signals'] as Map<String, dynamic>)
+            : null;
+    final snippetsJson = json['transcript_snippets'];
+    List<TranscriptSnippet>? snippets;
+    if (snippetsJson is List && snippetsJson.length <= 200) {
+      snippets = [];
+      for (final e in snippetsJson) {
+        if (e is! Map<String, dynamic>) return null;
+        final s = TranscriptSnippet.fromJson(e);
+        if (s == null) return null;
+        snippets.add(s);
+      }
+    }
+    if (id is! String ||
+        !_idPattern.hasMatch(id) ||
+        ts == null ||
+        caller == null ||
+        duration is! int ||
+        duration < 0 ||
+        duration > 7 * 24 * 3600 ||
+        digest is! String ||
+        !_shaPattern.hasMatch(digest) ||
+        audioSrc == null ||
+        sttSrc == null ||
+        score is! num ||
+        score < 0 ||
+        score > 1 ||
+        level is! String ||
+        !ThreatRiskLevel.values.any((l) => l.name == level) ||
+        reasons == null ||
+        actions == null ||
+        acoustic == null ||
+        semantic == null ||
+        snippets == null) {
+      return null;
+    }
+    return IncidentReport(
+      id: id,
+      timestamp: ts,
+      callerLabel: caller,
+      callDurationSeconds: duration,
+      audioDigestSha256: digest,
+      audioSourceLabel: audioSrc,
+      transcriptionSourceLabel: sttSrc,
+      peakRiskScore: score.toDouble(),
+      riskLevel:
+          ThreatRiskLevel.values.firstWhere((l) => l.name == level),
+      threatReasons: reasons,
+      acousticMetrics: acoustic,
+      semanticSignals: semantic,
+      transcriptSnippets: snippets,
+      recommendedActions: actions,
+      disclaimer: boundedStr(json['disclaimer'], 400) ??
+          legalDisclaimer,
+      analysisIsPartial: json['analysis_is_partial'] == true,
+    );
+  }
+
   @override
   List<Object?> get props => [
         id,
@@ -136,5 +257,6 @@ final class IncidentReport extends Equatable {
         semanticSignals,
         transcriptSnippets,
         recommendedActions,
+        analysisIsPartial,
       ];
 }

@@ -7,6 +7,7 @@ import '../../../forensics/presentation/screens/incidents_history_screen.dart';
 import '../../../paywall/presentation/screens/paywall_screen.dart';
 import '../../../onboarding/presentation/screens/onboarding_screen.dart';
 import '../../../protection/presentation/safecall_launcher.dart';
+import '../../../recording/presentation/screens/analyze_recording_screen.dart';
 import '../widgets/family_receiver_card.dart';
 import '../widgets/protection_banner.dart';
 import '../widgets/trusted_circle_card.dart';
@@ -144,7 +145,11 @@ class _ShieldTab extends StatelessWidget {
             icon: Icons.upload_file_outlined,
             title: AppStrings.analyzeRecording,
             description: AppStrings.analyzeRecordingDesc,
-            onTap: () => onComingSoon(AppStrings.analyzeRecording),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) => const AnalyzeRecordingScreen(),
+              ),
+            ),
           ),
         ],
       ),

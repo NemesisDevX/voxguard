@@ -8,6 +8,10 @@ import 'widgets/post_call_safety_sheet.dart';
 /// completion CTA so both paths get identical session + post-call
 /// safety-sheet behavior. Never auto-starts the mic: the user picks
 /// Live Mic or Demo inside the SafeCall screen.
+///
+/// `context` must belong to a widget that stays mounted for the
+/// duration of the session (e.g. Home or the StartupGate element) —
+/// the post-call sheet is shown from it after the route pops.
 Future<void> launchSafeCall(BuildContext context) async {
   final ended = await Navigator.of(context, rootNavigator: true)
       .push<SafeCallEnded>(

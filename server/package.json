@@ -5,7 +5,7 @@
   "type": "module",
   "description": "Minimal edge relay: VoxGuard client → relay → OneSignal REST API. Holds the OneSignal secret server-side.",
   "scripts": {
-    "test": "node --test test/relay.test.js",
+    "test": "node --test test/relay.test.js test/transcription.test.js",
     "dev": "wrangler dev",
     "deploy": "wrangler deploy"
   }

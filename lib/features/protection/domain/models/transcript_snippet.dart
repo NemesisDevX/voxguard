@@ -17,6 +17,30 @@ final class TranscriptSnippet extends Equatable {
   /// When the snippet arrived.
   final DateTime timestamp;
 
+  Map<String, dynamic> toJson() => {
+        'speaker': speaker,
+        'text': text,
+        'timestamp': timestamp.toIso8601String(),
+      };
+
+  /// Strict decode — bounded strings, parseable timestamp.
+  static TranscriptSnippet? fromJson(Map<String, dynamic> json) {
+    final speaker = json['speaker'];
+    final text = json['text'];
+    final ts = DateTime.tryParse('${json['timestamp'] ?? ''}');
+    if (speaker is! String ||
+        speaker.isEmpty ||
+        speaker.length > 64 ||
+        text is! String ||
+        text.isEmpty ||
+        text.length > 8000 ||
+        ts == null) {
+      return null;
+    }
+    return TranscriptSnippet(
+        speaker: speaker, text: text, timestamp: ts);
+  }
+
   @override
   List<Object?> get props => [speaker, text, timestamp];
 }
