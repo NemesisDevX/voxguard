@@ -406,6 +406,26 @@ void main() {
       expect(hit, isFalse);
     });
 
+    test('unresolved is rejected client-side — zero network I/O',
+        () async {
+      var hit = false;
+      final service = FamilyShieldAlertService(
+        httpClient: http_testing.MockClient((_) async {
+          hit = true;
+          return http.Response('{}', 200);
+        }),
+        relayUrl: 'https://relay.example.com/alert',
+        senderIdentity: () async => vg('9'),
+      );
+      final result = await service.sendFamilyShieldResponse(
+        incidentId: 'INC-9',
+        resolution: AlertResolution.unresolved,
+        targetExternalId: vg('a'),
+      );
+      expect(result.status, AlertDispatchStatus.rejected);
+      expect(hit, isFalse);
+    });
+
     test('demo mode simulates — nothing leaves the device', () async {
       var hit = false;
       final service = FamilyShieldAlertService(

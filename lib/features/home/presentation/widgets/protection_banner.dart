@@ -17,10 +17,18 @@ class ProtectionBanner extends StatefulWidget {
 
 class _ProtectionBannerState extends State<ProtectionBanner>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 2200),
-  )..repeat();
+  // Eagerly initialized in initState — lazy field init inside
+  // dispose() would create a ticker on a deactivated element.
+  late final AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
+  }
 
   @override
   void dispose() {

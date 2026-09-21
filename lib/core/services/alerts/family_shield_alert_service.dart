@@ -200,6 +200,14 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
         detail: 'Family Shield is disabled.',
       );
     }
+    // `unresolved` is a local state, never a wire resolution — reject
+    // client-side without any network I/O.
+    if (resolution == AlertResolution.unresolved) {
+      return const AlertDispatchResult(
+        status: AlertDispatchStatus.rejected,
+        detail: 'Choose Safe or Still Suspicious before responding.',
+      );
+    }
     if (!FamilyContactRules.externalIdPattern.hasMatch(targetExternalId)) {
       return const AlertDispatchResult(
         status: AlertDispatchStatus.rejected,

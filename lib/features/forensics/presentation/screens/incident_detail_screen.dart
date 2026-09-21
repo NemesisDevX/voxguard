@@ -142,7 +142,7 @@ class _ResponseRow extends StatelessWidget {
     return FutureBuilder<String>(
       future: _responderName(),
       builder: (context, snap) {
-        final name = snap.data ?? 'A trusted person';
+        final name = snap.data ?? 'An unrecognized VoxGuard identity';
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
@@ -178,7 +178,8 @@ class _ResponseRow extends StatelessWidget {
     for (final c in contacts) {
       if (c.externalId == response.responderExternalId) return c.name;
     }
-    return 'A trusted person';
+    // Unknown id — opaque, not evidence of trust.
+    return 'An unrecognized VoxGuard identity';
   }
 }
 

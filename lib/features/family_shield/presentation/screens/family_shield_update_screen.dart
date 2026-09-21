@@ -26,7 +26,9 @@ class FamilyShieldUpdateScreen extends StatelessWidget {
     final isSafe = response.resolution == AlertResolution.safe;
     final color =
         isSafe ? AppColors.statusSafe : AppColors.statusWarning;
-    final who = responderName ?? 'A trusted person';
+    // An opaque vg_… id is not proof of trust — never label an
+    // unrecognized identity as a "trusted person".
+    final who = responderName ?? 'An unrecognized VoxGuard identity';
     return Scaffold(
       appBar: AppBar(title: const Text('Family Shield Update')),
       body: SafeArea(

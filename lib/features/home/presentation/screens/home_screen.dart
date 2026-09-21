@@ -5,9 +5,8 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../forensics/presentation/screens/incidents_history_screen.dart';
 import '../../../paywall/presentation/screens/paywall_screen.dart';
-import '../../../protection/presentation/bloc/safecall_state.dart';
-import '../../../protection/presentation/screens/safecall_screen.dart';
-import '../../../protection/presentation/widgets/post_call_safety_sheet.dart';
+import '../../../onboarding/presentation/screens/onboarding_screen.dart';
+import '../../../protection/presentation/safecall_launcher.dart';
 import '../widgets/family_receiver_card.dart';
 import '../widgets/protection_banner.dart';
 import '../widgets/trusted_circle_card.dart';
@@ -22,18 +21,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _tabIndex = 0;
 
-  Future<void> _openSafeCall() async {
-    final ended = await Navigator.of(context).push<SafeCallEnded>(
-      MaterialPageRoute<SafeCallEnded>(
-        builder: (_) => const SafeCallScreen(),
-      ),
-    );
-    if (ended == null || !mounted) return;
-
-    // Post-call safety flow: why flagged → verify identity → optional
-    // demo family alert → incident summary → natural upgrade moment.
-    await PostCallSafetySheet.show(context, ended);
-  }
+  Future<void> _openSafeCall() => launchSafeCall(context);
 
   void _showComingSoon(String feature) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -309,10 +297,43 @@ class _SettingsTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ListView(
       padding: const EdgeInsets.all(20),
-      children: const [
-        FamilyReceiverCard(),
-        SizedBox(height: 16),
-        TrustedCircleCard(),
+      children: [
+        const FamilyReceiverCard(),
+        const SizedBox(height: 16),
+        const TrustedCircleCard(),
+        const SizedBox(height: 16),
+        // Re-open the onboarding/privacy walkthrough — review mode
+        // never touches completion state.
+        Material(
+          color: AppColors.bgElevated,
+          borderRadius: BorderRadius.circular(14),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(14),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(
+                builder: (_) =>
+                    const OnboardingScreen(reviewMode: true),
+              ),
+            ),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(
+                  horizontal: 14, vertical: 14),
+              child: Row(
+                children: [
+                  Icon(Icons.help_outline,
+                      color: AppColors.textMuted, size: 20),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Text('How VoxGuard Works',
+                        style: AppTypography.titleMedium),
+                  ),
+                  Icon(Icons.chevron_right,
+                      color: AppColors.textMuted, size: 18),
+                ],
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }

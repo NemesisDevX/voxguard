@@ -149,8 +149,12 @@ final class FamilyAlertCoordinator {
       _scheduleFlush();
       return;
     }
+    // Resolution is part of the dedupe key: a CHANGED resolution from
+    // the same responder is a new event worth surfacing, while an
+    // identical redelivery must not open the screen twice.
     final dedupeKey =
-        'resp|${response.responderExternalId}|${response.incidentId}';
+        'resp|${response.responderExternalId}|${response.incidentId}'
+        '|${response.resolution.name}';
     if (!_navigatedKeys.add(dedupeKey)) return;
     final incident =
         await _incidents.getIncidentById(response.incidentId);

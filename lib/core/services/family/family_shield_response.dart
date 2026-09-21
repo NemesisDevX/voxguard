@@ -73,13 +73,25 @@ final class FamilyShieldResponse {
           'received_at': receivedAt!.toIso8601String(),
       };
 
+  static final _incidentPattern =
+      RegExp(r'^[A-Za-z0-9_\-.:@]{1,64}$');
+
+  /// Strict load validation — skip corrupted rows safely.
   static FamilyShieldResponse? fromJson(Map<String, dynamic> json) {
     final incidentId = json['incident_id'];
     final responder = json['responder_external_id'];
     final resName = json['resolution'];
-    if (incidentId is! String || responder is! String) return null;
+    if (incidentId is! String || !_incidentPattern.hasMatch(incidentId)) {
+      return null;
+    }
+    if (responder is! String ||
+        !_externalIdPattern.hasMatch(responder)) {
+      return null;
+    }
     final resolution = AlertResolution.values.asNameMap()[resName];
-    if (resolution == null) return null;
+    if (resolution == null || !_validResolutions.contains(resolution)) {
+      return null;
+    }
     return FamilyShieldResponse(
       incidentId: incidentId,
       responderExternalId: responder,
@@ -125,11 +137,14 @@ final class PersistedFamilyShieldResponseStore
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! List) return;
+      final seen = <String>{};
       final list = <FamilyShieldResponse>[];
       for (final e in decoded) {
         if (e is! Map<String, dynamic>) continue;
         final r = FamilyShieldResponse.fromJson(e);
-        if (r != null) list.add(r);
+        if (r == null || !seen.add(r.key)) continue;
+        if (list.length >= _maxStored) break;
+        list.add(r);
       }
       _list.value = list;
     } on FormatException {

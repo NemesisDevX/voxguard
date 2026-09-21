@@ -53,25 +53,37 @@ final class ReceivedFamilyAlert {
         if (resolvedAt != null) 'resolved_at': resolvedAt!.toIso8601String(),
       };
 
+  static final _externalIdPattern = RegExp(r'^vg_[0-9a-f]{32}$');
+  static final _incidentPattern =
+      RegExp(r'^[A-Za-z0-9_\-.:@]{1,64}$');
+  static const _validRiskLevels = {'safe', 'suspicious', 'highRisk'};
+
+  /// Strict load validation — corrupted or tampered rows are
+  /// skipped, never repaired into fake alerts.
   static ReceivedFamilyAlert? fromJson(Map<String, dynamic> json) {
     final incidentId = json['incident_id'];
     final sender = json['sender_external_id'];
     final risk = json['risk_level'];
     final receivedAt = DateTime.tryParse('${json['received_at'] ?? ''}');
     final resName = json['resolution'];
-    if (incidentId is! String ||
-        sender is! String ||
-        risk is! String ||
-        receivedAt == null) {
+    if (incidentId is! String || !_incidentPattern.hasMatch(incidentId)) {
       return null;
     }
+    if (sender is! String || !_externalIdPattern.hasMatch(sender)) {
+      return null;
+    }
+    if (risk is! String || !_validRiskLevels.contains(risk)) {
+      return null;
+    }
+    if (receivedAt == null) return null;
+    final resolution = AlertResolution.values.asNameMap()[resName];
+    if (resolution == null) return null;
     return ReceivedFamilyAlert(
       incidentId: incidentId,
       senderExternalId: sender,
       riskLevel: risk,
       receivedAt: receivedAt,
-      resolution: AlertResolution.values.asNameMap()[resName] ??
-          AlertResolution.unresolved,
+      resolution: resolution,
       resolvedAt: DateTime.tryParse('${json['resolved_at'] ?? ''}'),
     );
   }
@@ -122,11 +134,16 @@ final class PersistedReceivedFamilyAlertRepository
     try {
       final decoded = jsonDecode(raw);
       if (decoded is! List) return;
+      // Sanitize: well-formed rows only, dedupe by stable key, cap
+      // applies during load — not only on insert.
+      final seen = <String>{};
       final list = <ReceivedFamilyAlert>[];
       for (final e in decoded) {
         if (e is! Map<String, dynamic>) continue;
         final a = ReceivedFamilyAlert.fromJson(e);
-        if (a != null) list.add(a);
+        if (a == null || !seen.add(a.key)) continue;
+        if (list.length >= _maxStored) break;
+        list.add(a);
       }
       _list.value = list;
     } on FormatException {

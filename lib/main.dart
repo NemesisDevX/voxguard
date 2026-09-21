@@ -6,7 +6,7 @@ import 'core/constants/app_strings.dart';
 import 'core/services/push/onesignal_push_identity_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/family_shield/family_alert_coordinator.dart';
-import 'features/home/presentation/screens/home_screen.dart';
+import 'features/onboarding/presentation/screens/startup_gate.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -41,7 +41,7 @@ class VoxGuardApp extends StatelessWidget {
       theme: AppTheme.dark,
       navigatorKey: FamilyAlertNavigator.key,
       scaffoldMessengerKey: FamilyAlertNavigator.messengerKey,
-      home: const HomeScreen(),
+      home: const StartupGate(),
     );
   }
 }

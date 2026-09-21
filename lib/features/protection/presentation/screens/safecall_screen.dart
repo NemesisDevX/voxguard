@@ -43,10 +43,10 @@ class _SafeCallView extends StatefulWidget {
 
 class _SafeCallViewState extends State<_SafeCallView>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _waveController = AnimationController(
-    vsync: this,
-    duration: const Duration(milliseconds: 1800),
-  )..repeat();
+  // Eagerly initialized in initState — a lazy field would be created
+  // during dispose() if build never touched it, and createTicker on a
+  // deactivated element crashes/leaks a ticker.
+  late final AnimationController _waveController;
 
   Timer? _clockTimer;
   Duration _elapsed = Duration.zero;
@@ -54,6 +54,10 @@ class _SafeCallViewState extends State<_SafeCallView>
   @override
   void initState() {
     super.initState();
+    _waveController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat();
     _clockTimer = Timer.periodic(const Duration(seconds: 1), (_) {
       if (mounted) setState(() => _elapsed += const Duration(seconds: 1));
     });
