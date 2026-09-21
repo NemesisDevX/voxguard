@@ -1,6 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/services/alerts/family_contact_repository.dart';
 import '../../../../core/services/alerts/family_shield_alert_service.dart';
 import '../../../../core/services/family/received_family_alert_repository.dart';
@@ -82,6 +86,8 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
     await ReceivedFamilyAlertLocator.instance
         .setResolution(widget.alert.key, resolution);
     if (mounted) setState(() => _resolution = resolution);
+    // A human response landed — one restrained confirmation pulse.
+    unawaited(HapticFeedback.mediumImpact());
 
     final result = await FamilyAlertLocator.instance
         .sendFamilyShieldResponse(
@@ -116,6 +122,11 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
+            const Text(
+              AppStrings.familyAlertFraming,
+              style: AppTypography.bodyMedium,
+            ),
+            const SizedBox(height: 8),
             Text(_headline, style: AppTypography.titleLarge),
             const SizedBox(height: 12),
             Container(
@@ -183,7 +194,13 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
               ),
 
             const SizedBox(height: 24),
-            Text('Your assessment', style: AppTypography.titleMedium),
+            const Text(AppStrings.yourJudgment,
+                style: AppTypography.titleMedium),
+            const SizedBox(height: 6),
+            const Text(
+              AppStrings.humanResponseNote,
+              style: AppTypography.bodyMedium,
+            ),
             const SizedBox(height: 10),
             Row(
               children: [

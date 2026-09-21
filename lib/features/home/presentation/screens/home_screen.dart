@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/services/alerts/family_contact_repository.dart';
+import '../../../../core/services/push/onesignal_push_identity_service.dart';
+import '../../../../core/services/push/push_identity_service.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/signal_mark.dart';
 import '../../../forensics/presentation/screens/incidents_history_screen.dart';
 import '../../../paywall/domain/models/entitlement_state.dart';
 import '../../../paywall/domain/models/subscription_tier.dart';
@@ -36,7 +40,7 @@ class _HomeScreenState extends State<HomeScreen> {
       appBar: AppBar(
         title: const Row(
           children: [
-            Icon(Icons.shield, color: AppColors.statusSafe, size: 26),
+            SignalMark(size: 24),
             SizedBox(width: 10),
             Flexible(
               child: Text(
@@ -66,7 +70,10 @@ class _HomeScreenState extends State<HomeScreen> {
       body: IndexedStack(
         index: _tabIndex,
         children: [
-          _ShieldTab(onSafeCall: _openSafeCall),
+          _ShieldTab(
+            onSafeCall: _openSafeCall,
+            onOpenFamily: () => setState(() => _tabIndex = 2),
+          ),
           const IncidentsHistoryScreen(),
           const _SettingsTab(),
         ],
@@ -80,8 +87,7 @@ class _HomeScreenState extends State<HomeScreen> {
           onTap: (i) => setState(() => _tabIndex = i),
           items: const [
             BottomNavigationBarItem(
-              icon: Icon(Icons.shield_outlined),
-              activeIcon: Icon(Icons.shield),
+              icon: Icon(Icons.graphic_eq),
               label: AppStrings.navShield,
             ),
             BottomNavigationBarItem(
@@ -100,9 +106,10 @@ class _HomeScreenState extends State<HomeScreen> {
 }
 
 class _ShieldTab extends StatelessWidget {
-  const _ShieldTab({required this.onSafeCall});
+  const _ShieldTab({required this.onSafeCall, required this.onOpenFamily});
 
   final VoidCallback onSafeCall;
+  final VoidCallback onOpenFamily;
 
   @override
   Widget build(BuildContext context) {
@@ -113,17 +120,14 @@ class _ShieldTab extends StatelessWidget {
           const ProtectionBanner(),
           const SizedBox(height: 28),
 
-          // Hero — SafeCall is the product's primary experience.
-          _HeroSafeCallCard(onTap: onSafeCall),
+          // Hero — the primary experience. One statement, one action.
+          _HeroProtectionCard(onTap: onSafeCall),
 
-          const SizedBox(height: 32),
+          const SizedBox(height: 14),
 
-          // Secondary product path — Analyze Recording is a real,
-          // shipped feature, so it sits beside the hero rather than
-          // in an "experimental" bucket. Unfinished capabilities
-          // (e.g. Live Shield) do not appear in the release UI.
+          // Secondary product path — a real, shipped feature.
           _ActionTile(
-            icon: Icons.upload_file_outlined,
+            icon: Icons.audio_file_outlined,
             title: AppStrings.analyzeRecording,
             description: AppStrings.analyzeRecordingDesc,
             onTap: () => Navigator.of(context).push(
@@ -132,15 +136,21 @@ class _ShieldTab extends StatelessWidget {
               ),
             ),
           ),
+
+          const SizedBox(height: 28),
+
+          // Calm Family Shield readiness — a status surface, never
+          // an emergency banner when nothing is happening.
+          _FamilyShieldStatusCard(onTap: onOpenFamily),
         ],
       ),
     );
   }
 }
 
-/// The primary hero card — large, calm, unmistakably the main action.
-class _HeroSafeCallCard extends StatelessWidget {
-  const _HeroSafeCallCard({required this.onTap});
+/// The hero — large, calm, unmistakably the main action.
+class _HeroProtectionCard extends StatelessWidget {
+  const _HeroProtectionCard({required this.onTap});
 
   final VoidCallback onTap;
 
@@ -148,62 +158,62 @@ class _HeroSafeCallCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Material(
       color: AppColors.bgElevated,
-      borderRadius: BorderRadius.circular(20),
+      borderRadius: BorderRadius.circular(22),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         child: Ink(
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: AppColors.statusSafe.withValues(alpha: 0.35),
-            ),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.statusSafe.withValues(alpha: 0.10),
-                AppColors.bgElevated,
-              ],
+              color: AppColors.accent.withValues(alpha: 0.4),
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(22),
+            padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
+                const Row(
                   children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        color: AppColors.statusSafe.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.phone_in_talk_outlined,
-                        color: AppColors.statusSafe,
-                        size: 28,
-                      ),
-                    ),
-                    const Spacer(),
-                    const Icon(
+                    SignalMark(size: 40),
+                    Spacer(),
+                    Icon(
                       Icons.arrow_forward,
                       color: AppColors.textMuted,
                       size: 20,
                     ),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  AppStrings.startSafeCall,
-                  style: AppTypography.titleLarge,
-                ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 18),
                 const Text(
-                  AppStrings.startSafeCallDesc,
+                  AppStrings.protectionCheckTitle,
+                  style: AppTypography.displaySmall,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  AppStrings.protectionCheckDesc,
                   style: AppTypography.bodyMedium,
+                ),
+                const SizedBox(height: 18),
+                SizedBox(
+                  width: double.infinity,
+                  height: 48,
+                  child: FilledButton.icon(
+                    onPressed: onTap,
+                    icon: const Icon(Icons.graphic_eq, size: 18),
+                    label: const Text(
+                      AppStrings.protectionCheckCta,
+                      style: TextStyle(fontWeight: FontWeight.w700),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: AppColors.accent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -266,6 +276,100 @@ class _ActionTile extends StatelessWidget {
                     color: AppColors.textMuted, size: 18),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Family Shield readiness — reports the real local state: trusted
+/// people saved, alert registration status. A status surface, not
+/// an emergency banner; tapping it opens the Settings tab where the
+/// circle is managed.
+class _FamilyShieldStatusCard extends StatelessWidget {
+  const _FamilyShieldStatusCard({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: AppColors.surfaceCard,
+      borderRadius: BorderRadius.circular(14),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(14),
+        child: Ink(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: AppColors.borderSubtle),
+          ),
+          child: ValueListenableBuilder<List<FamilyContact>>(
+            valueListenable: FamilyContactLocator.instance.contacts,
+            builder: (context, contacts, _) {
+              return ValueListenableBuilder<FamilyPushRegistration>(
+                valueListenable:
+                    PushIdentityLocator.instance.registration,
+                builder: (context, reg, _) {
+                  final ready = contacts.isNotEmpty;
+                  final alertsOn = reg.status ==
+                      PushRegistrationStatus.registered;
+                  final (status, color) = !ready
+                      ? (
+                          AppStrings.familyNeedsSetup,
+                          AppColors.statusWarning
+                        )
+                      : (
+                          alertsOn
+                              ? '${AppStrings.familyReadyWithCircle} · '
+                                  '${AppStrings.familyAlertsEnabled}'
+                              : AppStrings.familyReadyWithCircle,
+                          alertsOn
+                              ? AppColors.statusSafe
+                              : AppColors.textMuted,
+                        );
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Icon(Icons.group_outlined,
+                              color: AppColors.accent, size: 18),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Text(AppStrings.familyShieldTitle,
+                                style: AppTypography.titleMedium),
+                          ),
+                          const Icon(Icons.chevron_right,
+                              color: AppColors.textMuted, size: 18),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Icon(Icons.circle, size: 8, color: color),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              status,
+                              style: AppTypography.bodyMedium
+                                  .copyWith(color: color),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      const Text(
+                        AppStrings.familyStatusHint,
+                        style: AppTypography.bodyMedium,
+                      ),
+                    ],
+                  );
+                },
+              );
+            },
           ),
         ),
       ),

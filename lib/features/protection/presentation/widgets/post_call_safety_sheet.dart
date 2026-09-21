@@ -17,10 +17,10 @@ import '../bloc/safecall_state.dart';
 
 /// Post-call safety flow shown when a protection session ends.
 ///
-/// For high-risk sessions this walks the user through:
-///   HIGH RISK → WHY FLAGGED → VERIFY IDENTITY → trusted-number
-///   guidance → optional Family Shield alert → incident summary →
-///   optional upgrade.
+/// Sequence: what happened → why it was flagged → what to do now
+/// (independent verification, primary) → family help → incident
+/// evidence. For high-risk sessions the header is a pause, not an
+/// alarm.
 ///
 /// Generic, relationship-free copy — no hard-coded "Brother" claims.
 class PostCallSafetySheet extends StatelessWidget {
@@ -76,14 +76,14 @@ class PostCallSafetySheet extends StatelessWidget {
             if (_highRisk && incident != null) ...[
               _WhyFlaggedSection(incident: incident),
               const SizedBox(height: 16),
-              const _VerifyIdentityCard(),
+              const _VerifyCard(),
               const SizedBox(height: 16),
               _FamilyShieldCard(incident: incident),
               const SizedBox(height: 16),
               SizedBox(
                 width: double.infinity,
                 height: 50,
-                child: ElevatedButton.icon(
+                child: OutlinedButton.icon(
                   onPressed: () {
                     Navigator.of(context).pop();
                     Navigator.of(context).push(
@@ -99,9 +99,9 @@ class PostCallSafetySheet extends StatelessWidget {
                     style:
                         TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                   ),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.accent,
-                    foregroundColor: Colors.white,
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.textPrimary,
+                    side: const BorderSide(color: AppColors.borderSubtle),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -144,6 +144,8 @@ class PostCallSafetySheet extends StatelessWidget {
 
 // ── Header ───────────────────────────────────────────────────────────
 
+/// High-risk: "Pause." — one word of clarity, then the verification
+/// instruction. Safe sessions get a quiet confirmation.
 class _Header extends StatelessWidget {
   const _Header({required this.result});
 
@@ -160,34 +162,34 @@ class _Header extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 56,
-          height: 56,
+          width: 60,
+          height: 60,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: color.withValues(alpha: 0.12),
-            border: Border.all(color: color.withValues(alpha: 0.6)),
+            color: color.withValues(alpha: 0.10),
+            border: Border.all(color: color.withValues(alpha: 0.55)),
           ),
           child: Icon(
-            highRisk ? Icons.gpp_maybe_outlined : Icons.verified_user_outlined,
+            highRisk
+                ? Icons.pause_circle_outline
+                : Icons.check_circle_outline,
             color: color,
-            size: 28,
+            size: 30,
           ),
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 14),
         Text(
-          highRisk
-              ? AppStrings.bannerThreat
-              : AppStrings.postCallEnded,
-          style: AppTypography.displaySmall.copyWith(color: color),
+          highRisk ? AppStrings.postCallPause : AppStrings.postCallEnded,
+          style: AppTypography.displayLarge.copyWith(color: color),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 6),
         Text(
           highRisk
-              ? '${AppStrings.threatScoreLabel}: $score/100 — '
-                  '${AppStrings.postCallReview}'
+              ? '${AppStrings.verifyBeforeYouAct} '
+                  '${AppStrings.threatScoreLabel}: $score/100.'
               : AppStrings.postCallReview,
-          style: AppTypography.bodyMedium,
+          style: AppTypography.bodyLarge,
           textAlign: TextAlign.center,
         ),
       ],
@@ -263,25 +265,44 @@ class _WhyFlaggedSection extends StatelessWidget {
   }
 }
 
-// ── Verify identity ──────────────────────────────────────────────────
+// ── What to do now — independent verification (the primary card) ────
 
-class _VerifyIdentityCard extends StatelessWidget {
-  const _VerifyIdentityCard();
+class _VerifyCard extends StatelessWidget {
+  const _VerifyCard();
 
   @override
   Widget build(BuildContext context) {
-    return _Section(
-      title: AppStrings.verifyIdentityTitle.toUpperCase(),
-      icon: Icons.verified_user_outlined,
-      accent: AppColors.accent,
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: AppColors.accent.withValues(alpha: 0.5), width: 1.2),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const Row(
+            children: [
+              Icon(Icons.verified_user_outlined,
+                  size: 16, color: AppColors.accent),
+              SizedBox(width: 8),
+              Expanded(
+                child: Text(
+                  AppStrings.verifyBeforeYouAct,
+                  style: AppTypography.labelSmall,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
           const Text(
             AppStrings.verifyIdentityBody,
             style: AppTypography.bodyLarge,
           ),
-          const SizedBox(height: 10),
+          const SizedBox(height: 12),
           const _Step(number: '1', text: 'Hang up — do not send money.'),
           const _Step(
             number: '2',
@@ -392,7 +413,7 @@ class _FamilyShieldCardState extends State<_FamilyShieldCard> {
                 .instance.capabilities.familyShieldOutbound;
         return _Section(
           title: 'FAMILY SHIELD',
-          icon: Icons.family_restroom_outlined,
+          icon: Icons.group_outlined,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -402,8 +423,8 @@ class _FamilyShieldCardState extends State<_FamilyShieldCard> {
                         'contacts; no real notification is delivered.'
                     : locked
                         ? AppStrings.familyVaultUnlocksAlerts
-                        : 'Send a Family Shield alert to people in your '
-                            'Trusted Circle.',
+                        : 'Ask a person you trust for a second set of '
+                            'eyes — send them a Family Shield alert.',
                 style: AppTypography.bodyMedium,
               ),
               const SizedBox(height: 12),
@@ -531,13 +552,11 @@ class _Section extends StatelessWidget {
     required this.title,
     required this.icon,
     required this.child,
-    this.accent = AppColors.textMuted,
   });
 
   final String title;
   final IconData icon;
   final Widget child;
-  final Color accent;
 
   @override
   Widget build(BuildContext context) {
@@ -554,7 +573,7 @@ class _Section extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(icon, size: 15, color: accent),
+              Icon(icon, size: 15, color: AppColors.textMuted),
               const SizedBox(width: 8),
               Expanded(child: Text(title, style: AppTypography.labelSmall)),
             ],

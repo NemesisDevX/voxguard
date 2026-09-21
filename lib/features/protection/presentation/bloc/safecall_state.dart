@@ -66,7 +66,7 @@ final class SafeCallMonitoring extends SafeCallState {
   final bool demoActive;
 
   /// RMS amplitude of the latest audio chunk (0–1), lightly smoothed.
-  /// Drives the ThreatCore inner pulse.
+  /// Drives the Signal Lens breathing motion.
   final double audioAmplitude;
 
   /// Whether a streaming STT provider is actively producing

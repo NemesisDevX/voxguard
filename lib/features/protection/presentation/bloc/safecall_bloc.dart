@@ -3,6 +3,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../../../core/services/audio/audio_stream_source.dart';
@@ -50,6 +51,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     DemoAudioSource? demoSource,
     IStreamingTranscriptionService? transcriptionService,
     IProductAccess? productAccess,
+    @visibleForTesting SafeCallState? initialState,
   })  : _acousticService = acousticService ?? AcousticForensicsService(),
         _semanticService = semanticService ?? SemanticThreatService(),
         _fusionEngine = fusionEngine ?? ThreatFusionEngine(),
@@ -57,7 +59,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
         _demoSource = demoSource ?? DemoAudioSource(),
         _stt = transcriptionService ?? AssemblyAiStreamingService(),
         _productAccess = productAccess ?? ProductAccessLocator.instance,
-        super(const SafeCallInitial()) {
+        super(initialState ?? const SafeCallInitial()) {
     on<StartLiveMicSessionEvent>(
         (e, emit) => _serialized(() => _onStartLiveMic(e, emit)));
     on<StartDemoSessionEvent>(
@@ -74,10 +76,17 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
         (e, emit) => _serialized(() => _onReset(e, emit)));
   }
 
+  /// Presentation-test seam — starts the bloc preloaded with a state
+  /// the real audio pipeline would take seconds of fake timers to
+  /// reach (e.g. a high-risk monitoring snapshot).
+  @visibleForTesting
+  factory SafeCallBloc.seeded(SafeCallState seed) =>
+      SafeCallBloc(initialState: seed);
+
   // ── Session constants ────────────────────────────────────────────
   static const double _acousticSmoothing = 0.35;
 
-  /// Light amplitude smoothing — keeps the ThreatCore pulse reactive
+  /// Light amplitude smoothing — keeps the Signal Lens pulse reactive
   /// to speech without jittering on every 30 ms frame.
   static const double _amplitudeSmoothing = 0.4;
 

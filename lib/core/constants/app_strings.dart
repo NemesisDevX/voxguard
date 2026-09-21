@@ -14,14 +14,29 @@ abstract final class AppStrings {
   static const String startSafeCallDesc =
       'In-app protected call with live threat telemetry.';
 
+  /// Home hero — the readiness-first primary action.
+  static const String protectionCheckTitle = 'Start a protection check';
+  static const String protectionCheckDesc =
+      'Use speakerphone or play suspicious audio nearby — '
+      'VoxGuard listens for risk signals.';
+  static const String protectionCheckCta = 'Start SafeCall';
+
   static const String analyzeRecording = 'Analyze Recording';
   static const String analyzeRecordingDesc =
-      'Upload call audio or a voice note for threat analysis.';
+      'Check a saved call recording or voice note.';
 
   static const String incidentLogTooltip = 'Incident log';
 
+  // ── Family Shield readiness (home status surface) ────────────────
+  static const String familyShieldTitle = 'Family Shield';
+  static const String familyReadyWithCircle = 'Trusted Circle ready';
+  static const String familyAlertsEnabled = 'Family alerts enabled';
+  static const String familyNeedsSetup = 'Needs setup';
+  static const String familyStatusHint =
+      'A second set of eyes when a call feels wrong.';
+
   // ── Bottom navigation ────────────────────────────────────────────
-  static const String navShield = 'Shield';
+  static const String navShield = 'Protect';
   static const String navIncidents = 'Incidents';
   static const String navSettings = 'Settings';
 
@@ -55,6 +70,12 @@ abstract final class AppStrings {
   static const String simulateScam = 'Simulate Scam';
   static const String stopSimulation = 'Stop Demo';
 
+  /// High-risk live-session cue — the emotional signature.
+  static const String pauseHeadline = 'Pause before acting.';
+  static const String verifyBeforeYouAct = 'Verify before you act.';
+  static const String endCallAndVerify = 'End call & verify';
+  static const String technicalDetails = 'TECHNICAL DETAILS';
+
   static const String liveTranscript = 'LIVE TRANSCRIPT';
   static const String transcriptEmpty =
       'Transcript appears here during a protected call.';
@@ -63,9 +84,10 @@ abstract final class AppStrings {
 
   // ── Paywall ──────────────────────────────────────────────────────
   static const String paywallTitle =
-      'Upgrade Your Shield.\nProtect What Matters.';
+      'Two signals.\nOne human decision.';
   static const String paywallSubtitle =
-      'Scam calls are evolving. Your defense should too.';
+      'VoxGuard flags risk — you verify. Paid plans extend what the '
+      'two signals can see.';
   static const String securityBadge =
       'Billing handled by your app store';
   static const String demoStoreBadge = 'DEMO STORE';
@@ -108,6 +130,10 @@ abstract final class AppStrings {
   static const String postCallEnded = 'Protection session ended';
   static const String postCallReview =
       'Review the evidence before taking further action.';
+  static const String postCallPause = 'Pause.';
+  static const String postCallVerifyCta = 'Verify independently';
+  static const String callSavedNumberHint =
+      'Call the person back using a number you already trust.';
   static const String whyFlaggedTitle = 'Why VoxGuard Flagged This Call';
   static const String verifyIdentityTitle = 'Verify Identity';
   static const String verifyIdentityBody =
@@ -120,4 +146,19 @@ abstract final class AppStrings {
       'Tip: agree on a family safe phrase offline — ask the caller for it.';
   static const String viewIncidentReport = 'View Incident Report';
   static const String incidentLogged = 'High-risk call logged';
+
+  // ── Analyze Recording step labels ────────────────────────────────
+  static const String stepPickRecording = 'PICK A RECORDING';
+  static const String stepPrivacyDepth = 'CHOOSE PRIVACY DEPTH';
+  static const String stepAnalyze = 'ANALYZE';
+  static const String stepResult = 'UNDERSTAND THE RESULT';
+
+  // ── Family Shield receiver — human framing ───────────────────────
+  static const String familyAlertFraming =
+      'Someone you know is asking for a second set of eyes.';
+  static const String yourJudgment = 'YOUR JUDGMENT';
+  static const String humanResponseNote =
+      'Your call is the verification — not the app. Marking safe or '
+      'suspicious is a human response; it does not change the '
+      'risk analysis.';
 }

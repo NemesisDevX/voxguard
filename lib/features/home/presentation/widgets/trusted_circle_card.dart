@@ -49,10 +49,9 @@ class TrustedCircleCard extends StatelessWidget {
               ),
               const SizedBox(height: 6),
               const Text(
-                'Family Shield alerts go only to these people. '
-                'Family Shield IDs route private safety alerts. '
-                'Phone numbers stay on this device and are never '
-                'included in alert payloads.',
+                'The people you can ask for a second set of eyes. '
+                'Alerts reach them by Family Shield ID — phone '
+                'numbers stay on this device.',
                 style: AppTypography.bodyMedium,
               ),
               const SizedBox(height: 12),

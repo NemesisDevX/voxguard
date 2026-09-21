@@ -64,7 +64,7 @@ abstract final class SubscriptionTiers {
   static const SubscriptionTier free = SubscriptionTier(
     tierId: TierId.free,
     name: 'Quick Check',
-    subtitle: 'On-device protection essentials',
+    subtitle: 'Local safety tools',
     features: [
       'Live Mic acoustic anomaly monitoring',
       'On-device recording analysis',
@@ -80,7 +80,7 @@ abstract final class SubscriptionTiers {
   static const SubscriptionTier sentinel = SubscriptionTier(
     tierId: TierId.sentinel,
     name: 'Sentinel Shield',
-    subtitle: 'Full dual-engine defense for you',
+    subtitle: 'Conversation-aware protection',
     isPopular: true,
     features: [
       'Everything in Quick Check',
@@ -98,7 +98,7 @@ abstract final class SubscriptionTiers {
   static const SubscriptionTier familyVault = SubscriptionTier(
     tierId: TierId.familyVault,
     name: 'Family Vault',
-    subtitle: 'Extend protection to your circle',
+    subtitle: 'The human verification loop',
     features: [
       'Everything in Sentinel Shield',
       'Send Family Shield alerts to your Trusted Circle',

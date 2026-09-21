@@ -4,10 +4,20 @@ import 'app_colors.dart';
 
 /// VoxGuard type scale.
 ///
-/// Crisp high-contrast white for headings, muted slate for body copy.
-/// Uses the platform default font family to stay clean and trusted.
+/// Consumer hierarchy: one primary statement per screen, one dominant
+/// action, evidence below. Warm off-white headings, muted periwinkle
+/// body copy, sparse uppercase reserved for compact section labels.
 abstract final class AppTypography {
   AppTypography._();
+
+  /// The one primary statement on a screen ("Pause before acting.").
+  static const TextStyle displayLarge = TextStyle(
+    fontSize: 30,
+    fontWeight: FontWeight.w700,
+    color: AppColors.textPrimary,
+    letterSpacing: -0.5,
+    height: 1.15,
+  );
 
   static const TextStyle displaySmall = TextStyle(
     fontSize: 26,

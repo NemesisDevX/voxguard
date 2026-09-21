@@ -156,13 +156,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 controller: _pageCtrl,
                 onPageChanged: (i) => setState(() => _page = i),
                 children: [
-                  const _UnderstandPage(),
-                  const _PrivacyPage(),
-                  _PermissionsPage(
+                  const _VoicePage(),
+                  const _SignalsPage(),
+                  const _VerifyPage(),
+                  _FamilyShieldPage(
                     push: _push,
                     onEnableAlerts: _enableAlerts,
                   ),
-                  const _FamilyShieldPage(),
                   _ReadyPage(
                     reviewMode: widget.reviewMode,
                     onStartSafeCall: _startSafeCall,
@@ -263,30 +263,60 @@ class _Bullet extends StatelessWidget {
   }
 }
 
-// ── Page 1 · Understand ──────────────────────────────────────────────
+// ── Page 1 · Familiar voice ──────────────────────────────────────────
 
-class _UnderstandPage extends StatelessWidget {
-  const _UnderstandPage();
+/// The emotional opener — the threat model in one sentence.
+class _VoicePage extends StatelessWidget {
+  const _VoicePage();
 
   @override
   Widget build(BuildContext context) {
     return const _Page(
-      icon: Icons.hearing,
-      iconColor: AppColors.statusSafe,
-      title: 'Hear the threat before you trust the voice.',
+      icon: Icons.record_voice_over_outlined,
+      iconColor: AppColors.statusWarning,
+      title: 'A familiar voice can still be misleading.',
       children: [
         Text(
-          'During a SafeCall protection session you start yourself, '
-          'VoxGuard listens for suspicious patterns and explains the '
-          'risk in plain language.',
+          'Scammers clone voices, spoof numbers, and pressure the '
+          'people you love. Hearing a familiar voice is not proof '
+          'of who is speaking.',
           style: AppTypography.bodyMedium,
         ),
         SizedBox(height: 14),
-        _Bullet('Conversation-risk signals — urgency, payment '
-            'demands, secrecy pressure.'),
-        _Bullet('Acoustic anomaly indicators — an assistive '
-            'heuristic prototype, not a forensic verdict.'),
-        _Bullet('Threat Score is a risk signal, not the statistical '
+        _Bullet('Urgency, secrecy, and payment pressure are the '
+            'real tells — not the voice itself.'),
+        _Bullet('Caller ID and sound alone can never prove identity.'),
+      ],
+    );
+  }
+}
+
+// ── Page 2 · Two signals ─────────────────────────────────────────────
+
+/// What the app actually watches — two evidence streams, one human
+/// decision. The Signal Lens metaphor introduced in words.
+class _SignalsPage extends StatelessWidget {
+  const _SignalsPage();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _Page(
+      icon: Icons.blur_on,
+      iconColor: AppColors.accent,
+      title: 'Two signals. One human decision.',
+      children: [
+        Text(
+          'During a SafeCall session you start yourself, VoxGuard '
+          'listens for risk signals — never identity certainty — and '
+          'explains what it heard in plain language.',
+          style: AppTypography.bodyMedium,
+        ),
+        SizedBox(height: 14),
+        _Bullet('Conversation signal — urgency, payment demands, '
+            'secrecy pressure in what is being said.'),
+        _Bullet('Voice-acoustic signal — anomaly indicators; an '
+            'assistive heuristic, not a forensic verdict.'),
+        _Bullet('The Risk Signal score is a signal, not the '
             'probability that a call is fake.'),
         _Bullet('VoxGuard does not intercept your phone\'s cellular '
             'calls — a protection session is always your choice.'),
@@ -295,39 +325,43 @@ class _UnderstandPage extends StatelessWidget {
   }
 }
 
-// ── Page 2 · Privacy ─────────────────────────────────────────────────
+// ── Page 3 · Verify independently ────────────────────────────────────
 
-class _PrivacyPage extends StatelessWidget {
-  const _PrivacyPage();
+/// The product's core behavior: pause, then verify through a channel
+/// you already trust.
+class _VerifyPage extends StatelessWidget {
+  const _VerifyPage();
 
   @override
   Widget build(BuildContext context) {
     return const _Page(
-      icon: Icons.lock_outline,
+      icon: Icons.verified_user_outlined,
       iconColor: AppColors.accent,
-      title: 'Your voice stays in your control.',
+      title: 'When something feels wrong, verify independently.',
       children: [
-        _Bullet('Microphone audio is processed in memory while a '
-            'session runs — VoxGuard never stores an audio recording.'),
-        _Bullet('When cloud transcription is configured, live audio '
-            'streams to the configured transcription provider to '
-            'produce transcript text for analysis.'),
-        _Bullet('Family Shield alerts carry only privacy-minimal '
-            'metadata: an opaque VoxGuard ID, an incident reference, '
-            'and a risk band.'),
-        _Bullet('Family Shield never sends audio, transcripts, '
-            'names, or trusted phone numbers.'),
-        _Bullet('You verify people independently — VoxGuard flags '
-            'risk; it does not prove identity.'),
+        Text(
+          'A risk signal is a reason to pause — not a verdict. The '
+          'strongest move is always yours:',
+          style: AppTypography.bodyMedium,
+        ),
+        SizedBox(height: 14),
+        _Bullet('Pause — never send money, codes, or details under '
+            'pressure.'),
+        _Bullet('Call the person back on a number you already '
+            'trust — never one the caller gave you.'),
+        _Bullet('Agree on a family safe phrase offline — ask for it '
+            'when a call feels wrong.'),
       ],
     );
   }
 }
 
-// ── Page 3 · Permissions ─────────────────────────────────────────────
+// ── Page 4 · Family Shield ───────────────────────────────────────────
 
-class _PermissionsPage extends StatelessWidget {
-  const _PermissionsPage({
+/// The human loop: alerts, Trusted Circle, and the (explicit,
+/// opt-in) notification permission action.
+class _FamilyShieldPage extends StatelessWidget {
+  const _FamilyShieldPage({
     required this.push,
     required this.onEnableAlerts,
   });
@@ -335,31 +369,66 @@ class _PermissionsPage extends StatelessWidget {
   final IPushIdentityService push;
   final Future<void> Function() onEnableAlerts;
 
+  String _shortId(String id) =>
+      id.length > 14 ? '${id.substring(0, 8)}…${id.substring(id.length - 6)}' : id;
+
   @override
   Widget build(BuildContext context) {
     return _Page(
-      icon: Icons.tune,
-      iconColor: AppColors.statusWarning,
-      title: 'Permissions only when you choose.',
+      icon: Icons.group_outlined,
+      iconColor: AppColors.statusSafe,
+      title: 'Family Shield: a second set of eyes.',
       children: [
-        const Text('Microphone', style: AppTypography.titleMedium),
-        const SizedBox(height: 6),
         const Text(
-          'Live Mic needs microphone access while a protection '
-          'session is running — it is only asked for when you choose '
-          'Live Mic. Demo Mode works without it.',
-          style: AppTypography.bodyMedium,
-        ),
-        const SizedBox(height: 18),
-        const Text('Notifications', style: AppTypography.titleMedium),
-        const SizedBox(height: 6),
-        const Text(
-          'Family Alerts let trusted people respond when you need a '
-          'second pair of eyes. You can enable them now or later in '
-          'Settings — SafeCall works either way.',
+          'When a call feels wrong, people you trust can help you '
+          'decide. Each VoxGuard installation receives an opaque '
+          'Family Shield ID — trusted people save it in their own '
+          'Trusted Circle to receive your private safety alerts '
+          'and respond.',
           style: AppTypography.bodyMedium,
         ),
         const SizedBox(height: 14),
+        const _Bullet('Names and trusted phone numbers stay on the '
+            'device that saved them.'),
+        const _Bullet('Setting up your Trusted Circle is optional — '
+            'you can do it later in Settings.'),
+        const SizedBox(height: 14),
+        FutureBuilder<String>(
+          future: PushIdentityLocator.instance.voxGuardIdentity(),
+          builder: (context, snap) {
+            final id = snap.data;
+            if (id == null) {
+              return const Text(
+                'Your Family Shield ID appears here once the app '
+                'finishes setting up.',
+                style: AppTypography.bodyMedium,
+              );
+            }
+            return Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Your ID: ${_shortId(id)}',
+                    style: AppTypography.titleMedium,
+                  ),
+                ),
+                TextButton.icon(
+                  onPressed: () {
+                    Clipboard.setData(ClipboardData(text: id));
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                          content:
+                              Text('Family Shield ID copied.')),
+                    );
+                  },
+                  icon: const Icon(Icons.copy, size: 16),
+                  label: const Text('Copy ID'),
+                ),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 16),
         ValueListenableBuilder<FamilyPushRegistration>(
           valueListenable: push.registration,
           builder: (context, reg, _) {
@@ -410,75 +479,9 @@ class _PermissionsPage extends StatelessWidget {
   }
 }
 
-// ── Page 4 · Family Shield ───────────────────────────────────────────
+// ── Page 5 · Privacy + ready ─────────────────────────────────────────
 
-class _FamilyShieldPage extends StatelessWidget {
-  const _FamilyShieldPage();
-
-  String _shortId(String id) =>
-      id.length > 14 ? '${id.substring(0, 8)}…${id.substring(id.length - 6)}' : id;
-
-  @override
-  Widget build(BuildContext context) {
-    return _Page(
-      icon: Icons.group_outlined,
-      iconColor: AppColors.accent,
-      title: 'A second pair of eyes.',
-      children: [
-        const Text(
-          'Each VoxGuard installation receives an opaque Family Shield '
-          'ID. Trusted people can save it in their own Trusted Circle '
-          'to receive your private safety alerts — and respond.',
-          style: AppTypography.bodyMedium,
-        ),
-        const SizedBox(height: 14),
-        const _Bullet('Names and trusted phone numbers stay on the '
-            'device that saved them.'),
-        const _Bullet('Setting up your Trusted Circle is optional — '
-            'you can do it later in Settings.'),
-        const SizedBox(height: 14),
-        FutureBuilder<String>(
-          future: PushIdentityLocator.instance.voxGuardIdentity(),
-          builder: (context, snap) {
-            final id = snap.data;
-            if (id == null) {
-              return const Text(
-                'Your Family Shield ID appears here once the app '
-                'finishes setting up.',
-                style: AppTypography.bodyMedium,
-              );
-            }
-            return Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Your ID: ${_shortId(id)}',
-                    style: AppTypography.titleMedium,
-                  ),
-                ),
-                TextButton.icon(
-                  onPressed: () {
-                    Clipboard.setData(ClipboardData(text: id));
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content:
-                              Text('Family Shield ID copied.')),
-                    );
-                  },
-                  icon: const Icon(Icons.copy, size: 16),
-                  label: const Text('Copy ID'),
-                ),
-              ],
-            );
-          },
-        ),
-      ],
-    );
-  }
-}
-
-// ── Page 5 · Ready ───────────────────────────────────────────────────
-
+/// Privacy controls stay explicit — then the ready state.
 class _ReadyPage extends StatelessWidget {
   const _ReadyPage({
     required this.reviewMode,
@@ -493,12 +496,23 @@ class _ReadyPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Page(
-      icon: Icons.shield_outlined,
+      icon: Icons.lock_outline,
       iconColor: AppColors.statusSafe,
-      title: 'VoxGuard is ready.',
+      title: 'Your voice stays in your control.',
       children: [
+        const _Bullet('Microphone audio is processed in memory while '
+            'a session runs — VoxGuard never stores an audio '
+            'recording. Live Mic asks for microphone access only '
+            'when you choose it; Demo Mode works without it.'),
+        const _Bullet('When cloud transcription is configured, live '
+            'audio streams to the configured transcription provider '
+            'to produce transcript text for analysis.'),
+        const _Bullet('Family Shield alerts carry only an opaque '
+            'VoxGuard ID, an incident reference, and a risk band — '
+            'never audio, transcripts, names, or phone numbers.'),
+        const SizedBox(height: 6),
         const Text(
-          'Listen → Warn → Explain → Verify → Protect family',
+          'Evidence → Pause → Verify → People you trust',
           style: AppTypography.titleMedium,
         ),
         const SizedBox(height: 10),

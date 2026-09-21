@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/threat_phrase_highlighter.dart';
@@ -185,7 +186,9 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
   }
 
   List<Widget> _buildEmpty() => [
-        const SizedBox(height: 24),
+        const SizedBox(height: 8),
+        const _StepLabel(AppStrings.stepPickRecording),
+        const SizedBox(height: 16),
         const Icon(Icons.audio_file_outlined,
             size: 56, color: AppColors.accent),
         const SizedBox(height: 16),
@@ -222,6 +225,8 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
     final transcriptionReady = _analyzer.transcriptionConfigured;
     final analyzing = _busy && _stage != null;
     return [
+      const _StepLabel(AppStrings.stepPrivacyDepth),
+      const SizedBox(height: 10),
       _FileSummaryCard(file: file, info: info),
       const SizedBox(height: 20),
       const Text('PRIVACY', style: AppTypography.labelSmall),
@@ -315,6 +320,8 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
   List<Widget> _buildResult(RecordingAnalysisResult r) {
     final report = r.report;
     return [
+      const _StepLabel(AppStrings.stepResult),
+      const SizedBox(height: 10),
       if (report != null) ...[
         _FullResultHeader(report: report),
         const SizedBox(height: 16),
@@ -735,23 +742,155 @@ class _PartialResultHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        const SizedBox(height: 8),
-        const Icon(Icons.analytics_outlined,
-            size: 40, color: AppColors.statusWarning),
-        const SizedBox(height: 8),
-        Text(
-          'PARTIAL ANALYSIS',
-          style: AppTypography.labelSmall
-              .copyWith(color: AppColors.statusWarning),
+    // Deliberately incomplete visual treatment — a dashed outline
+    // signals "one signal missing", never a safe-looking verdict.
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: AppColors.statusWarning.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      foregroundDecoration: ShapeDecoration(
+        shape: _DashedBorder(
+          color: AppColors.statusWarning.withValues(alpha: 0.6),
+          borderRadius: 16,
         ),
-        const SizedBox(height: 8),
+      ),
+      child: Column(
+        children: [
+          const Icon(Icons.blur_off,
+              size: 36, color: AppColors.statusWarning),
+          const SizedBox(height: 8),
+          Text(
+            'PARTIAL ANALYSIS',
+            style: AppTypography.labelSmall
+                .copyWith(color: AppColors.statusWarning),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Conversation-risk signals were not analyzed, so VoxGuard '
+            'cannot produce a complete Threat Score.',
+            textAlign: TextAlign.center,
+            style: AppTypography.bodyMedium,
+          ),
+          const SizedBox(height: 10),
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _AbsentLayerLegend(),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Legend row matching the Signal Lens "missing layer" idiom —
+/// three broken dashes, not a colored bar.
+class _AbsentLayerLegend extends StatelessWidget {
+  const _AbsentLayerLegend();
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        for (var i = 0; i < 3; i++)
+          Container(
+            width: 3.4,
+            height: 3,
+            margin: const EdgeInsets.only(right: 1.6),
+            decoration: BoxDecoration(
+              color: AppColors.signalAbsent,
+              borderRadius: BorderRadius.circular(1),
+            ),
+          ),
+        const SizedBox(width: 7),
         const Text(
-          'Conversation-risk signals were not analyzed, so VoxGuard '
-          'cannot produce a complete Threat Score.',
-          textAlign: TextAlign.center,
-          style: AppTypography.bodyMedium,
+          'CONVERSATION SIGNAL · NOT ANALYZED',
+          style: TextStyle(
+            fontSize: 9.5,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.7,
+            color: AppColors.signalAbsent,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// Dashed rounded-rect border used only for partial/incomplete
+/// states — "in progress" outline, never an alert frame.
+class _DashedBorder extends ShapeBorder {
+  const _DashedBorder({required this.color, required this.borderRadius});
+
+  final Color color;
+  final double borderRadius;
+
+  @override
+  EdgeInsetsGeometry get dimensions => EdgeInsets.zero;
+
+  @override
+  Path getInnerPath(Rect rect, {TextDirection? textDirection}) =>
+      getOuterPath(rect, textDirection: textDirection);
+
+  @override
+  Path getOuterPath(Rect rect, {TextDirection? textDirection}) =>
+      Path()
+        ..addRRect(RRect.fromRectAndRadius(
+            rect, Radius.circular(borderRadius)));
+
+  @override
+  void paint(Canvas canvas, Rect rect, {TextDirection? textDirection}) {
+    final rrect =
+        RRect.fromRectAndRadius(rect, Radius.circular(borderRadius));
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.4
+      ..color = color;
+    const dash = 7.0;
+    const gap = 5.0;
+    for (final metric in (Path()..addRRect(rrect)).computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        canvas.drawPath(
+          metric.extractPath(distance, distance + dash),
+          paint,
+        );
+        distance += dash + gap;
+      }
+    }
+  }
+
+  @override
+  ShapeBorder scale(double t) =>
+      _DashedBorder(color: color, borderRadius: borderRadius * t);
+}
+
+/// Small numbered-context label introducing each phase of the flow.
+class _StepLabel extends StatelessWidget {
+  const _StepLabel(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 22,
+          height: 3,
+          decoration: BoxDecoration(
+            color: AppColors.accent,
+            borderRadius: BorderRadius.circular(2),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(text, style: AppTypography.labelSmall),
         ),
       ],
     );

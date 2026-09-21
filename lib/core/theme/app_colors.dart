@@ -2,43 +2,66 @@ import 'package:flutter/material.dart';
 
 /// VoxGuard design-system color tokens.
 ///
-/// Consumer-first dark palette: deep zinc/slate backgrounds, crisp white
-/// headings, muted slate body text, and a restrained set of semantic
-/// status colors (emerald / amber / crimson).
+/// Signal Lens palette: deep graphite foundations, warm off-white
+/// type, muted periwinkle for neutral evidence, mint for verified /
+/// safe resolution, warm amber for uncertainty, and an oxide red
+/// reserved for genuinely high-risk states. Flat surfaces — no
+/// gradients, no neon.
 abstract final class AppColors {
   AppColors._();
 
-  // ── Backgrounds (deep zinc / slate) ──────────────────────────────
-  static const Color bgBase = Color(0xFF0B0D13);
-  static const Color bgSurface = Color(0xFF12151F);
-  static const Color bgElevated = Color(0xFF1A1E2C);
+  // ── Backgrounds (deep graphite / ink) ────────────────────────────
+  static const Color bgBase = Color(0xFF0E1014);
+  static const Color bgSurface = Color(0xFF15181F);
+  static const Color bgElevated = Color(0xFF1D2029);
 
   // ── Cards & surfaces ─────────────────────────────────────────────
-  static const Color surfaceCard = Color(0xFF1E2333);
-  static const Color borderSubtle = Color(0xFF2D354A);
+  static const Color surfaceCard = Color(0xFF21252F);
+  static const Color borderSubtle = Color(0xFF343A47);
 
   // ── Text ─────────────────────────────────────────────────────────
-  static const Color textPrimary = Color(0xFFF8FAFC);
-  static const Color textMuted = Color(0xFF94A3B8);
+  /// Warm off-white — never pure #FFF.
+  static const Color textPrimary = Color(0xFFF4F1EA);
+
+  /// Muted periwinkle — secondary information, evidence, metadata.
+  static const Color textMuted = Color(0xFF9AA1BC);
 
   // ── Semantic status ──────────────────────────────────────────────
-  /// Safe / protected.
-  static const Color statusSafe = Color(0xFF10B981);
+  /// Verified / safe — calm mint.
+  static const Color statusSafe = Color(0xFF3ED0A0);
 
-  /// Elevated suspicion.
-  static const Color statusWarning = Color(0xFFF59E0B);
+  /// Uncertain / elevated — warm amber.
+  static const Color statusWarning = Color(0xFFE3A63C);
 
-  /// High-risk threat.
-  static const Color statusDanger = Color(0xFFEF4444);
+  /// Active high risk — oxide red, used sparingly.
+  static const Color statusDanger = Color(0xFFE15B44);
 
-  // ── Brand accent (restrained indigo) ─────────────────────────────
-  static const Color accent = Color(0xFF6366F1);
-  static const Color accentMuted = Color(0xFF4F55A3);
+  // ── Brand accent (muted periwinkle) ──────────────────────────────
+  static const Color accent = Color(0xFF8B9CC9);
+  static const Color accentMuted = Color(0xFF566080);
+
+  // ── Signal Lens layer colors ─────────────────────────────────────
+  /// Layer A — conversation / semantic evidence.
+  static const Color signalSemantic = Color(0xFF8B9CC9);
+
+  /// Layer B — acoustic / voice evidence. Warm sand so the two
+  /// signals are distinguishable without leaning on status hues.
+  static const Color signalAcoustic = Color(0xFFC9B284);
+
+  /// Color of a signal layer that has not run — visible absence.
+  static const Color signalAbsent = Color(0xFF4A4F5E);
 
   /// Maps a normalized threat score (0.0 – 1.0) to its semantic color.
   static Color forThreat(double value) {
     if (value >= 0.7) return statusDanger;
     if (value >= 0.4) return statusWarning;
     return statusSafe;
+  }
+
+  /// A layer's own color tinted toward its risk band as its score
+  /// earns it — low evidence keeps the layer hue, high evidence
+  /// converges on the status color.
+  static Color forSignalLayer(Color layer, double score) {
+    return Color.lerp(layer, forThreat(score), score.clamp(0.0, 1.0))!;
   }
 }

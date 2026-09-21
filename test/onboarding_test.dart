@@ -284,6 +284,8 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Continue'));
       await tester.pumpAndSettle();
+      await tester.tap(find.text('Continue'));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('Enable Family Alerts'));
       await tester.pumpAndSettle();
@@ -307,6 +309,8 @@ void main() {
               onCompleted: () {},
               pushService: push),
         ));
+        await tester.pumpAndSettle();
+        await tester.tap(find.text('Continue'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Continue'));
         await tester.pumpAndSettle();

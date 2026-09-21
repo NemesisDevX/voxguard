@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -15,20 +16,25 @@ import '../../domain/models/transcript_snippet.dart';
 import '../bloc/safecall_bloc.dart';
 import '../bloc/safecall_event.dart';
 import '../bloc/safecall_state.dart';
-import '../widgets/threat_core.dart';
+import '../widgets/signal_lens.dart';
 import '../widgets/threat_meter_card.dart';
 
-/// SafeCall active-call HUD.
+/// SafeCall active-session screen.
 ///
-/// Hosts the [SafeCallBloc] session and binds the live threat radar,
-/// transcript feed and composite banner to its state.
+/// Hierarchy: Signal Lens (state) → human interpretation → evidence →
+/// transcript → collapsed technical metrics. Raw DSP never leads.
 class SafeCallScreen extends StatelessWidget {
-  const SafeCallScreen({super.key});
+  const SafeCallScreen({super.key, @visibleForTesting this.bloc});
+
+  /// Presentation-test seam — a preloaded bloc (e.g.
+  /// `SafeCallBloc.seeded`) for design-state tests. Production always
+  /// builds its own.
+  final SafeCallBloc? bloc;
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => SafeCallBloc(),
+      create: (_) => bloc ?? SafeCallBloc(),
       child: const _SafeCallView(),
     );
   }
@@ -76,11 +82,25 @@ class _SafeCallViewState extends State<_SafeCallView>
     return '$m:$s';
   }
 
+  /// Escalation haptic — one restrained pulse when the risk band moves
+  /// upward. Never continuous vibration during monitoring.
+  bool _bandEscalated(SafeCallState prev, SafeCallState curr) =>
+      prev is SafeCallMonitoring &&
+      curr is SafeCallMonitoring &&
+      curr.report.riskLevel.index > prev.report.riskLevel.index;
+
   @override
   Widget build(BuildContext context) {
     return BlocConsumer<SafeCallBloc, SafeCallState>(
-      listenWhen: (_, current) => current is SafeCallEnded,
-      listener: (context, state) => Navigator.of(context).pop(state),
+      listenWhen: (prev, current) =>
+          current is SafeCallEnded || _bandEscalated(prev, current),
+      listener: (context, state) {
+        if (state is SafeCallEnded) {
+          Navigator.of(context).pop(state);
+        } else {
+          unawaited(HapticFeedback.mediumImpact());
+        }
+      },
       builder: (context, state) {
         if (state is SafeCallInitial || state is SafeCallError) {
           return _ModePickerView(state: state);
@@ -107,6 +127,14 @@ class _SafeCallViewState extends State<_SafeCallView>
             monitoring?.cloudTranscriptionEntitled ?? false;
         final partial = monitoring?.partialTranscript ?? '';
         final score = report.compositeRiskScore;
+
+        // The conversation layer exists only when semantic evidence
+        // has actually flowed — never fabricate it for acoustic-only
+        // sessions.
+        final semanticRan = transcript.isNotEmpty ||
+            sttLive ||
+            (isDemo && demoActive);
+        final semanticScore = semanticRan ? semantic.combinedScore : null;
 
         return Scaffold(
           appBar: AppBar(
@@ -141,19 +169,63 @@ class _SafeCallViewState extends State<_SafeCallView>
                             .read<SafeCallBloc>()
                             .add(const EndCallEvent()),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 18),
                       Center(
-                        child: ThreatCore(
+                        child: SignalLens(
                           score: score,
+                          semanticScore: semanticScore,
+                          acousticScore:
+                              acoustic?.syntheticVoiceScore ?? 0,
                           amplitude: amplitude,
                           isDemoAudio: isDemo,
                         ),
                       ),
+                      const SizedBox(height: 10),
+                      // Human interpretation — the message first,
+                      // the number second.
+                      Center(
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 300),
+                          child: Text(
+                            SignalLens.interpretation(score),
+                            key: ValueKey(
+                                SignalLens.stateLabel(score)),
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodyLarge.copyWith(
+                              color: AppColors.forThreat(score),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                      if (report.primaryThreatReasons.isNotEmpty &&
+                          report.riskLevel != ThreatRiskLevel.safe) ...[
+                        const SizedBox(height: 6),
+                        Center(
+                          child: Text(
+                            report.primaryThreatReasons.first,
+                            textAlign: TextAlign.center,
+                            style: AppTypography.bodyMedium,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
+                      if (semantic.evidenceCategories.isNotEmpty)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Wrap(
+                            alignment: WrapAlignment.center,
+                            spacing: 6,
+                            runSpacing: 6,
+                            children: [
+                              for (final e in semantic.evidenceCategories)
+                                _EvidenceChip(category: e),
+                            ],
+                          ),
+                        ),
                       _TranscriptFeed(
                         snippets: transcript,
                         flaggedPhrases: semantic.flaggedPhrases,
-                        evidence: semantic.evidenceCategories,
                         demoActive: demoActive,
                         partial: partial,
                         transcriptionLive: sttLive,
@@ -161,55 +233,34 @@ class _SafeCallViewState extends State<_SafeCallView>
                         isDemoSession: isDemo,
                       ),
                       const SizedBox(height: 16),
-                      _WaveformCard(
-                        animation: _waveController,
+                      _TechnicalDetails(
+                        waveAnimation: _waveController,
                         tint: AppColors.forThreat(score),
                         amplitude: amplitude,
-                      ),
-                      const SizedBox(height: 24),
-                      const Text(
-                        AppStrings.threatRadarTitle,
-                        style: AppTypography.labelSmall,
-                      ),
-                      const SizedBox(height: 12),
-                      ThreatMeterCard(
-                        title: AppStrings.signalSynthetic,
-                        value: acoustic?.syntheticVoiceScore ?? 0,
-                        icon: Icons.record_voice_over_outlined,
-                        style: ThreatMeterStyle.status,
-                        normalLabel: AppStrings.statusNormal,
-                        elevatedLabel: AppStrings.statusElevated,
-                      ),
-                      const SizedBox(height: 10),
-                      ThreatMeterCard(
-                        title: AppStrings.signalUrgency,
-                        value: semantic.urgencyScore,
-                        icon: Icons.priority_high,
-                      ),
-                      const SizedBox(height: 10),
-                      ThreatMeterCard(
-                        title: AppStrings.signalFinancial,
-                        value: semantic.financialDemandScore,
-                        icon: Icons.payments_outlined,
-                      ),
-                      const SizedBox(height: 10),
-                      ThreatMeterCard(
-                        title: AppStrings.signalSecrecy,
-                        value: semantic.secrecyScore,
-                        icon: Icons.visibility_off_outlined,
+                        syntheticScore:
+                            acoustic?.syntheticVoiceScore ?? 0,
+                        semantic: semantic,
                       ),
                     ],
                   ),
                 ),
-                _CompositeBanner(report: report),
+                _SessionActionBar(
+                  report: report,
+                  onEndCall: () => context
+                      .read<SafeCallBloc>()
+                      .add(const EndCallEvent()),
+                ),
               ],
             ),
           ),
           floatingActionButton: isDemo
               ? FloatingActionButton.extended(
-                  onPressed: () => context
-                      .read<SafeCallBloc>()
-                      .add(const SimulateDemoAttackEvent()),
+                  onPressed: () {
+                    unawaited(HapticFeedback.lightImpact());
+                    context
+                        .read<SafeCallBloc>()
+                        .add(const SimulateDemoAttackEvent());
+                  },
                   backgroundColor: demoActive
                       ? AppColors.statusDanger
                       : AppColors.bgElevated,
@@ -241,7 +292,7 @@ class _CallerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(18),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
         color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(16),
@@ -249,14 +300,10 @@ class _CallerCard extends StatelessWidget {
       ),
       child: Row(
         children: [
-          const CircleAvatar(
-            radius: 26,
-            backgroundColor: AppColors.bgElevated,
-            child: Icon(
-              Icons.person_outline,
-              color: AppColors.textMuted,
-              size: 28,
-            ),
+          const Icon(
+            Icons.hearing,
+            color: AppColors.textMuted,
+            size: 22,
           ),
           const SizedBox(width: 14),
           Expanded(
@@ -264,12 +311,12 @@ class _CallerCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  AppStrings.unknownCaller,
-                  style: AppTypography.titleMedium,
+                  AppStrings.safeCallActive,
+                  style: AppTypography.labelSmall,
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${AppStrings.maskedNumber} · $durationLabel',
+                  '${AppStrings.unknownCaller} · $durationLabel',
                   style: AppTypography.bodyMedium,
                 ),
               ],
@@ -310,7 +357,6 @@ class _TranscriptFeed extends StatefulWidget {
   const _TranscriptFeed({
     required this.snippets,
     required this.flaggedPhrases,
-    required this.evidence,
     required this.demoActive,
     required this.partial,
     required this.transcriptionLive,
@@ -320,7 +366,6 @@ class _TranscriptFeed extends StatefulWidget {
 
   final List<TranscriptSnippet> snippets;
   final List<String> flaggedPhrases;
-  final List<EvidenceCategory> evidence;
   final bool demoActive;
 
   /// Live uncommitted STT partial — rendered dimmed at the tail.
@@ -432,17 +477,6 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
               ),
             ),
           ),
-          if (widget.evidence.isNotEmpty)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 10),
-              child: Wrap(
-                spacing: 6,
-                runSpacing: 6,
-                children: [
-                  for (final e in widget.evidence) _EvidenceChip(category: e),
-                ],
-              ),
-            ),
           AnimatedCrossFade(
             duration: const Duration(milliseconds: 250),
             crossFadeState: _expanded
@@ -586,6 +620,127 @@ class _EvidenceChip extends StatelessWidget {
   }
 }
 
+// ── Technical details (collapsed by default) ─────────────────────────
+
+/// Deeper metrics — real signal data, but visually secondary. The
+/// waveform lives here too: it is real amplitude data, not ornament,
+/// so it belongs with the technical layer rather than the headline.
+class _TechnicalDetails extends StatefulWidget {
+  const _TechnicalDetails({
+    required this.waveAnimation,
+    required this.tint,
+    required this.amplitude,
+    required this.syntheticScore,
+    required this.semantic,
+  });
+
+  final Animation<double> waveAnimation;
+  final Color tint;
+  final double amplitude;
+  final double syntheticScore;
+  final SemanticThreatSignals semantic;
+
+  @override
+  State<_TechnicalDetails> createState() => _TechnicalDetailsState();
+}
+
+class _TechnicalDetailsState extends State<_TechnicalDetails> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.surfaceCard,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.borderSubtle),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          InkWell(
+            onTap: () => setState(() => _expanded = !_expanded),
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(16),
+            ),
+            child: Padding(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.biotech_outlined,
+                    size: 18,
+                    color: AppColors.textMuted,
+                  ),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Text(
+                      AppStrings.technicalDetails,
+                      style: AppTypography.labelSmall,
+                    ),
+                  ),
+                  Icon(
+                    _expanded ? Icons.expand_less : Icons.expand_more,
+                    color: AppColors.textMuted,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 250),
+            crossFadeState: _expanded
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Padding(
+              padding: const EdgeInsets.fromLTRB(12, 0, 12, 14),
+              child: Column(
+                children: [
+                  _WaveformCard(
+                    animation: widget.waveAnimation,
+                    tint: widget.tint,
+                    amplitude: widget.amplitude,
+                  ),
+                  const SizedBox(height: 12),
+                  ThreatMeterCard(
+                    title: AppStrings.signalSynthetic,
+                    value: widget.syntheticScore,
+                    icon: Icons.record_voice_over_outlined,
+                    style: ThreatMeterStyle.status,
+                    normalLabel: AppStrings.statusNormal,
+                    elevatedLabel: AppStrings.statusElevated,
+                  ),
+                  const SizedBox(height: 10),
+                  ThreatMeterCard(
+                    title: AppStrings.signalUrgency,
+                    value: widget.semantic.urgencyScore,
+                    icon: Icons.priority_high,
+                  ),
+                  const SizedBox(height: 10),
+                  ThreatMeterCard(
+                    title: AppStrings.signalFinancial,
+                    value: widget.semantic.financialDemandScore,
+                    icon: Icons.payments_outlined,
+                  ),
+                  const SizedBox(height: 10),
+                  ThreatMeterCard(
+                    title: AppStrings.signalSecrecy,
+                    value: widget.semantic.secrecyScore,
+                    icon: Icons.visibility_off_outlined,
+                  ),
+                ],
+              ),
+            ),
+            secondChild: const SizedBox(width: double.infinity),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ── Live waveform visualizer ─────────────────────────────────────────
 
 class _WaveformCard extends StatelessWidget {
@@ -598,9 +753,8 @@ class _WaveformCard extends StatelessWidget {
   final Animation<double> animation;
   final Color tint;
 
-  /// Real RMS amplitude from the audio pipeline (demo PCM in this
-  /// build). Bars scale with it — motion reflects actual stream data,
-  /// not a decorative loop.
+  /// Real RMS amplitude from the audio pipeline. Bars scale with it —
+  /// motion reflects actual stream data, not a decorative loop.
   final double amplitude;
 
   static const int _barCount = 27;
@@ -644,67 +798,113 @@ class _WaveformCard extends StatelessWidget {
   }
 }
 
-// ── Composite threat banner ──────────────────────────────────────────
+// ── Session action bar ───────────────────────────────────────────────
 
-class _CompositeBanner extends StatelessWidget {
-  const _CompositeBanner({required this.report});
+/// Bottom action surface — calm by default; at high risk it becomes
+/// the PAUSE → VERIFY moment: a human decision, not an alarm.
+class _SessionActionBar extends StatelessWidget {
+  const _SessionActionBar({required this.report, required this.onEndCall});
 
   final CompositeThreatReport report;
+  final VoidCallback onEndCall;
 
   @override
   Widget build(BuildContext context) {
     final score = report.compositeRiskScore;
-    final pct = (score * 100).round();
     final color = AppColors.forThreat(score);
+    final highRisk = report.riskLevel == ThreatRiskLevel.highRisk;
 
-    final (String headline, String detail, IconData icon) =
-        switch (report.riskLevel) {
-      ThreatRiskLevel.highRisk => (
-          AppStrings.bannerThreat,
-          '${AppStrings.threatScoreLabel}: $pct/100 — '
-              '${report.primaryThreatReasons.firstOrNull ??
-                  AppStrings.bannerThreatDetail}',
-          Icons.gpp_maybe_outlined,
+    if (!highRisk) {
+      // Calm strip — a quiet status line, not a competing banner.
+      return Container(
+        margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: AppColors.bgSurface,
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(color: AppColors.borderSubtle),
         ),
-      ThreatRiskLevel.suspicious => (
-          '${AppStrings.bannerElevated}: $pct/100',
-          report.primaryThreatReasons.firstOrNull ??
-              AppStrings.bannerElevatedDetail,
-          Icons.warning_amber_rounded,
+        child: Row(
+          children: [
+            Icon(
+              report.riskLevel == ThreatRiskLevel.suspicious
+                  ? Icons.visibility_outlined
+                  : Icons.check_circle_outline,
+              color: color,
+              size: 18,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                report.riskLevel == ThreatRiskLevel.suspicious
+                    ? report.primaryThreatReasons.firstOrNull ??
+                        AppStrings.bannerElevatedDetail
+                    : AppStrings.bannerProtectedDetail,
+                style: AppTypography.bodyMedium,
+              ),
+            ),
+          ],
         ),
-      ThreatRiskLevel.safe => (
-          '${AppStrings.bannerProtected}: $pct/100',
-          AppStrings.bannerProtectedDetail,
-          Icons.verified_user_outlined,
-        ),
-    };
+      );
+    }
 
+    // HIGH RISK — clarity, not panic. The primary next step is a
+    // human verification, ending the session first.
     return AnimatedContainer(
       duration: const Duration(milliseconds: 500),
       curve: Curves.easeOut,
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: color.withValues(alpha: 0.65), width: 1.2),
+        color: AppColors.statusDanger.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+            color: AppColors.statusDanger.withValues(alpha: 0.7),
+            width: 1.2),
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: color, size: 26),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  headline,
-                  style: AppTypography.titleMedium.copyWith(color: color),
+          Text(
+            AppStrings.pauseHeadline,
+            style: AppTypography.titleLarge.copyWith(
+              color: AppColors.statusDanger,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            report.primaryThreatReasons.firstOrNull ??
+                AppStrings.bannerThreatDetail,
+            style: AppTypography.bodyMedium,
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            AppStrings.callSavedNumberHint,
+            style: AppTypography.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            width: double.infinity,
+            height: 46,
+            child: FilledButton.icon(
+              onPressed: () {
+                unawaited(HapticFeedback.lightImpact());
+                onEndCall();
+              },
+              icon: const Icon(Icons.verified_user_outlined, size: 18),
+              label: const Text(
+                AppStrings.endCallAndVerify,
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+              style: FilledButton.styleFrom(
+                backgroundColor: AppColors.statusDanger,
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 2),
-                Text(detail, style: AppTypography.bodyMedium),
-              ],
+              ),
             ),
           ),
         ],
@@ -769,8 +969,8 @@ class _ModePickerView extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
           children: [
-            const Icon(Icons.shield_outlined,
-                size: 56, color: AppColors.statusSafe),
+            const Icon(Icons.graphic_eq,
+                size: 52, color: AppColors.accent),
             const SizedBox(height: 16),
             const Text(
               'Start a Protection Session',
@@ -792,10 +992,14 @@ class _ModePickerView extends StatelessWidget {
                   'Analyze real microphone audio — speakerphone calls '
                   'or a voice played nearby.',
               accent: AppColors.statusSafe,
-              badge: 'LIVE MIC',
-              onTap: () => context
-                  .read<SafeCallBloc>()
-                  .add(const StartLiveMicSessionEvent()),
+              badge: 'REAL SESSION',
+              primary: true,
+              onTap: () {
+                unawaited(HapticFeedback.lightImpact());
+                context
+                    .read<SafeCallBloc>()
+                    .add(const StartLiveMicSessionEvent());
+              },
             ),
             const SizedBox(height: 12),
             _ModeCard(
@@ -803,12 +1007,16 @@ class _ModePickerView extends StatelessWidget {
               title: 'Demo Attack',
               description:
                   'Run the scripted judging scenario — generated '
-                  'audio and demo transcript.',
+                  'audio and demo transcript. Nothing is real audio.',
               accent: AppColors.accent,
-              badge: 'DEMO',
-              onTap: () => context
-                  .read<SafeCallBloc>()
-                  .add(const StartDemoSessionEvent()),
+              badge: 'DEMONSTRATION',
+              primary: false,
+              onTap: () {
+                unawaited(HapticFeedback.lightImpact());
+                context
+                    .read<SafeCallBloc>()
+                    .add(const StartDemoSessionEvent());
+              },
             ),
             if (error != null) ...[
               const SizedBox(height: 20),
@@ -862,6 +1070,7 @@ class _ModeCard extends StatelessWidget {
     required this.description,
     required this.accent,
     required this.badge,
+    required this.primary,
     required this.onTap,
   });
 
@@ -870,12 +1079,17 @@ class _ModeCard extends StatelessWidget {
   final String description;
   final Color accent;
   final String badge;
+
+  /// The real-session card is visually dominant; the demo card stays
+  /// deliberately secondary so a demonstration can never look like
+  /// captured real evidence.
+  final bool primary;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.surfaceCard,
+      color: primary ? AppColors.bgElevated : AppColors.surfaceCard,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -883,7 +1097,10 @@ class _ModeCard extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: accent.withValues(alpha: 0.4)),
+            border: Border.all(
+              color: accent.withValues(alpha: primary ? 0.55 : 0.35),
+              width: primary ? 1.4 : 1,
+            ),
           ),
           child: Padding(
             padding: const EdgeInsets.all(18),
@@ -907,22 +1124,25 @@ class _ModeCard extends StatelessWidget {
                         children: [
                           Text(title, style: AppTypography.titleMedium),
                           const SizedBox(width: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 6, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: accent.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(6),
-                              border: Border.all(
-                                  color: accent.withValues(alpha: 0.5)),
-                            ),
-                            child: Text(
-                              badge,
-                              style: TextStyle(
-                                fontSize: 8,
-                                fontWeight: FontWeight.w800,
-                                letterSpacing: 1.0,
-                                color: accent,
+                          Flexible(
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 6, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: accent.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(6),
+                                border: Border.all(
+                                    color: accent.withValues(alpha: 0.5)),
+                              ),
+                              child: Text(
+                                badge,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 8,
+                                  fontWeight: FontWeight.w800,
+                                  letterSpacing: 1.0,
+                                  color: accent,
+                                ),
                               ),
                             ),
                           ),
@@ -1046,6 +1266,11 @@ class _LiveBadgeState extends State<_LiveBadge>
 
   @override
   Widget build(BuildContext context) {
+    final reduceMotion =
+        MediaQuery.maybeDisableAnimationsOf(context) ?? false;
+    if (reduceMotion && _controller.isAnimating) {
+      _controller.stop();
+    }
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
@@ -1058,14 +1283,21 @@ class _LiveBadgeState extends State<_LiveBadge>
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          FadeTransition(
-            opacity: Tween(begin: 0.35, end: 1.0).animate(_controller),
-            child: const Icon(
-              Icons.circle,
-              size: 8,
-              color: AppColors.statusSafe,
-            ),
-          ),
+          reduceMotion
+              ? const Icon(
+                  Icons.circle,
+                  size: 8,
+                  color: AppColors.statusSafe,
+                )
+              : FadeTransition(
+                  opacity:
+                      Tween(begin: 0.35, end: 1.0).animate(_controller),
+                  child: const Icon(
+                    Icons.circle,
+                    size: 8,
+                    color: AppColors.statusSafe,
+                  ),
+                ),
           const SizedBox(width: 6),
           const Text(
             AppStrings.liveBadge,
