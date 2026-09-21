@@ -1455,11 +1455,11 @@ aF1(a){var s=!1
 if($.bl().gcY()===B.aX||$.bl().gcY()===B.c4)if(a!=null)s=a===".SF Pro Text"||a===".SF Pro Display"||a===".SF UI Text"||a===".SF UI Display"
 return s},
 aM6(){if(A.aNs())return B.qB
-if($.bl().gcY()===B.aX||$.bl().gcY()===B.c4)return B.Mn
+if($.bl().gcY()===B.aX||$.bl().gcY()===B.c4)return B.Mm
 throw A.f(A.b6("Should only be called on Mac or iOS."))},
 b_R(){if(A.aNs())return B.qB
 if($.bl().gcY()===B.aX||$.bl().gcY()===B.c4)return A.aM6()
-return B.Mk},
+return B.Mj},
 aN1(a,b){var s,r,q,p,o=new A.cu("")
 A.aMC(a,o)
 if(!A.aF2(a)&&!A.aF1(a)){s=b==null
@@ -11657,7 +11657,7 @@ break
 case 4:s=l.a
 s===$&&A.a()
 s=A.bC(s,200)
-r=A.bC(A.a6z(l,B.qD,B.Mq),24)
+r=A.bC(A.a6z(l,B.qD,B.Mp),24)
 q=A.bC(A.a6z(l,B.qD,B.N6),32)
 p=A.bC(l.a,10)
 o=A.bC(l.a,12)
@@ -11668,8 +11668,8 @@ break
 case 5:s=l.a
 s===$&&A.a()
 s=A.bC(A.BQ(s+240),40)
-r=A.bC(A.a6z(l,B.qG,B.NI),24)
-q=A.bC(A.a6z(l,B.qG,B.NJ),32)
+r=A.bC(A.a6z(l,B.qF,B.NI),24)
+q=A.bC(A.a6z(l,B.qF,B.NJ),32)
 p=A.bC(l.a+15,8)
 o=A.bC(l.a+15,12)
 l.d===$&&A.a()
@@ -27079,8 +27079,8 @@ q=$.fN
 if(q==null){q=$.dB
 q=new A.kv(q==null?$.dB=A.jc():q)
 $.fN=q}return new A.a8p(s,"","",r,q,new A.ba(!0,p,t.uh))},
-aTw(a){if(a.ay)return"Elevated acoustic signals were flagged in a recording on a protected device. Conversation-risk signals were not analyzed \u2014 verify directly with your relative."
-return a.x===B.et?"A high-risk call was flagged on a protected device. Verify directly with your relative before any funds move.":"A suspicious-call warning was flagged on a protected device. Verify directly with your relative before any funds move."},
+aTw(a){if(a.ay)return"Elevated acoustic signals were flagged in a recording on a monitored device. Conversation-risk signals were not analyzed \u2014 verify directly with your relative."
+return a.x===B.et?"A high-risk call was flagged on a monitored device. Verify directly with your relative before any funds move.":"A suspicious-call warning was flagged on a monitored device. Verify directly with your relative before any funds move."},
 a8p:function a8p(a,b,c,d,e,f){var _=this
 _.a=a
 _.b=b
@@ -27505,7 +27505,7 @@ _.b=b
 _.c=c
 _.d=d},
 aKh(a){var s,r
-for(s=0;s<3;++s){r=B.qF[s]
+for(s=0;s<3;++s){r=B.qH[s]
 if(r.a===a)return r}return null},
 t5:function t5(a,b){this.a=a
 this.b=b},
@@ -31755,7 +31755,7 @@ if(e.b){q=t.f
 d=q.a(q.a(B.cm.hi(a2)).h(0,"data"))
 c=A.b4(d.h(0,"message"))
 if(c!=null&&c.length!==0){b=A.aDv(d,"assertiveness")
-e.a.WT(c,B.Ml[b==null?0:b])}}a.fh(a3,B.cm.bM(!0))
+e.a.WT(c,B.Mk[b==null?0:b])}}a.fh(a3,B.cm.bM(!0))
 return
 case"flutter/navigation":q=a.gcR().b
 p=t.e8
@@ -36323,7 +36323,7 @@ o=A.dx(s.h(0,"textAlignIndex"))
 n=A.dx(s.h(0,"textDirectionIndex"))
 m=A.ep(s.h(0,"fontWeightIndex"))
 l=m!=null?A.aNg(m):"normal"
-p=new A.amP(new A.a7p(A.aaV(s,"fontSize"),l,A.b4(s.h(0,"fontFamily")),B.Mi[o],B.lO[n],A.aaV(s,"letterSpacing"),A.aaV(s,"wordSpacing"),A.aaV(s,"lineHeight")))
+p=new A.amP(new A.a7p(A.aaV(s,"fontSize"),l,A.b4(s.h(0,"fontFamily")),B.Mh[o],B.lO[n],A.aaV(s,"letterSpacing"),A.aaV(s,"wordSpacing"),A.aaV(s,"lineHeight")))
 break
 case"TextInput.clearClient":p=B.Fa
 break
@@ -73182,7 +73182,7 @@ q.b4()
 q.k3$.C(0,s.gahF())
 s.e=q}return q},
 gSJ(){var s=this.f
-return s===$?this.f=new A.arE(1,B.Mh,B.bU):s},
+return s===$?this.f=new A.arE(1,B.Mf,B.bU):s},
 gfQ(){var s=this.z
 s=s==null?null:$.cb().d===s
 return s===!0},
@@ -93238,7 +93238,7 @@ break
 case 11:h=A.w(t.rR,t.qN)
 for(i=J.aL(l);i.p();){g=i.gK()
 h.bz(g.b,new A.afA()).m(0,g.c,g)}i=t.tk
-f=A.a0(new A.aI(B.qF,new A.afB(h),i),i.i("D.E"))
+f=A.a0(new A.aI(B.qH,new A.afB(h),i),i.i("D.E"))
 e=B.b.Kw(f,new A.afC(a0),new A.afD(f))
 d=h.h(0,e.a)
 c=(d==null?B.wO:d).Y(B.d5)?B.d5:B.eL
@@ -93706,7 +93706,7 @@ if(p>=0.5)r.push("Financial transfer demand detected")
 if(o>=0.5)r.push("Secrecy & isolation pressure")
 if(q>=0.5)r.push("Urgency manipulation tactics")
 if(m.length!==0)r.push('Identity impersonation claim: "'+B.b.gX(m)+'"')
-if(k>=0.7)r.push("Synthetic voice artifacts detected")
+if(k>=0.7)r.push("Synthetic-voice indicators elevated")
 if(i)r.push("Coordinated scam pattern \u2014 amplified")
 if(r.length===0)r.push("No significant threat indicators")
 return new A.LU(j,s,r,this.ak6(s))},
@@ -93835,7 +93835,7 @@ return}p.id=!0
 p.CW.r=!0
 s=p.I0(!0)
 if(!b.d)b.a.$1(s)
-for(s=p.fx,r=0;r<4;){q=B.Mo[r];++r
+for(s=p.fx,r=0;r<4;){q=B.Mn[r];++r
 s.push(A.c5(new A.az(B.e.az(14e5*r)),new A.aiP(p,q)))}},
 gOT(){var s=this.go
 return(s==null?null:s.gl0())===B.eJ},
@@ -94161,7 +94161,7 @@ this.aA()},
 gab_(){var s=this.a
 if(s.y)return"Demo transcript will appear here."
 if(s.w)return"Listening for speech\u2026"
-return s.x?"Voice analysis active \u2014 live transcription unavailable.":"Acoustic protection active. Automatic conversation analysis is available with Sentinel Shield."},
+return s.x?"Voice analysis active \u2014 live transcription unavailable.":"Acoustic protection active. Transcript-backed conversation analysis unlocks with Sentinel Shield."},
 B(a){var s,r,q,p=this,o=null,n=A.ay(16),m=A.bH(B.a1,1),l=t.p,k=A.b([B.Kc,B.bJ,B.IM],l)
 if(p.a.f)k.push(B.Rb)
 s=p.a.c.length
@@ -94822,7 +94822,7 @@ Ba(a){return this.arb(a)},
 arb(a){var s=0,r=A.q(t.H3),q,p=2,o=[],n,m,l
 var $async$Ba=A.r(function(b,c){if(b===1){o.push(c)
 s=p}for(;;)switch(s){case 0:p=4
-n=B.b.q(B.Mg,16)
+n=B.b.q(B.Me,16)
 if(!n)A.aa(A.eG(16,"bitDepth","Must be 8, 16, 24, or 32"))
 s=7
 return A.l($.aFD().lv(a.d,a.b,16,1,!1,16e3),$async$Ba)
@@ -95209,7 +95209,7 @@ for(s=this.c,r=s.length,q=0;q<s.length;s.length===r||(0,A.z)(s),++q)n.push(new A
 return new A.tg("WHY VOXGUARD FLAGGED IT",A.bj(n,B.y,B.i,B.l),p)}}
 A.SN.prototype={
 B(a){var s=null,r=this.c,q=r.d,p=B.d.az(q*100),o=t.p
-o=A.b([A.aZ(A.b([A.Y(this.d?"Acoustic anomaly score":"Synthetic voice",s,s,s,s,B.r,s,s),B.mV,A.Y(""+p+"%",s,s,s,s,B.am.b_(A.mS(q)),s,s)],o),B.o,B.i,B.l,0,s),B.aa,new A.x6("Spectral flux",r.a,s),new A.x6("Spectral rolloff",r.b,s),new A.x6("Zero-crossing rate",r.c,s)],o)
+o=A.b([A.aZ(A.b([A.Y(this.d?"Acoustic anomaly score":"Synthetic voice indicators",s,s,s,s,B.r,s,s),B.mV,A.Y(""+p+"%",s,s,s,s,B.am.b_(A.mS(q)),s,s)],o),B.o,B.i,B.l,0,s),B.aa,new A.x6("Spectral flux",r.a,s),new A.x6("Spectral rolloff",r.b,s),new A.x6("Zero-crossing rate",r.c,s)],o)
 if(q>=0.7)o.push(B.Ra)
 return new A.tg("ACOUSTIC ANOMALY SIGNALS",A.bj(o,B.y,B.i,B.l),s)}}
 A.x6.prototype={
@@ -99099,12 +99099,12 @@ B.nv=new A.Ic(0,"named")
 B.D4=new A.Ic(1,"anonymous")
 B.M_=s([B.nv,B.D4],A.ai("B<Ic>"))
 B.MO=s([0.41233895,0.35762064,0.18051042],t.n)
-B.Ms=s([0.2126,0.7152,0.0722],t.n)
+B.Mr=s([0.2126,0.7152,0.0722],t.n)
 B.NM=s([0.01932141,0.11916382,0.95034478],t.n)
-B.M1=s([B.MO,B.Ms,B.NM],t.zg)
+B.M1=s([B.MO,B.Mr,B.NM],t.zg)
 B.qy=s([0,4,12,1,5,13,3,7,15],t.t)
 B.M4=s([65533],t.t)
-B.Mg=s([8,16,24,32],t.t)
+B.Me=s([8,16,24,32],t.t)
 B.a3U=new A.hw(0,1)
 B.a3Z=new A.hw(0.5,1)
 B.a41=new A.hw(0.5375,0.75)
@@ -99116,32 +99116,32 @@ B.a42=new A.hw(0.8875,0.25)
 B.a40=new A.hw(0.925,0.5)
 B.a3V=new A.hw(0.9625,0.75)
 B.a3W=new A.hw(1,1)
-B.Mh=s([B.a3U,B.a3Z,B.a41,B.a43,B.a4_,B.a3Y,B.a3X,B.a42,B.a40,B.a3V,B.a3W],A.ai("B<hw>"))
+B.Mf=s([B.a3U,B.a3Z,B.a41,B.a43,B.a4_,B.a3Y,B.a3X,B.a42,B.a40,B.a3V,B.a3W],A.ai("B<hw>"))
 B.cD=new A.m9(0,"left")
 B.eo=new A.m9(1,"right")
 B.fY=new A.m9(3,"justify")
 B.aZ=new A.m9(4,"start")
 B.ep=new A.m9(5,"end")
-B.Mi=s([B.cD,B.eo,B.be,B.fY,B.aZ,B.ep],A.ai("B<m9>"))
+B.Mh=s([B.cD,B.eo,B.be,B.fY,B.aZ,B.ep],A.ai("B<m9>"))
 B.MA=s([2,1.13276676],t.n)
 B.Lv=s([2.18349805,1.20311921],t.n)
 B.Nu=s([2.33888662,1.28698796],t.n)
 B.Nw=s([2.48660575,1.36351941],t.n)
-B.Mm=s([2.62226596,1.44717976],t.n)
+B.Ml=s([2.62226596,1.44717976],t.n)
 B.Mt=s([2.7514899,1.53385819],t.n)
 B.MZ=s([3.36298265,1.98288283],t.n)
 B.ME=s([4.08649929,2.23811846],t.n)
 B.MR=s([4.85481134,2.47563463],t.n)
-B.Mr=s([5.62945551,2.72948597],t.n)
+B.Mq=s([5.62945551,2.72948597],t.n)
 B.MB=s([6.43023796,2.98020421],t.n)
-B.qz=s([B.MA,B.Lv,B.Nu,B.Nw,B.Mm,B.Mt,B.MZ,B.ME,B.MR,B.Mr,B.MB],t.zg)
-B.Mk=s(["Arial"],t.s)
-B.Ml=s([B.k0,B.k1],A.ai("B<z1>"))
-B.Mn=s(["-apple-system","BlinkMacSystemFont"],t.s)
-B.Mo=s(["\u0623\u0644\u0648\u2026 \u0623\u0646\u0627 \u0623\u062e\u0648\u0643\u060c \u0627\u0644\u0635\u0648\u062a \u0645\u062a\u063a\u064a\u0631 \u0634\u0648\u064a\u0629 \u0639\u0634\u0627\u0646 \u0627\u0644\u062e\u0637","\u0623\u0646\u0627 \u0641\u064a \u0645\u0634\u0643\u0644\u0629 \u0643\u0628\u064a\u0631\u0629 \u0648\u0645\u062d\u062a\u0627\u062c\u0643 \u062a\u0633\u0627\u0639\u062f\u0646\u064a \u062f\u0644\u0648\u0642\u062a\u064a","\u062d\u0648\u0644 \u0644\u064a 2,000 \u062c\u0646\u064a\u0647 \u0628\u0633\u0631\u0639\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u062d\u0641\u0638\u0629","\u0648\u0645\u062a\u0642\u0648\u0644\u0634 \u0644\u062d\u062f\u060c \u0627\u0644\u0645\u0648\u0636\u0648\u0639 \u062e\u0637\u064a\u0631 \u0648\u0628\u064a\u0646\u064a \u0648\u0628\u064a\u0646\u0643"],t.s)
+B.qz=s([B.MA,B.Lv,B.Nu,B.Nw,B.Ml,B.Mt,B.MZ,B.ME,B.MR,B.Mq,B.MB],t.zg)
+B.Mj=s(["Arial"],t.s)
+B.Mk=s([B.k0,B.k1],A.ai("B<z1>"))
+B.Mm=s(["-apple-system","BlinkMacSystemFont"],t.s)
+B.Mn=s(["\u0623\u0644\u0648\u2026 \u0623\u0646\u0627 \u0623\u062e\u0648\u0643\u060c \u0627\u0644\u0635\u0648\u062a \u0645\u062a\u063a\u064a\u0631 \u0634\u0648\u064a\u0629 \u0639\u0634\u0627\u0646 \u0627\u0644\u062e\u0637","\u0623\u0646\u0627 \u0641\u064a \u0645\u0634\u0643\u0644\u0629 \u0643\u0628\u064a\u0631\u0629 \u0648\u0645\u062d\u062a\u0627\u062c\u0643 \u062a\u0633\u0627\u0639\u062f\u0646\u064a \u062f\u0644\u0648\u0642\u062a\u064a","\u062d\u0648\u0644 \u0644\u064a 2,000 \u062c\u0646\u064a\u0647 \u0628\u0633\u0631\u0639\u0629 \u0639\u0644\u0649 \u0627\u0644\u0645\u062d\u0641\u0638\u0629","\u0648\u0645\u062a\u0642\u0648\u0644\u0634 \u0644\u062d\u062f\u060c \u0627\u0644\u0645\u0648\u0636\u0648\u0639 \u062e\u0637\u064a\u0631 \u0648\u0628\u064a\u0646\u064a \u0648\u0628\u064a\u0646\u0643"],t.s)
 B.qA=s([B.eL,B.d5],A.ai("B<fE>"))
 B.qB=s(["BlinkMacSystemFont"],t.s)
-B.Mq=s([18,15,10,12,15,18,15,12,12],t.n)
+B.Mp=s([18,15,10,12,15,18,15,12,12],t.n)
 B.Mu=s(["Elevated acoustic anomalies \u2014 conversation-risk signals were not analyzed"],t.s)
 B.Mv=s(["Noto Color Emoji","Noto Sans Symbols","Noto Sans SC","Noto Sans TC","Noto Sans HK","Noto Sans JP","Noto Sans KR"],t.s)
 B.Mw=s([1116352408,1899447441,3049323471,3921009573,961987163,1508970993,2453635748,2870763221,3624381080,310598401,607225278,1426881987,1925078388,2162078206,2614888103,3248222580,3835390401,4022224774,264347078,604807628,770255983,1249150122,1555081692,1996064986,2554220882,2821834349,2952996808,3210313671,3336571891,3584528711,113926993,338241895,666307205,773529912,1294757372,1396182291,1695183700,1986661051,2177026350,2456956037,2730485921,2820302411,3259730800,3345764771,3516065817,3600352804,4094571909,275423344,430227734,506948616,659060556,883997877,958139571,1322822218,1537002063,1747873779,1955562222,2024104815,2227730452,2361852424,2428436474,2756734187,3204031479,3329325298],t.t)
@@ -99181,15 +99181,15 @@ B.a3H=new A.mp(6,0.11)
 B.a3F=new A.mp(8,0.12)
 B.a3E=new A.mp(12,0.14)
 B.qE=s([B.a3D,B.a3I,B.a3G,B.a3H,B.a3F,B.a3E],A.ai("B<mp>"))
-B.M9=s(["Live Mic acoustic anomaly monitoring","On-device recording analysis","Manual transcript check \u2014 analyzed locally","Local incident history","Receive & respond to Family Shield alerts"],t.s)
-B.VY=new A.jA(B.bf,"Quick Check","On-device protection essentials",B.M9,!1)
-B.M8=s(["Everything in Quick Check","Automatic Live Mic transcription & conversation-risk analysis","Enhanced recording transcription","Fused multi-signal threat scoring","Incident report export"],t.s)
-B.VX=new A.jA(B.h0,"Sentinel Shield","Full dual-engine defense for you",B.M8,!0)
-B.M5=s(["Everything in Sentinel Shield","Send Family Shield alerts to your Trusted Circle","Up to 5 trusted contacts","Safety responses loop back privately"],t.s)
-B.VZ=new A.jA(B.c7,"Family Vault","Extend protection to your circle",B.M5,!1)
-B.qF=s([B.VY,B.VX,B.VZ],A.ai("B<jA>"))
-B.qG=s([0,21,51,121,151,191,271,321,360],t.n)
+B.qF=s([0,21,51,121,151,191,271,321,360],t.n)
 B.ML=s(["End the call immediately","Do not share OTPs, PINs or banking details","Verify the caller through an official channel","Report the number to your carrier or authorities","Enable Family Shield alerts for relatives"],t.s)
+B.M7=s(["Live Mic acoustic anomaly monitoring","On-device recording analysis","Manual transcript check \u2014 analyzed locally","Local incident history","Receive & respond to Family Shield alerts"],t.s)
+B.VZ=new A.jA(B.bf,"Quick Check","On-device protection essentials",B.M7,!1)
+B.Ms=s(["Everything in Quick Check","Automatic Live Mic transcription & enhanced recording transcription \u2014 when infrastructure is configured","Transcript-backed conversation-risk analysis","Fused multi-signal threat scoring"],t.s)
+B.VX=new A.jA(B.h0,"Sentinel Shield","Full dual-engine defense for you",B.Ms,!0)
+B.Mg=s(["Everything in Sentinel Shield","Send Family Shield alerts to your Trusted Circle","Up to 5 locally-saved Trusted Circle contacts","Safety responses loop back privately"],t.s)
+B.VY=new A.jA(B.c7,"Family Vault","Extend protection to your circle",B.Mg,!1)
+B.qH=s([B.VZ,B.VX,B.VY],A.ai("B<jA>"))
 B.DD=new A.Lj(2,"outer")
 B.oF=new A.P(0.09803921568627451,0,0,0,B.j)
 B.h=new A.i(0,0)
@@ -99259,10 +99259,10 @@ B.n3=new A.oh(1,"suspicious")
 B.et=new A.oh(2,"highRisk")
 B.qM=s([B.es,B.n3,B.et],A.ai("B<oh>"))
 B.NE=s(["Do not send money or share OTPs/PINs based on this recording","Verify the speaker through a number you already trust","Contact the relevant bank/carrier/authority if needed"],t.s)
-B.Ma=s([0.001200833568784504,0.002389694492170889,0.0002795742885861124],t.n)
+B.M8=s([0.001200833568784504,0.002389694492170889,0.0002795742885861124],t.n)
 B.Nb=s([0.0005891086651375999,0.0029785502573438758,0.0003270666104008398],t.n)
-B.Mp=s([0.00010146692491640572,0.0005364214359186694,0.0032979401770712076],t.n)
-B.NH=s([B.Ma,B.Nb,B.Mp],t.zg)
+B.Mo=s([0.00010146692491640572,0.0005364214359186694,0.0032979401770712076],t.n)
+B.NH=s([B.M8,B.Nb,B.Mo],t.zg)
 B.NI=s([45,95,45,20,45,90,45,45,45],t.n)
 B.NJ=s([120,120,20,45,20,15,20,120,120],t.n)
 B.e3=new A.hS(0,"controlModifier")
@@ -99862,32 +99862,32 @@ B.MY=s([B.wp,null,null,B.dn],t.L)
 B.Ln=s([B.wq,null,null,B.wE],t.L)
 B.NF=s([B.wr,null,null,B.m2],t.L)
 B.NC=s([B.ws,null,null,B.fs],t.L)
-B.M6=s([B.wt,null,null,B.dp],t.L)
+B.M5=s([B.wt,null,null,B.dp],t.L)
 B.NL=s([B.wu,null,null,B.ft],t.L)
 B.NB=s([B.wv,null,null,B.dq],t.L)
 B.M3=s([B.ww,null,null,B.m3],t.L)
 B.Ls=s([B.wx,null,null,B.dr],t.L)
-B.Mj=s([B.wy,null,null,B.fu],t.L)
+B.Mi=s([B.wy,null,null,B.fu],t.L)
 B.Nt=s([B.wz,null,null,B.ds],t.L)
 B.Nv=s([B.wA,null,null,B.fv],t.L)
-B.Mb=s([B.fq,B.fq,B.iq,null],t.L)
+B.M9=s([B.fq,B.fq,B.iq,null],t.L)
 B.NG=s([B.il,null,B.il,null],t.L)
 B.MF=s([B.ce,null,null,B.dp],t.L)
 B.MG=s([B.c0,null,null,B.dq],t.L)
 B.MH=s([B.c1,null,null,B.dr],t.L)
 B.NK=s([B.cf,null,null,B.ds],t.L)
 B.Nz=s([B.lX,null,null,B.m3],t.L)
-B.Mc=s([B.fp,B.fp,B.ip,null],t.L)
+B.Ma=s([B.fp,B.fp,B.ip,null],t.L)
 B.N7=s([B.ba,null,null,B.dn],t.L)
 B.MI=s([B.dk,null,null,B.fs],t.L)
 B.M2=s([B.ik,null,null,B.m1],t.L)
 B.MJ=s([B.dl,null,null,B.fu],t.L)
 B.NA=s([B.fo,null,null,B.m2],t.L)
-B.Md=s([B.fr,B.fr,B.ir,null],t.L)
+B.Mb=s([B.fr,B.fr,B.ir,null],t.L)
 B.MK=s([B.fm,null,null,B.ft],t.L)
 B.Nd=s([B.fn,null,null,B.fv],t.L)
-B.Me=s([B.cV,B.cV,B.dm,null],t.L)
-B.Py=new A.dA(["*",B.LY,"+",B.Ns,"-",B.Mx,".",B.MY,"/",B.Ln,"0",B.NF,"1",B.NC,"2",B.M6,"3",B.NL,"4",B.NB,"5",B.M3,"6",B.Ls,"7",B.Mj,"8",B.Nt,"9",B.Nv,"Alt",B.Mb,"AltGraph",B.NG,"ArrowDown",B.MF,"ArrowLeft",B.MG,"ArrowRight",B.MH,"ArrowUp",B.NK,"Clear",B.Nz,"Control",B.Mc,"Delete",B.N7,"End",B.MI,"Enter",B.M2,"Home",B.MJ,"Insert",B.NA,"Meta",B.Md,"PageDown",B.MK,"PageUp",B.Nd,"Shift",B.Me],A.ai("dA<u,Q<h?>>"))
+B.Mc=s([B.cV,B.cV,B.dm,null],t.L)
+B.Py=new A.dA(["*",B.LY,"+",B.Ns,"-",B.Mx,".",B.MY,"/",B.Ln,"0",B.NF,"1",B.NC,"2",B.M5,"3",B.NL,"4",B.NB,"5",B.M3,"6",B.Ls,"7",B.Mi,"8",B.Nt,"9",B.Nv,"Alt",B.M9,"AltGraph",B.NG,"ArrowDown",B.MF,"ArrowLeft",B.MG,"ArrowRight",B.MH,"ArrowUp",B.NK,"Clear",B.Nz,"Control",B.Ma,"Delete",B.N7,"End",B.MI,"Enter",B.M2,"Home",B.MJ,"Insert",B.NA,"Meta",B.Mb,"PageDown",B.MK,"PageUp",B.Nd,"Shift",B.Mc],A.ai("dA<u,Q<h?>>"))
 B.Qd={KeyA:0,KeyB:1,KeyC:2,KeyD:3,KeyE:4,KeyF:5,KeyG:6,KeyH:7,KeyI:8,KeyJ:9,KeyK:10,KeyL:11,KeyM:12,KeyN:13,KeyO:14,KeyP:15,KeyQ:16,KeyR:17,KeyS:18,KeyT:19,KeyU:20,KeyV:21,KeyW:22,KeyX:23,KeyY:24,KeyZ:25,Digit1:26,Digit2:27,Digit3:28,Digit4:29,Digit5:30,Digit6:31,Digit7:32,Digit8:33,Digit9:34,Digit0:35,Minus:36,Equal:37,BracketLeft:38,BracketRight:39,Backslash:40,Semicolon:41,Quote:42,Backquote:43,Comma:44,Period:45,Slash:46}
 B.wS=new A.bP(B.Qd,["a","b","c","d","e","f","g","h","i","j","k","l","m","n","o","p","q","r","s","t","u","v","w","x","y","z","1","2","3","4","5","6","7","8","9","0","-","=","[","]","\\",";","'","`",",",".","/"],t.li)
 B.Qc={"zh-Hant":0,"zh-TW":1,"zh-MO":2,"zh-HK":3,ja:4,ko:5,zh:6,"zh-Hans":7,"zh-CN":8}
@@ -99895,9 +99895,9 @@ B.lN=s(["Noto Sans TC"],t.s)
 B.N1=s(["Noto Sans HK","Noto Sans TC"],t.s)
 B.M0=s(["Noto Sans JP"],t.s)
 B.Lu=s(["Noto Sans KR"],t.s)
-B.qH=s(["Noto Sans SC"],t.s)
+B.qG=s(["Noto Sans SC"],t.s)
 B.NO=s(["Noto Sans SC","Noto Sans TC"],t.s)
-B.iv=new A.bP(B.Qc,[B.lN,B.lN,B.lN,B.N1,B.M0,B.Lu,B.qH,B.qH,B.NO],t.VJ)
+B.iv=new A.bP(B.Qc,[B.lN,B.lN,B.lN,B.N1,B.M0,B.Lu,B.qG,B.qG,B.NO],t.VJ)
 B.Q7={Abort:0,Again:1,AltLeft:2,AltRight:3,ArrowDown:4,ArrowLeft:5,ArrowRight:6,ArrowUp:7,AudioVolumeDown:8,AudioVolumeMute:9,AudioVolumeUp:10,Backquote:11,Backslash:12,Backspace:13,BracketLeft:14,BracketRight:15,BrightnessDown:16,BrightnessUp:17,BrowserBack:18,BrowserFavorites:19,BrowserForward:20,BrowserHome:21,BrowserRefresh:22,BrowserSearch:23,BrowserStop:24,CapsLock:25,Comma:26,ContextMenu:27,ControlLeft:28,ControlRight:29,Convert:30,Copy:31,Cut:32,Delete:33,Digit0:34,Digit1:35,Digit2:36,Digit3:37,Digit4:38,Digit5:39,Digit6:40,Digit7:41,Digit8:42,Digit9:43,DisplayToggleIntExt:44,Eject:45,End:46,Enter:47,Equal:48,Escape:49,Esc:50,F1:51,F10:52,F11:53,F12:54,F13:55,F14:56,F15:57,F16:58,F17:59,F18:60,F19:61,F2:62,F20:63,F21:64,F22:65,F23:66,F24:67,F3:68,F4:69,F5:70,F6:71,F7:72,F8:73,F9:74,Find:75,Fn:76,FnLock:77,GameButton1:78,GameButton10:79,GameButton11:80,GameButton12:81,GameButton13:82,GameButton14:83,GameButton15:84,GameButton16:85,GameButton2:86,GameButton3:87,GameButton4:88,GameButton5:89,GameButton6:90,GameButton7:91,GameButton8:92,GameButton9:93,GameButtonA:94,GameButtonB:95,GameButtonC:96,GameButtonLeft1:97,GameButtonLeft2:98,GameButtonMode:99,GameButtonRight1:100,GameButtonRight2:101,GameButtonSelect:102,GameButtonStart:103,GameButtonThumbLeft:104,GameButtonThumbRight:105,GameButtonX:106,GameButtonY:107,GameButtonZ:108,Help:109,Home:110,Hyper:111,Insert:112,IntlBackslash:113,IntlRo:114,IntlYen:115,KanaMode:116,KeyA:117,KeyB:118,KeyC:119,KeyD:120,KeyE:121,KeyF:122,KeyG:123,KeyH:124,KeyI:125,KeyJ:126,KeyK:127,KeyL:128,KeyM:129,KeyN:130,KeyO:131,KeyP:132,KeyQ:133,KeyR:134,KeyS:135,KeyT:136,KeyU:137,KeyV:138,KeyW:139,KeyX:140,KeyY:141,KeyZ:142,KeyboardLayoutSelect:143,Lang1:144,Lang2:145,Lang3:146,Lang4:147,Lang5:148,LaunchApp1:149,LaunchApp2:150,LaunchAssistant:151,LaunchControlPanel:152,LaunchMail:153,LaunchScreenSaver:154,MailForward:155,MailReply:156,MailSend:157,MediaFastForward:158,MediaPause:159,MediaPlay:160,MediaPlayPause:161,MediaRecord:162,MediaRewind:163,MediaSelect:164,MediaStop:165,MediaTrackNext:166,MediaTrackPrevious:167,MetaLeft:168,MetaRight:169,MicrophoneMuteToggle:170,Minus:171,NonConvert:172,NumLock:173,Numpad0:174,Numpad1:175,Numpad2:176,Numpad3:177,Numpad4:178,Numpad5:179,Numpad6:180,Numpad7:181,Numpad8:182,Numpad9:183,NumpadAdd:184,NumpadBackspace:185,NumpadClear:186,NumpadClearEntry:187,NumpadComma:188,NumpadDecimal:189,NumpadDivide:190,NumpadEnter:191,NumpadEqual:192,NumpadMemoryAdd:193,NumpadMemoryClear:194,NumpadMemoryRecall:195,NumpadMemoryStore:196,NumpadMemorySubtract:197,NumpadMultiply:198,NumpadParenLeft:199,NumpadParenRight:200,NumpadSubtract:201,Open:202,PageDown:203,PageUp:204,Paste:205,Pause:206,Period:207,Power:208,PrintScreen:209,PrivacyScreenToggle:210,Props:211,Quote:212,Resume:213,ScrollLock:214,Select:215,SelectTask:216,Semicolon:217,ShiftLeft:218,ShiftRight:219,ShowAllWindows:220,Slash:221,Sleep:222,Space:223,Super:224,Suspend:225,Tab:226,Turbo:227,Undo:228,WakeUp:229,ZoomToggle:230}
 B.zP=new A.v(458907)
 B.zv=new A.v(458873)
@@ -100288,8 +100288,8 @@ B.Kd=new A.b1(B.lF,20,B.E,null,null)
 B.dx=new A.c1(12,null,null,null)
 B.a0B=new A.as("How VoxGuard Works",null,B.am,null,null,null,null,null,null)
 B.IQ=new A.f4(1,B.bl,B.a0B,null)
-B.Mf=s([B.Kd,B.dx,B.IQ,B.qk],t.p)
-B.Te=new A.jo(B.az,B.i,B.l,B.o,null,B.bL,null,0,B.Mf,null)
+B.Md=s([B.Kd,B.dx,B.IQ,B.qk],t.p)
+B.Te=new A.jo(B.az,B.i,B.l,B.o,null,B.bL,null,0,B.Md,null)
 B.R9=new A.aM(B.dc,B.Te,null)
 B.a0A=new A.as("Elevated synthetic-voice indicators detected.",null,B.r,null,null,null,null,null,null)
 B.Ra=new A.aM(B.pj,B.a0A,null)
@@ -100456,8 +100456,8 @@ B.Kn=new A.b1(B.q4,11,B.ae,null,null)
 B.mR=new A.c1(4,null,null,null)
 B.Yw=new A.t(!0,B.ae,null,null,null,null,10,B.bZ,null,1.1,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null,null)
 B.a0f=new A.as("LIVE MIC",null,B.Yw,null,null,null,null,null,null)
-B.M7=s([B.Kn,B.mR,B.a0f],t.p)
-B.Td=new A.jo(B.az,B.i,B.ao,B.o,null,B.bL,null,0,B.M7,null)
+B.M6=s([B.Kn,B.mR,B.a0f],t.p)
+B.Td=new A.jo(B.az,B.i,B.ao,B.o,null,B.bL,null,0,B.M6,null)
 B.JR=new A.b1(B.dj,16,B.L,null,null)
 B.aY=new A.c1(8,null,null,null)
 B.a1j=new A.as(u.p,null,B.r,null,null,null,null,null,null)
