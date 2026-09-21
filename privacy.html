@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>VoxGuard — Privacy Policy</title>
+<style>
+  body { background:#0B0D13; color:#F8FAFC; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; margin:0; padding:32px 20px; }
+  main { max-width:720px; margin:0 auto; line-height:1.65; }
+  h1 { font-size:1.6rem; } h2 { font-size:1.15rem; margin-top:2em; color:#10B981; }
+  p,li { color:#C9D2E0; } code { color:#94A3B8; }
+  .muted { color:#94A3B8; font-size:.9rem; }
+  .placeholder { border:1px dashed #F59E0B; padding:8px 12px; border-radius:8px; color:#F59E0B; }
+</style>
+</head>
+<body>
+<main>
+<h1>VoxGuard Privacy Policy</h1>
+<p class="muted">Last updated: September 21, 2026 · Applies to the VoxGuard app and this site.</p>
+
+<p>VoxGuard is a consumer safety tool that analyzes voice scam risk during
+protection sessions <em>you start yourself</em>. This policy describes what the
+app actually does today — not aspirational behavior.</p>
+
+<h2>Microphone</h2>
+<ul>
+  <li>The microphone is requested <strong>only after you explicitly start a Live Mic
+  protection session</strong>. VoxGuard never asks for microphone access at launch,
+  and never listens in the background.</li>
+  <li>Raw Live Mic audio is processed <strong>in memory only</strong>. VoxGuard does
+  not store a raw microphone recording.</li>
+  <li>If you are entitled to transcript-backed analysis and cloud transcription is
+  configured, Live Mic audio is streamed to the configured transcription provider
+  (AssemblyAI) <strong>for the duration of the session only</strong> to produce
+  transcript text. If transcription is unavailable or not in your plan, analysis
+  continues on-device with acoustic anomaly indicators only.</li>
+</ul>
+
+<h2>Analyze Recording</h2>
+<ul>
+  <li>You choose a file and then choose a privacy mode. Nothing uploads on file
+  selection alone.</li>
+  <li><strong>Keep on this device</strong>: decoding and analysis run locally; zero
+  network calls. You may optionally paste a transcript you already have — it is
+  analyzed locally.</li>
+  <li><strong>Include conversation analysis</strong>: the selected audio is uploaded
+  once to the VoxGuard transcription relay, which forwards it to the configured
+  speech-to-text provider. VoxGuard does not permanently store the uploaded file;
+  the original file on your device is never copied into VoxGuard storage.</li>
+</ul>
+
+<h2>Incident reports (on-device)</h2>
+<ul>
+  <li>Flagged sessions save a local incident report on your device: an ID,
+  timestamp, a SHA-256 digest of the analyzed audio, risk score, threat reasons,
+  transcript snippets, and source labels. Reports persist locally (capped list)
+  until you delete them.</li>
+  <li>Incident reports never contain audio and never leave the device unless you
+  share one yourself.</li>
+</ul>
+
+<h2>Family Shield</h2>
+<ul>
+  <li>Trusted Circle names and phone numbers you enter are stored
+  <strong>locally on your device</strong> (maximum 5 contacts) and are never sent
+  to VoxGuard servers.</li>
+  <li>A Family Shield alert is sent only when <strong>you tap to send it</strong>
+  after a flagged session. The alert payload contains privacy-minimal metadata:
+  an opaque VoxGuard identity (<code>vg_…</code>), an incident reference, a risk
+  band, an analysis-scope flag, and later a Safe / Still Suspicious response —
+  never audio, transcripts, names, or phone numbers.</li>
+  <li>Alerts travel through a VoxGuard-operated relay which holds the OneSignal
+  credentials; OneSignal delivers the push notification to devices that opted in.
+  An "accepted" result means the relay accepted the request — it is not a
+  guarantee of delivery to a specific device.</li>
+  <li>Notification permission is requested only from the Family Shield receiver
+  card in Settings — never at launch.</li>
+</ul>
+
+<h2>Purchases</h2>
+<ul>
+  <li>Subscriptions are handled by RevenueCat and your app store (Google Play /
+  App Store). VoxGuard receives an entitlement state (which plan is active) — we
+  do not see or store your payment details.</li>
+  <li>Web and desktop builds use a clearly labelled Demo Store that simulates
+  checkout and never charges money.</li>
+</ul>
+
+<h2>What we do not do</h2>
+<ul>
+  <li>No accounts, no analytics SDK, no advertising SDK, no cross-device
+  tracking.</li>
+  <li>No contact-book or call-log access. VoxGuard cannot intercept native
+  cellular calls.</li>
+  <li>Direct Groq semantic analysis exists as a developer-only experiment and is
+  disabled in production builds; the production semantic engine runs on-device.</li>
+  <li>Threat Score is an assistive risk signal — not a probability, not a
+  forensic or legal determination.</li>
+</ul>
+
+<h2>Data retention &amp; deletion</h2>
+<p>Incident reports and Trusted Circle data live in app storage. Uninstalling the
+app removes them. You can delete individual incidents inside the app.</p>
+
+<h2>Contact</h2>
+<p class="placeholder">PLACEHOLDER — support contact / legal entity pending
+(release blocker, tracked in docs/FINAL_RELEASE_STATUS.md).</p>
+
+<h2>Changes</h2>
+<p>If behavior changes, this page is updated before release. The in-app privacy
+summary and this page describe the same behavior.</p>
+</main>
+</body>
+</html>
