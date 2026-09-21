@@ -112,7 +112,20 @@ class IncidentDetailScreen extends StatelessWidget {
       ),
     );
     if (confirmed != true || !context.mounted) return;
-    await IncidentRepositoryLocator.instance.deleteIncident(incident.id);
+    try {
+      await IncidentRepositoryLocator.instance.deleteIncident(incident.id);
+    } on IncidentPersistenceException {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              "Couldn't delete this incident. Please try again.",
+            ),
+          ),
+        );
+      }
+      return;
+    }
     if (context.mounted) Navigator.of(context).pop();
   }
 

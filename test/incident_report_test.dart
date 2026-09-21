@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -313,6 +314,64 @@ void main() {
       expect(await repo.getAllIncidents(), isEmpty);
       expect(await repo.getIncidentById('INC-2026-0007'), isNull);
     });
+
+    test('write failure does not mutate memory and throws a controlled '
+        'error', () async {
+      final prefs = _WriteFailPrefs();
+      final repo = PersistedIncidentRepository(prefs: prefs);
+      await repo.saveIncident(makeReport(id: 'INC-2026-0011'));
+      await repo.saveIncident(makeReport(id: 'INC-2026-0012'));
+
+      expect(repo.deleteIncident('INC-2026-0011'),
+          throwsA(isA<IncidentPersistenceException>()));
+      // Give the rejected future a tick to settle.
+      await Future<void>.delayed(Duration.zero);
+
+      // In-memory list unchanged — the incident stays visible.
+      final all = await repo.getAllIncidents();
+      expect(all, hasLength(2));
+      expect(await repo.getIncidentById('INC-2026-0011'), isNotNull);
+    });
+
+    test('failed delete leaves the stored incident intact', () async {
+      // Prefs seeded with a valid stored list; writes return false.
+      final seeding = _WriteFailPrefs();
+      final writer = PersistedIncidentRepository(prefs: seeding);
+      // saveIncident is best-effort — with a working writer it stores.
+      seeding.allowWrites = true;
+      await writer.saveIncident(makeReport(id: 'INC-2026-0013'));
+      final storedBefore = seeding.stored;
+      expect(storedBefore, contains('INC-2026-0013'));
+
+      seeding.allowWrites = false;
+      final repo = PersistedIncidentRepository(prefs: seeding);
+      await expectLater(repo.deleteIncident('INC-2026-0013'),
+          throwsA(isA<IncidentPersistenceException>()));
+
+      // Disk copy still contains the incident — nothing was lost.
+      expect(seeding.stored, storedBefore);
+      expect(await repo.getIncidentById('INC-2026-0013'), isNotNull);
+    });
+
+    test('thrown persistence errors surface as the controlled exception',
+        () async {
+      // Seed a real stored row via a working prefs instance.
+      SharedPreferences.setMockInitialValues({});
+      final good = await SharedPreferences.getInstance();
+      final goodRepo = PersistedIncidentRepository(prefs: good);
+      await goodRepo.saveIncident(makeReport(id: 'INC-2026-0014'));
+
+      // Same stored content, but every write throws.
+      final prefs = _WriteFailPrefs(
+        storedJson: good.getString('voxguard.incidents_v1'),
+      )..throwOnWrite = true;
+      final failing = PersistedIncidentRepository(prefs: prefs);
+      await expectLater(failing.deleteIncident('INC-2026-0014'),
+          throwsA(isA<IncidentPersistenceException>()));
+      expect(await failing.getIncidentById('INC-2026-0014'),
+          isNotNull);
+      expect(prefs.stored, contains('INC-2026-0014'));
+    });
   });
 
   group('incident deletion — UI', () {
@@ -386,5 +445,87 @@ void main() {
       expect(await IncidentRepositoryLocator.instance
           .getIncidentById('INC-2026-0010'), isNotNull);
     });
+
+    testWidgets('failed deletion stays on detail and shows safe copy',
+        (tester) async {
+      final incident = makeReport(id: 'INC-2026-0015');
+      final inner = InMemoryIncidentRepository(seed: false);
+      await inner.saveIncident(incident);
+      IncidentRepositoryLocator.instance =
+          _FailingDeleteRepository(inner);
+
+      await tester.pumpWidget(MaterialApp(
+        home: IncidentDetailScreen(incident: incident),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Delete incident'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      // Still on Incident Detail — no navigation on failure.
+      expect(find.text('INC-2026-0015'), findsWidgets);
+      // Consumer-safe failure copy — no raw storage exception text.
+      expect(
+        find.text("Couldn't delete this incident. Please try again."),
+        findsOneWidget,
+      );
+      // Incident is still in the store.
+      expect(await inner.getIncidentById('INC-2026-0015'), isNotNull);
+    });
   });
+}
+
+/// SharedPreferences fake whose writes can fail — returning false or
+/// throwing — while reads keep working.
+final class _WriteFailPrefs implements SharedPreferences {
+  _WriteFailPrefs({String? storedJson}) : stored = storedJson;
+
+  bool allowWrites = false;
+  bool throwOnWrite = false;
+  String? stored;
+
+  @override
+  String? getString(String key) => stored;
+
+  @override
+  Future<bool> setString(String key, String value) {
+    if (throwOnWrite) {
+      return Future<bool>.error(StateError('write failed'));
+    }
+    if (!allowWrites) return Future<bool>.value(false);
+    stored = value;
+    return Future<bool>.value(true);
+  }
+
+  @override
+  noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// Repository wrapper whose deletion always fails with the controlled
+/// exception — used to prove the UI surfaces it safely.
+final class _FailingDeleteRepository implements IIncidentRepository {
+  const _FailingDeleteRepository(this._inner);
+
+  final IIncidentRepository _inner;
+
+  @override
+  Future<void> deleteIncident(String id) =>
+      throw const IncidentPersistenceException();
+
+  @override
+  Future<void> saveIncident(IncidentReport incident) =>
+      _inner.saveIncident(incident);
+
+  @override
+  Future<List<IncidentReport>> getAllIncidents() =>
+      _inner.getAllIncidents();
+
+  @override
+  Future<IncidentReport?> getIncidentById(String id) =>
+      _inner.getIncidentById(id);
+
+  @override
+  ValueListenable<List<IncidentReport>> get incidents => _inner.incidents;
 }

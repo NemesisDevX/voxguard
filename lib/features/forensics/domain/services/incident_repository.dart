@@ -9,6 +9,15 @@ import '../../../protection/domain/models/semantic_threat_signals.dart';
 import '../../../protection/domain/models/transcript_snippet.dart';
 import '../models/incident_report.dart';
 
+/// Controlled failure raised when a destructive repository operation
+/// could not be durably persisted. Carries no raw storage details.
+final class IncidentPersistenceException implements Exception {
+  const IncidentPersistenceException();
+
+  @override
+  String toString() => 'IncidentPersistenceException';
+}
+
 /// Contract for the forensic incident store.
 abstract interface class IIncidentRepository {
   /// Persist a new incident.
@@ -257,16 +266,26 @@ final class PersistedIncidentRepository implements IIncidentRepository {
   Future<void> deleteIncident(String id) async {
     await _loadFuture;
     final list = _incidents.value.toList()..removeWhere((i) => i.id == id);
-    _incidents.value = List.unmodifiable(list);
+    if (list.length == _incidents.value.length) {
+      return; // nothing to delete — idempotent no-op
+    }
+    // Deletion is a user-requested destructive action promised as
+    // permanent — persist first and only mutate the reactive list
+    // once the removal is durably written.
+    bool persisted;
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();
-      await prefs.setString(
+      persisted = await prefs.setString(
         _key,
         jsonEncode([for (final i in list) i.toJson()]),
       );
     } catch (_) {
-      // Persistence failure must not break the in-memory flow.
+      persisted = false;
     }
+    if (!persisted) {
+      throw const IncidentPersistenceException();
+    }
+    _incidents.value = List.unmodifiable(list);
   }
 
   @override

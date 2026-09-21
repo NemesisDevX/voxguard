@@ -10,8 +10,8 @@ or accounts — nothing unverified is claimed DONE.
 | Item | Status | Proof |
 |------|--------|-------|
 | Truth sweep — no interception/background/probability/guarantee claims | DONE | repo sweep; disclaimer strings in `app_strings.dart` |
-| Package-ID collision resolved | DONE | `com.nemesisdevx.voxguard` — Android `applicationId`/`namespace`, Kotlin package path, iOS/macOS bundle IDs, Linux app ID, Windows runner; zero `com.voxguard.app` in tracked files |
-| Incident deletion | DONE | `IIncidentRepository.deleteIncident` — persisted + in-memory impls, AppBar delete action with confirm dialog, repo + widget regression tests |
+| Package-ID collision resolved | DONE | `com.nemesisdevx.voxguard` — Android `applicationId`/`namespace`, Kotlin package path, iOS/macOS bundle IDs, Linux app ID, Windows runner; zero active release configuration uses `com.voxguard.app` (historical docs retain it factually) |
+| Incident deletion | DONE | `IIncidentRepository.deleteIncident` — persisted + in-memory impls, AppBar delete action with confirm dialog; persisted impl writes storage first and reports failure only via `IncidentPersistenceException` (no silent swallow), UI shows safe retry copy |
 | Live Shield removed from release UI | DONE | roadmap-only in README |
 | Responsive + large-text smoke | DONE | `test/responsive_smoke_test.dart` |
 | Arabic/RTL first-strong-direction detection | DONE | `threat_phrase_highlighter.dart` + tests |
@@ -69,7 +69,7 @@ or accounts — nothing unverified is claimed DONE.
 |-------|--------|
 | `flutter pub get` | PASS |
 | `flutter analyze` | PASS — 0 issues |
-| `flutter test` | PASS — 283/283 |
+| `flutter test` | PASS — 287/287 |
 | `flutter build web --release --base-href /voxguard/` | PASS |
 | `flutter build apk --debug` | PASS |
 | `cd server && npm ci && npm test` | PASS — 41/41 |
