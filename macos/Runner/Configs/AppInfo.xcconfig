@@ -8,7 +8,7 @@
 PRODUCT_NAME = voxguard
 
 // The application's bundle identifier
-PRODUCT_BUNDLE_IDENTIFIER = com.voxguard.app
+PRODUCT_BUNDLE_IDENTIFIER = com.nemesisdevx.voxguard
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.voxguard. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 com.nemesisdevx. All rights reserved.

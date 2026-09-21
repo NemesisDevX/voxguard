@@ -11,7 +11,7 @@ verified on hardware.
 | App name | **VoxGuard** |
 | Subtitle / short description | Voice scam risk defense — hear the threat before you trust the voice. |
 | Category | Tools / Safety |
-| Package / bundle ID | `com.voxguard.app` (Android + iOS) |
+| Package / bundle ID | `com.nemesisdevx.voxguard` (Android + iOS) |
 | Content rating | Everyone |
 
 ## Full description
@@ -85,9 +85,9 @@ never quote fixed prices in listing text.
 
 | Field | Value |
 |-------|-------|
-| Privacy policy | `BLOCKED_EXTERNAL` — `web/privacy.html` is ready; needs a public host (GitHub Pages `/voxguard/privacy.html` once deployed). Set via `VOXGUARD_PRIVACY_POLICY_URL`. |
-| Terms | `BLOCKED_EXTERNAL` — same for `web/terms.html` via `VOXGUARD_TERMS_URL`. |
-| Support URL | `BLOCKED_EXTERNAL` — GitHub repo/issues until a support address exists. |
+| Privacy policy | `https://nemesisdevx.github.io/voxguard/privacy.html` — live (HTTP 200 verified); in-app default in `LegalLinks`, overridable via `VOXGUARD_PRIVACY_POLICY_URL` |
+| Terms | `https://nemesisdevx.github.io/voxguard/terms.html` — live (HTTP 200 verified); same override via `VOXGUARD_TERMS_URL` |
+| Support URL | `https://github.com/NemesisDevX/voxguard/issues` — project support and issue reports |
 
 ## Reviewer notes
 

@@ -9,8 +9,9 @@ plugins {
 }
 
 // Release signing is configured externally — android/key.properties
-// (gitignored) or VOXGUARD_* environment variables. Credentials never
-// enter the repository, and a release build must NEVER silently fall
+// (gitignored) takes priority; explicit VOXGUARD_* environment
+// variables are the fallback. Credentials never enter the repository
+// and are never logged, and a release build must NEVER silently fall
 // back to the debug key: requesting a release artifact without
 // credentials fails loudly so a debug-signed binary can never ship
 // as "release".
@@ -20,15 +21,21 @@ val keystoreProperties = Properties().apply {
         FileInputStream(keystorePropertiesFile).use { load(it) }
     }
 }
-fun signingProperty(name: String): String? =
-    keystoreProperties.getProperty(name) ?: System.getenv(name)
+fun signingProperty(keyProp: String, envVar: String): String? =
+    keystoreProperties.getProperty(keyProp) ?: System.getenv(envVar)
 
 val releaseSigningReady = listOf(
-    "storeFile", "storePassword", "keyAlias", "keyPassword",
-).all { !signingProperty(it).isNullOrBlank() }
+    "storeFile" to "VOXGUARD_KEYSTORE_FILE",
+    "storePassword" to "VOXGUARD_KEYSTORE_PASSWORD",
+    "keyAlias" to "VOXGUARD_KEY_ALIAS",
+    "keyPassword" to "VOXGUARD_KEY_PASSWORD",
+).all { (k, e) -> !signingProperty(k, e).isNullOrBlank() }
+
+fun requireSigningProperty(keyProp: String, envVar: String): String =
+    signingProperty(keyProp, envVar)!!
 
 android {
-    namespace = "com.voxguard.app"
+    namespace = "com.nemesisdevx.voxguard"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -42,7 +49,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.voxguard.app"
+        applicationId = "com.nemesisdevx.voxguard"
         minSdk = 24
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
@@ -52,13 +59,17 @@ android {
     signingConfigs {
         if (releaseSigningReady) {
             create("release") {
-                val storePath = signingProperty("storeFile")!!
+                val storePath = requireSigningProperty(
+                    "storeFile", "VOXGUARD_KEYSTORE_FILE")
                 val file = File(storePath)
                 storeFile = if (file.isAbsolute) file
                     else rootProject.file(storePath)
-                storePassword = signingProperty("storePassword")
-                keyAlias = signingProperty("keyAlias")
-                keyPassword = signingProperty("keyPassword")
+                storePassword = requireSigningProperty(
+                    "storePassword", "VOXGUARD_KEYSTORE_PASSWORD")
+                keyAlias = requireSigningProperty(
+                    "keyAlias", "VOXGUARD_KEY_ALIAS")
+                keyPassword = requireSigningProperty(
+                    "keyPassword", "VOXGUARD_KEY_PASSWORD")
             }
         }
     }
@@ -86,8 +97,10 @@ gradle.taskGraph.whenReady {
         throw GradleException(
             "BLOCKED_EXTERNAL — release keystore required. Provide " +
                 "android/key.properties (storeFile, storePassword, " +
-                "keyAlias, keyPassword) or the matching VOXGUARD_* " +
-                "environment variables. See docs/FINAL_RELEASE_STATUS.md."
+                "keyAlias, keyPassword) or the environment variables " +
+                "VOXGUARD_KEYSTORE_FILE, VOXGUARD_KEYSTORE_PASSWORD, " +
+                "VOXGUARD_KEY_ALIAS, VOXGUARD_KEY_PASSWORD. " +
+                "See docs/FINAL_RELEASE_STATUS.md."
         )
     }
 }

@@ -9,8 +9,8 @@
   main { max-width:720px; margin:0 auto; line-height:1.65; }
   h1 { font-size:1.6rem; } h2 { font-size:1.15rem; margin-top:2em; color:#10B981; }
   p,li { color:#C9D2E0; } code { color:#94A3B8; }
+  a { color:#10B981; }
   .muted { color:#94A3B8; font-size:.9rem; }
-  .placeholder { border:1px dashed #F59E0B; padding:8px 12px; border-radius:8px; color:#F59E0B; }
 </style>
 </head>
 <body>
@@ -99,12 +99,20 @@ app actually does today — not aspirational behavior.</p>
 </ul>
 
 <h2>Data retention &amp; deletion</h2>
-<p>Incident reports and Trusted Circle data live in app storage. Uninstalling the
-app removes them. You can delete individual incidents inside the app.</p>
+<p>Incident reports and Trusted Circle contacts live in local app storage on
+your device.</p>
+<ul>
+  <li>You can delete an individual incident report inside the app (open the
+  incident, then use the delete action). Deletion is permanent on this
+  device.</li>
+  <li>You can remove a Trusted Circle contact from the Trusted Circle card at
+  any time.</li>
+  <li>Uninstalling the app removes all locally stored app data.</li>
+</ul>
 
 <h2>Contact</h2>
-<p class="placeholder">PLACEHOLDER — support contact / legal entity pending
-(release blocker, tracked in docs/FINAL_RELEASE_STATUS.md).</p>
+<p>Project support and issue reports:
+<a href="https://github.com/NemesisDevX/voxguard/issues">github.com/NemesisDevX/voxguard/issues</a></p>
 
 <h2>Changes</h2>
 <p>If behavior changes, this page is updated before release. The in-app privacy

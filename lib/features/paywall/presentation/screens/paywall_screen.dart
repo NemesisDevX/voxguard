@@ -612,10 +612,11 @@ class _FooterRow extends StatelessWidget {
     final terms = LegalLinks.terms;
     final privacy = LegalLinks.privacyPolicy;
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+    return Wrap(
+      alignment: WrapAlignment.center,
+      spacing: 8,
       children: [
-        // Legal links render ONLY when a valid https URL is configured —
+        // Legal links render ONLY when a valid https URL resolves —
         // never dead buttons.
         if (terms != null) _footerLink(AppStrings.terms, terms),
         if (privacy != null) _footerLink(AppStrings.privacy, privacy),

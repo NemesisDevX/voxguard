@@ -514,11 +514,13 @@ class _TranscriptLine extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: RichText(
+            // Text.rich inherits DefaultTextStyle so transcript spans
+            // pick up the ambient font family + fallback list.
+            child: Text.rich(
               textDirection: isRtlText(snippet.text)
                   ? TextDirection.rtl
                   : TextDirection.ltr,
-              text: TextSpan(
+              TextSpan(
                 style: style,
                 children: buildThreatSpans(
                   snippet.text,

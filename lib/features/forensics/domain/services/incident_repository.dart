@@ -20,6 +20,10 @@ abstract interface class IIncidentRepository {
   /// Lookup by `INC-…` id.
   Future<IncidentReport?> getIncidentById(String id);
 
+  /// Permanently remove one incident by id. Safe/idempotent for ids that
+  /// do not exist.
+  Future<void> deleteIncident(String id);
+
   /// Reactive view of the incident list so the history tab updates
   /// live when a call ends.
   ValueListenable<List<IncidentReport>> get incidents;
@@ -49,6 +53,12 @@ final class InMemoryIncidentRepository implements IIncidentRepository {
       if (i.id == id) return i;
     }
     return null;
+  }
+
+  @override
+  Future<void> deleteIncident(String id) async {
+    _incidents.value =
+        _incidents.value.where((i) => i.id != id).toList(growable: false);
   }
 
   @override
@@ -231,6 +241,22 @@ final class PersistedIncidentRepository implements IIncidentRepository {
     while (list.length > _maxIncidents) {
       list.removeLast(); // bounded cap
     }
+    _incidents.value = List.unmodifiable(list);
+    try {
+      final prefs = _prefs ?? await SharedPreferences.getInstance();
+      await prefs.setString(
+        _key,
+        jsonEncode([for (final i in list) i.toJson()]),
+      );
+    } catch (_) {
+      // Persistence failure must not break the in-memory flow.
+    }
+  }
+
+  @override
+  Future<void> deleteIncident(String id) async {
+    await _loadFuture;
+    final list = _incidents.value.toList()..removeWhere((i) => i.id == id);
     _incidents.value = List.unmodifiable(list);
     try {
       final prefs = _prefs ?? await SharedPreferences.getInstance();

@@ -197,16 +197,17 @@ void main() {
       expect(find.text('EGP 8,999.99/yr'), findsOneWidget);
     });
 
-    testWidgets('dead legal links never render — Terms/Privacy '
-        'absent without configured URLs', (tester) async {
+    testWidgets('legal links render — defaults point at the deployed '
+        'GitHub Pages policy/terms', (tester) async {
       PurchaseServiceLocator.instance = _RealStoreFake([
         _pkg('sentinel_monthly', TierId.sentinel, BillingCycle.monthly),
       ]);
       await _open(tester);
 
-      // No dart-defines in tests → no dead buttons.
-      expect(find.text('Terms of Service'), findsNothing);
-      expect(find.text('Privacy Policy'), findsNothing);
+      // LegalLinks defaults resolve to the hosted pages — buttons
+      // are live, never dead.
+      expect(find.text('Terms of Service'), findsOneWidget);
+      expect(find.text('Privacy Policy'), findsOneWidget);
       // Restore is present for a real store.
       expect(find.text('Restore Purchases'), findsOneWidget);
     });

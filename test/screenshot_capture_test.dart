@@ -64,16 +64,18 @@ Future<void> _loadRoboto() async {
       loader.addFont(Future.value(ByteData.view(f.readAsBytesSync().buffer)));
     }
   }
+  await loader.load();
   // The demo transcript is Egyptian Arabic and Roboto has no Arabic
-  // coverage — registering the Noto face under the SAME family lets
-  // the engine use it for glyphs Roboto lacks (fallback lists from
-  // merged styles are not consulted by the test font collection).
+  // coverage. Noto Naskh Arabic (SIL OFL 1.1, see tool/fonts/) is
+  // registered under its own family and reached through the ambient
+  // fontFamilyFallback wired in _shell.
   final arabic = File('tool/fonts/NotoNaskhArabic.ttf');
   if (arabic.existsSync()) {
-    loader.addFont(
-        Future.value(ByteData.view(arabic.readAsBytesSync().buffer)));
+    final arabicLoader = FontLoader('NotoNaskh')
+      ..addFont(
+          Future.value(ByteData.view(arabic.readAsBytesSync().buffer)));
+    await arabicLoader.load();
   }
-  await loader.load();
   // Icons.* resolve to the MaterialIcons family — without it every
   // icon paints as a hollow box.
   final iconFont = File('${fontsDir.path}/materialicons-regular.otf');
@@ -89,14 +91,20 @@ Widget _shell(Widget child) {
   final base = ThemeData(
       brightness: Brightness.dark,
       platform: TargetPlatform.android);
+  const fallback = ['NotoNaskh'];
   return MaterialApp(
     debugShowCheckedModeBanner: false,
     // Explicit families: test-rendered text otherwise resolves to
     // the hollow Ahem box font; the fallback covers Arabic glyphs.
     theme: base.copyWith(
-      textTheme: base.textTheme.apply(fontFamily: 'Roboto'),
-      primaryTextTheme: base.primaryTextTheme.apply(fontFamily: 'Roboto'),
+      textTheme: base.textTheme
+          .apply(fontFamily: 'Roboto', fontFamilyFallback: fallback),
+      primaryTextTheme: base.primaryTextTheme
+          .apply(fontFamily: 'Roboto', fontFamilyFallback: fallback),
     ),
+    // MaterialApp's ambient DefaultTextStyle derives from the themed
+    // textTheme — transcript bubbles (Text.rich) merge it, so the
+    // fontFamilyFallback reaches Arabic spans with no explicit family.
     home: child,
   );
 }
@@ -153,14 +161,14 @@ void main() {
     await shot(tester, const HomeScreen(), '01_home_threatcore');
 
     // 2 — Onboarding (privacy-first trust flow)
-    await shot(tester, const OnboardingScreen(), '02_onboarding');
+    await shot(tester, const OnboardingScreen(), '07_onboarding');
 
     // 3 — Paywall (Demo Store labelled)
-    await shot(tester, const PaywallScreen(), '03_paywall');
+    await shot(tester, const PaywallScreen(), '06_paywall');
 
     // 4 — Analyze Recording
     await shot(
-        tester, const AnalyzeRecordingScreen(), '04_analyze_recording');
+        tester, const AnalyzeRecordingScreen(), '05_analyze_recording');
 
     // 5 — Incident detail (constructed high-risk report)
     final incident = IncidentReport(
@@ -213,13 +221,13 @@ void main() {
       ],
     );
     await shot(tester, IncidentDetailScreen(incident: incident),
-        '05_incident_detail');
+        '03_incident_detail');
 
     // 6 — Family Shield alert (receiver side, known sender)
     final alert = ReceivedFamilyAlert(
       incidentId: 'INC-2026-4821',
       senderExternalId: 'vg_0123456789abcdef0123456789abcdef',
-      riskLevel: 'high',
+      riskLevel: 'highRisk',
       receivedAt: DateTime(2026, 8, 14, 21, 37),
       analysisScope: 'full',
     );
@@ -233,7 +241,7 @@ void main() {
     await shot(
       tester,
       FamilyAlertScreen(alert: alert, sender: sender),
-      '06_family_shield_alert',
+      '04_family_shield_alert',
     );
   });
 

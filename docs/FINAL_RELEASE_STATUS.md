@@ -1,32 +1,37 @@
 # Final Release Status — VoxGuard
 
-Statuses: `DONE` / `FAILED` / `NOT RUN` / `BLOCKED_EXTERNAL`.
-Generated during the Sprint 6 finalization pass. External items are
-explicitly blocked on credentials, hardware, or accounts — nothing
-unverified is claimed DONE.
+Statuses: `DONE` / `FAILED` / `NOT RUN` / `BLOCKED_EXTERNAL` /
+`BLOCKED_DECISION`. Generated during the foundation-freeze pass after
+Sprint 6. External items are explicitly blocked on credentials, hardware,
+or accounts — nothing unverified is claimed DONE.
 
 ## Repo-side product work
 
 | Item | Status | Proof |
 |------|--------|-------|
 | Truth sweep — no interception/background/probability/guarantee claims | DONE | repo sweep; disclaimer strings in `app_strings.dart` |
+| Package-ID collision resolved | DONE | `com.nemesisdevx.voxguard` — Android `applicationId`/`namespace`, Kotlin package path, iOS/macOS bundle IDs, Linux app ID, Windows runner; zero `com.voxguard.app` in tracked files |
+| Incident deletion | DONE | `IIncidentRepository.deleteIncident` — persisted + in-memory impls, AppBar delete action with confirm dialog, repo + widget regression tests |
 | Live Shield removed from release UI | DONE | roadmap-only in README |
-| Responsive + large-text smoke | DONE | `test/responsive_smoke_test.dart` — 6/6 |
+| Responsive + large-text smoke | DONE | `test/responsive_smoke_test.dart` |
 | Arabic/RTL first-strong-direction detection | DONE | `threat_phrase_highlighter.dart` + tests |
 | Reduced-motion respect (ThreatCore) | DONE | `MediaQuery.disableAnimations` wired |
 | Display name `VoxGuard` normalized | DONE | Android label, iOS `CFBundleDisplayName`, web title/manifest |
 | Original VoxGuard icon — all densities + adaptive + web | DONE | `tool/generate_icons.py` → mipmap-*/AppIcon/web icons |
 | Branded launch screens (Android + iOS) | DONE | `launch_background.xml`, `LaunchScreen.storyboard` |
-| `web/privacy.html` + `web/terms.html` | DONE | honest current-behavior copy, placeholders marked |
-| Android release-signing config (key.properties, fail-loud) | DONE | `android/app/build.gradle.kts` |
-| iOS `Runner.entitlements` prepared (aps-environment) | DONE | file present; Xcode capability wiring is manual step |
+| `web/privacy.html` + `web/terms.html` | DONE | honest current-behavior copy; GitHub Issues as project support route |
+| Legal link defaults | DONE | `LegalLinks` defaults to the deployed GitHub Pages URLs; `VOXGUARD_*_URL` dart-defines remain valid overrides |
+| Android release-signing config | DONE | `key.properties` (storeFile/storePassword/keyAlias/keyPassword) takes priority, `VOXGUARD_KEYSTORE_FILE`/`VOXGUARD_KEYSTORE_PASSWORD`/`VOXGUARD_KEY_ALIAS`/`VOXGUARD_KEY_PASSWORD` env fallback; release without credentials fails loudly — `test/release_signing_config_test.dart` |
+| iOS push entitlements wired | DONE | `RunnerDebug.entitlements` (development) / `RunnerRelease.entitlements` (production) + `CODE_SIGN_ENTITLEMENTS` in Runner Debug/Release/Profile configs |
+| Screenshot harness reproducible | DONE | `test/screenshot_capture_test.dart` regenerates exactly the 7 committed filenames; fixtures use production `highRisk`; Arabic transcript renders real Noto Naskh glyphs via `fontFamilyFallback` |
+| Third-party font licensing | DONE | `tool/fonts/NotoNaskhArabic.ttf` unmodified + verbatim upstream `tool/fonts/OFL.txt` (SIL OFL 1.1) + `tool/fonts/README.md` attribution |
 | Store metadata pack | DONE | `docs/STORE_METADATA.md` |
 | Shipaton submission pack | DONE | `docs/SHIPATON_SUBMISSION.md` |
 | Demo script (<2 min) | DONE | `docs/DEMO_SCRIPT.md` |
 | OneSignal campaign spec | DONE | `docs/ONESIGNAL_CAMPAIGN.md` |
 | Purchase QA checklist | DONE | `docs/REVENUECAT_QA.md` |
 | Hardware QA matrix | DONE | `docs/FINAL_QA.md` |
-| 1179×2556 screenshots (7) | DONE | `submission/screenshots/` — real renders at native size |
+| 1179×2556 screenshots (7) | DONE | `submission/screenshots/` — real renders at native size, verified dimensions |
 | 1024×1024 icon | DONE | `submission/voxguard-icon-1024.png` verified dimensions |
 | MIT license (Next Gen OSS requirement) | DONE | `LICENSE` |
 
@@ -34,20 +39,21 @@ unverified is claimed DONE.
 
 | Requirement | Status | Blocker |
 |-------------|--------|---------|
+| Public release brand | BLOCKED_DECISION | `docs/BRAND_RELEASE_DECISION.md` — existing published "VoxGuard" product + related trademark filing; rename reserved for design sprint |
 | Android release keystore | BLOCKED_EXTERNAL | `android/key.properties` + `.jks` not present in repo (correctly gitignored); build configured to fail loudly without them |
-| `flutter build appbundle --release` | BLOCKED_EXTERNAL | needs the keystore above |
+| `flutter build appbundle --release` | BLOCKED_EXTERNAL | needs the keystore above — verified to abort with `BLOCKED_EXTERNAL — release keystore required` |
 | Google Play developer account | BLOCKED_EXTERNAL | account + $25 fee, external |
 | Google Play production eligibility (closed testing etc.) | BLOCKED_EXTERNAL | account policy requirements |
 | Apple Developer account | BLOCKED_EXTERNAL | $99/yr, external |
 | iOS build verification | NOT RUN | no macOS/Xcode on this machine |
-| iOS push capability wiring | BLOCKED_EXTERNAL | needs Xcode: add Push Notifications capability → `Runner.entitlements`, flip `aps-environment` to `production` for release |
+| iOS push signing | BLOCKED_EXTERNAL | needs Apple Team ID, provisioning profile, APNs key — entitlements files are wired, credentials are external |
 | Store listing live | BLOCKED_EXTERNAL | store accounts + review time |
 | US availability | BLOCKED_EXTERNAL | store distribution checkbox |
 | RevenueCat Dashboard products/entitlements/Offering | BLOCKED_EXTERNAL | dashboard config; docs in `docs/REVENUECAT_SETUP.md` |
 | Real sandbox purchase observed | NOT RUN | keyed build + physical device |
 | Judge premium-access method | BLOCKED_EXTERNAL | choose at submission: demo mode suffices for judging loop; or RC promotional/sandbox access |
-| Privacy URL live | BLOCKED_EXTERNAL | `web/privacy.html` ready; needs host (e.g. GitHub Pages) |
-| Terms URL live | BLOCKED_EXTERNAL | `web/terms.html` ready; same |
+| Privacy URL live | DONE | `https://nemesisdevx.github.io/voxguard/privacy.html` — HTTP 200 verified |
+| Terms URL live | DONE | `https://nemesisdevx.github.io/voxguard/terms.html` — HTTP 200 verified |
 | OneSignal campaign deployed | BLOCKED_EXTERNAL | dashboard credentials; spec in `docs/ONESIGNAL_CAMPAIGN.md` |
 | OneSignal App ID | BLOCKED_EXTERNAL | `ONESIGNAL_APP_ID` dart-define at build time |
 | Physical two-device push test | NOT RUN | needs 2 devices + configured relay/OneSignal |
@@ -57,8 +63,17 @@ unverified is claimed DONE.
 | RevenueCat Project ID | BLOCKED_EXTERNAL | dashboard value for Devpost form |
 | Devpost submission | BLOCKED_EXTERNAL | manual submission before Sep 30, 2026 11:45 PM PDT |
 
-## Automated verification (latest run)
+## Automated verification (latest run — foundation freeze)
 
-See Part U results in the sprint report — `flutter pub get`,
-`analyze`, `test`, web release build, APK debug build, server
-`npm ci && npm test`. Numbers are reported only from observed runs.
+| Check | Result |
+|-------|--------|
+| `flutter pub get` | PASS |
+| `flutter analyze` | PASS — 0 issues |
+| `flutter test` | PASS — 283/283 |
+| `flutter build web --release --base-href /voxguard/` | PASS |
+| `flutter build apk --debug` | PASS |
+| `cd server && npm ci && npm test` | PASS — 41/41 |
+| Screenshot capture (`--update-goldens --dart-define=CAPTURE_SHOTS=true`) | PASS — 7 PNGs at 1179×2556, exact committed filenames, Arabic glyphs verified rendered |
+| Submission icon | `submission/voxguard-icon-1024.png` — 1024×1024 verified |
+| `flutter build appbundle --release` | Expected fail-loud: `BLOCKED_EXTERNAL — release keystore required` (correct — no credentials present) |
+| iOS build | NOT RUN — no macOS/Xcode |

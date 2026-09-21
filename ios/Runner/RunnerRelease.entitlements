@@ -3,9 +3,8 @@
 <plist version="1.0">
 <dict>
 	<!-- Required for Family Shield push delivery via OneSignal.
-	     Xcode must reference this file (Signing & Capabilities →
-	     Push Notifications) before archive/upload. -->
+	     Release/Profile builds use the production APNs environment. -->
 	<key>aps-environment</key>
-	<string>development</string>
+	<string>production</string>
 </dict>
 </plist>

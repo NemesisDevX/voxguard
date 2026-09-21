@@ -270,6 +270,8 @@ flutter build apk --debug
 
 Every push to `main` runs the full pipeline — analyze → Flutter tests → relay tests → web + APK builds → auto-deploy to GitHub Pages → APK artifact upload (see `.github/workflows/ci.yml`). The CI badge above reflects the live result.
 
+Release signing reads `android/key.properties` (gitignored) first, then falls back to `VOXGUARD_KEYSTORE_FILE`, `VOXGUARD_KEYSTORE_PASSWORD`, `VOXGUARD_KEY_ALIAS`, `VOXGUARD_KEY_PASSWORD` environment variables. A release build without either fails loudly — debug keys are never substituted.
+
 ### Release & submission docs
 
 | Doc | Contents |
@@ -280,6 +282,7 @@ Every push to `main` runs the full pipeline — analyze → Flutter tests → re
 | `docs/ONESIGNAL_CAMPAIGN.md` | "Keep Them Coming Back" campaign spec + deploy checklist |
 | `docs/REVENUECAT_SETUP.md` / `docs/REVENUECAT_QA.md` | Store configuration + real-device purchase QA |
 | `docs/FINAL_QA.md` / `docs/FINAL_RELEASE_STATUS.md` | Hardware QA matrix + external blocker report |
+| `docs/BRAND_RELEASE_DECISION.md` | Package-ID collision resolved; public store brand pending decision |
 | `submission/` | 1024×1024 icon + 1179×2556 screenshots |
 
 ---

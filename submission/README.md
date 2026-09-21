@@ -1,4 +1,9 @@
-# Submission Assets
+# Submission Assets — technical capture pack
+
+These are **technical/demo capture artifacts** of real app surfaces —
+not a visual-final award pack. The entire pack is replaced/re-reviewed
+during the upcoming visual design sprint, together with the public
+brand decision (`docs/BRAND_RELEASE_DECISION.md`).
 
 ## Icon
 
@@ -11,25 +16,27 @@ AppIcon set, web icons/favicon).
 ## Screenshots — `screenshots/`
 
 All frames are **1179×2556**, rendered natively at that resolution
-(no upscaling, no device frame) by the capture harness:
+(no upscaling, no device frame) by the deterministic capture harness:
 
 ```
 flutter test test/screenshot_capture_test.dart --update-goldens \
   --dart-define=CAPTURE_SHOTS=true
 ```
 
+Regenerating produces exactly these paths — no alternate numbering:
+
 | File | Surface |
 |------|---------|
 | `01_home_threatcore.png` | Home — ThreatCore, calm state |
-| `02_safecall_demo.png` | SafeCall demo attack — high-risk escalation, evidence chips, threat radar, transcript feed |
+| `02_safecall_demo.png` | SafeCall demo attack — high-risk escalation, evidence chips, threat radar, Egyptian-Arabic transcript feed |
 | `03_incident_detail.png` | Incident report — forensic detail, flagged transcript, recommended actions |
 | `04_family_shield_alert.png` | Family Shield receiver — verify directly, Mark Safe / Still Suspicious |
 | `05_analyze_recording.png` | Analyze Recording — picker state |
 | `06_paywall.png` | Paywall — Demo Store labeled, tier cards |
 | `07_onboarding.png` | Onboarding — privacy-first trust flow |
 
-Known rendering caveat: the demo transcript's Arabic glyphs show as
-placeholder boxes because the test renderer's font collection has
-no Arabic system fallback — on physical devices Android/iOS render
-the same strings correctly in RTL. Structure, alignment, and
-highlighting are exactly what a device shows.
+Rendering notes: fixtures obey production schemas (`highRisk`,
+`full`/`partial` scope). Arabic glyphs render via Noto Naskh Arabic
+(SIL OFL 1.1 — `tool/fonts/`) loaded into the test font collection as
+a fallback family; on physical devices the same strings render via
+the platform font stack.

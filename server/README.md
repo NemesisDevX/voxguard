@@ -64,7 +64,7 @@ flutter run \
 
 ```bash
 cd server
-npm test          # 35 unit tests, upstream fetch mocked
+npm test          # unit tests, upstream fetch mocked
 npx wrangler dev  # local worker; stub OneSignal via env or watch logs
 ```
 

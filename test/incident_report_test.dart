@@ -252,5 +252,139 @@ void main() {
       expect(notified, 2);
       expect(repo.incidents.value.first.id, 'INC-2026-0003');
     });
+
+    test('deletes only the targeted incident and notifies listeners',
+        () async {
+      final repo = InMemoryIncidentRepository(seed: false);
+      await repo.saveIncident(makeReport(id: 'INC-2026-0002'));
+      await repo.saveIncident(makeReport(id: 'INC-2026-0003'));
+      var notified = 0;
+      repo.incidents.addListener(() => notified++);
+
+      await repo.deleteIncident('INC-2026-0003');
+
+      expect(notified, 1);
+      final all = await repo.getAllIncidents();
+      expect(all, hasLength(1));
+      expect(all.single.id, 'INC-2026-0002');
+      expect(await repo.getIncidentById('INC-2026-0003'), isNull);
+    });
+
+    test('deleting a nonexistent id is safe and idempotent', () async {
+      final repo = InMemoryIncidentRepository(seed: false);
+      await repo.saveIncident(makeReport(id: 'INC-2026-0004'));
+
+      await repo.deleteIncident('INC-0000-0000');
+      await repo.deleteIncident('INC-0000-0000');
+
+      expect(await repo.getAllIncidents(), hasLength(1));
+    });
+  });
+
+  group('PersistedIncidentRepository deletion', () {
+    test('deletion persists across a fresh repository instance',
+        () async {
+      SharedPreferences.setMockInitialValues({});
+      final prefs = await SharedPreferences.getInstance();
+
+      final repo = PersistedIncidentRepository(prefs: prefs);
+      await repo.saveIncident(makeReport(id: 'INC-2026-0005'));
+      await repo.saveIncident(makeReport(id: 'INC-2026-0006'));
+
+      // Simulate a restart — a new repo over the same storage.
+      final reloaded = PersistedIncidentRepository(prefs: prefs);
+      await reloaded.deleteIncident('INC-2026-0005');
+
+      final afterRestart = PersistedIncidentRepository(prefs: prefs);
+      final all = await afterRestart.getAllIncidents();
+      expect(all, hasLength(1));
+      expect(all.single.id, 'INC-2026-0006');
+    });
+
+    test('delete on corrupted storage stays safe and empty', () async {
+      SharedPreferences.setMockInitialValues(
+          {'voxguard.incidents_v1': '{not-json'});
+      final prefs = await SharedPreferences.getInstance();
+      final repo = PersistedIncidentRepository(prefs: prefs);
+
+      await repo.deleteIncident('INC-2026-0007');
+      await repo.deleteIncident('INC-0000-0000'); // idempotent
+
+      expect(await repo.getAllIncidents(), isEmpty);
+      expect(await repo.getIncidentById('INC-2026-0007'), isNull);
+    });
+  });
+
+  group('incident deletion — UI', () {
+    setUp(() {
+      SharedPreferences.setMockInitialValues({});
+      IncidentRepositoryLocator.instance =
+          InMemoryIncidentRepository(seed: false);
+      FamilyContactLocator.instance =
+          PersistedFamilyContactRepository();
+      ReceivedFamilyAlertLocator.instance =
+          PersistedReceivedFamilyAlertRepository();
+      FamilyShieldResponseLocator.instance =
+          PersistedFamilyShieldResponseStore();
+    });
+
+    testWidgets('confirm deletes the incident and returns to history',
+        (tester) async {
+      final incident = makeReport(id: 'INC-2026-0009');
+      await IncidentRepositoryLocator.instance.saveIncident(incident);
+
+      await tester.pumpWidget(MaterialApp(
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Center(
+              child: ElevatedButton(
+                onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                    builder: (_) =>
+                        IncidentDetailScreen(incident: incident),
+                  ),
+                ),
+                child: const Text('open'),
+              ),
+            ),
+          ),
+        ),
+      ));
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      expect(find.text('INC-2026-0009'), findsWidgets);
+
+      await tester.tap(find.byTooltip('Delete incident'));
+      await tester.pumpAndSettle();
+      expect(find.text('Delete this incident?'), findsOneWidget);
+
+      await tester.tap(find.text('Delete'));
+      await tester.pumpAndSettle();
+
+      // Back on the launcher screen, incident is gone from the store.
+      expect(find.text('open'), findsOneWidget);
+      expect(await IncidentRepositoryLocator.instance
+          .getIncidentById('INC-2026-0009'), isNull);
+    });
+
+    testWidgets('cancel keeps the incident and stays on detail',
+        (tester) async {
+      final incident = makeReport(id: 'INC-2026-0010');
+      await IncidentRepositoryLocator.instance.saveIncident(incident);
+
+      await tester.pumpWidget(MaterialApp(
+        home: IncidentDetailScreen(incident: incident),
+      ));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byTooltip('Delete incident'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Cancel'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('INC-2026-0010'), findsWidgets);
+      expect(await IncidentRepositoryLocator.instance
+          .getIncidentById('INC-2026-0010'), isNotNull);
+    });
   });
 }

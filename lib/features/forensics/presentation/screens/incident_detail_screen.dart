@@ -16,6 +16,7 @@ import '../../../protection/domain/models/composite_threat_report.dart';
 import '../../../protection/domain/models/semantic_threat_signals.dart';
 import '../../../protection/domain/models/transcript_snippet.dart';
 import '../../domain/models/incident_report.dart';
+import '../../domain/services/incident_repository.dart';
 
 /// Forensic viewer for a single flagged incident — consumer-first
 /// evidence hierarchy with technical telemetry collapsed by default.
@@ -83,10 +84,52 @@ class IncidentDetailScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _confirmDelete(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Delete this incident?'),
+        content: Text(
+          '${incident.id} will be permanently removed from this device. '
+          'This cannot be undone.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text(
+              'Delete',
+              style: TextStyle(
+                color: AppColors.statusDanger,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !context.mounted) return;
+    await IncidentRepositoryLocator.instance.deleteIncident(incident.id);
+    if (context.mounted) Navigator.of(context).pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(incident.id)),
+      appBar: AppBar(
+        title: Text(incident.id),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.delete_outline),
+            tooltip: 'Delete incident',
+            color: AppColors.statusDanger,
+            onPressed: () => _confirmDelete(context),
+          ),
+        ],
+      ),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
         children: [
@@ -794,11 +837,13 @@ class _TranscriptCard extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 3),
-            RichText(
+            // Text.rich inherits DefaultTextStyle so transcript spans
+            // pick up the ambient font family + fallback list.
+            Text.rich(
               textDirection: isRtlText(s.text)
                   ? TextDirection.rtl
                   : TextDirection.ltr,
-              text: TextSpan(
+              TextSpan(
                 style: AppTypography.bodyLarge.copyWith(fontSize: 13.5),
                 children: buildThreatSpans(
                   s.text,
