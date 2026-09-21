@@ -15,7 +15,19 @@ abstract interface class IRecordingFilePicker {
 /// nothing downstream depends on a sandbox file path — the picker
 /// grant can lapse before decode finishes on some OSes.
 final class FilePickerRecordingPicker implements IRecordingFilePicker {
-  const FilePickerRecordingPicker();
+  const FilePickerRecordingPicker({
+    Future<PlatformFile?> Function({
+      FileType type,
+      List<String>? allowedExtensions,
+    })? pickFile,
+  }) : _pickFile = pickFile ?? FilePicker.pickFile;
+
+  /// Seam over `FilePicker.pickFile` — tests supply a stub
+  /// `PlatformFile` so no platform channel is touched.
+  final Future<PlatformFile?> Function({
+    FileType type,
+    List<String>? allowedExtensions,
+  }) _pickFile;
 
   /// Common consumer recording formats — the decoder may support more,
   /// but these are the formats the product advertises.
@@ -25,14 +37,26 @@ final class FilePickerRecordingPicker implements IRecordingFilePicker {
 
   @override
   Future<PickedRecording?> pickRecording() async {
-    final file = await FilePicker.pickFile(
+    final file = await _pickFile(
       type: FileType.custom,
       allowedExtensions: supportedExtensions,
     );
     if (file == null) return null; // user cancelled — normal outcome
-    // Reported size is available before the bytes are read, letting
-    // oversized files be rejected without a full load.
-    final size = file.lengthSync() ?? await file.length() ?? 0;
+
+    // When the platform already knows the size, reject oversized
+    // picks BEFORE readAsBytes — the file is never buffered.
+    final knownSize = file.lengthSync();
+    if (knownSize != null && knownSize > kMaxRecordingSourceBytes) {
+      throw const RecordingAnalysisException(
+        'That file is too large — recordings up to 25 MB are '
+        'supported.',
+        code: 'tooLarge',
+      );
+    }
+
+    // Post-read size still runs through the analyzer's own check —
+    // some platforms cannot report a size before reading.
+    final size = knownSize ?? await file.length() ?? 0;
     final bytes = await file.readAsBytes();
     final ext = (file.extension ?? '').toLowerCase();
     return PickedRecording(

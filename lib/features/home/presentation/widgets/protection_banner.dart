@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../paywall/domain/models/entitlement_state.dart';
 import '../../../paywall/domain/models/subscription_tier.dart';
 import '../../../paywall/domain/services/purchase_service_locator.dart';
 
@@ -75,20 +76,19 @@ class _ProtectionBannerState extends State<ProtectionBanner>
 }
 
 /// Live entitlement badge — flips from FREE TIER to the purchased plan
-/// the moment a checkout or restore completes.
+/// the moment a checkout, restore, or CustomerInfo sync lands.
 class _PlanBadge extends StatelessWidget {
   const _PlanBadge();
 
   @override
   Widget build(BuildContext context) {
-    return ValueListenableBuilder<String?>(
-      valueListenable: PurchaseServiceLocator.instance.activeTier,
-      builder: (context, tierId, _) {
-        final tier = SubscriptionTiers.byId(tierId);
-        final premium = tier != null && !tier.isFree;
-        final label = switch (tierId) {
-          'sentinel' => AppStrings.planSentinel,
-          'family_vault' => AppStrings.planFamily,
+    return ValueListenableBuilder<EntitlementState>(
+      valueListenable: PurchaseServiceLocator.instance.entitlement,
+      builder: (context, entitlement, _) {
+        final premium = entitlement.tier != TierId.free;
+        final label = switch (entitlement.tier) {
+          TierId.sentinel => AppStrings.planSentinel,
+          TierId.familyVault => AppStrings.planFamily,
           _ => AppStrings.planFree,
         };
         final color =

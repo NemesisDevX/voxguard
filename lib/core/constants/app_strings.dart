@@ -72,22 +72,41 @@ abstract final class AppStrings {
       'Upgrade Your Shield.\nProtect What Matters.';
   static const String paywallSubtitle =
       'Scam calls are evolving. Your defense should too.';
-  static const String securityBadge = 'Bank-Grade Encryption · Cancel Anytime';
+  static const String securityBadge =
+      'Billing handled by your app store';
+  static const String demoStoreBadge = 'DEMO STORE';
+  static const String demoStoreNotice =
+      'Simulated checkout — no real charge will occur.';
+  static const String storeUnavailableNotice =
+      "Subscriptions aren't configured in this build.";
   static const String monthly = 'Monthly';
   static const String annual = 'Annual';
-  static const String saveBadge = 'SAVE 35%';
   static const String mostPopular = 'MOST POPULAR';
-  static const String trialBanner =
-      '7-Day Free Trial included. No charge today.';
-  static const String startTrial = 'Start 7-Day Free Trial';
   static const String upgradeNow = 'Upgrade Now';
   static const String continueFree = 'Continue with Free';
+  static const String subscribeNow = 'Subscribe';
+  static const String activateDemoPlan = 'Activate Demo Plan';
+  static const String demoPlanActivated =
+      'Demo plan activated — no real charge';
+  static const String noPurchasesRestored = 'No active purchases found.';
   static const String terms = 'Terms of Service';
   static const String privacy = 'Privacy Policy';
   static const String restore = 'Restore Purchases';
-  static const String upgradeTooltip = 'Upgrade to Pro';
+  static const String upgradeTooltip = 'View plans';
   static const String plansLoadError = 'Could not load plans.';
   static const String retry = 'Try Again';
+  static const String planNotAvailable =
+      'That plan is not available in this store.';
+
+  // ── Entitlement gates ────────────────────────────────────────────
+  static const String sentinelUnlocksTranscription =
+      'Sentinel Shield adds automatic transcription and '
+      'conversation-risk analysis.';
+  static const String familyVaultUnlocksAlerts =
+      'Family Vault lets you send safety alerts to your Trusted Circle.';
+  static const String acousticProtectionActive =
+      'Acoustic protection active. Automatic conversation analysis is '
+      'available with Sentinel Shield.';
 
   // ── Plan badges ──────────────────────────────────────────────────
   static const String planFree = 'FREE TIER';

@@ -41,6 +41,7 @@ final class SafeCallMonitoring extends SafeCallState {
     this.demoActive = false,
     this.audioAmplitude = 0,
     this.isTranscriptionLive = false,
+    this.cloudTranscriptionEntitled = false,
     this.partialTranscript = '',
   });
 
@@ -72,6 +73,12 @@ final class SafeCallMonitoring extends SafeCallState {
   /// transcripts for this session.
   final bool isTranscriptionLive;
 
+  /// Whether the current plan entitles automatic cloud
+  /// transcription. When false the session runs acoustic-only BY
+  /// PLAN, not by configuration — the UI must say so honestly
+  /// instead of implying the provider is merely unavailable.
+  final bool cloudTranscriptionEntitled;
+
   /// Latest volatile STT partial hypothesis (displayed live, never
   /// committed to the transcript until finalized).
   final String partialTranscript;
@@ -88,6 +95,7 @@ final class SafeCallMonitoring extends SafeCallState {
     bool? demoActive,
     double? audioAmplitude,
     bool? isTranscriptionLive,
+    bool? cloudTranscriptionEntitled,
     String? partialTranscript,
   }) {
     return SafeCallMonitoring(
@@ -99,6 +107,8 @@ final class SafeCallMonitoring extends SafeCallState {
       demoActive: demoActive ?? this.demoActive,
       audioAmplitude: audioAmplitude ?? this.audioAmplitude,
       isTranscriptionLive: isTranscriptionLive ?? this.isTranscriptionLive,
+      cloudTranscriptionEntitled:
+          cloudTranscriptionEntitled ?? this.cloudTranscriptionEntitled,
       partialTranscript: partialTranscript ?? this.partialTranscript,
     );
   }
@@ -113,6 +123,7 @@ final class SafeCallMonitoring extends SafeCallState {
         demoActive,
         audioAmplitude,
         isTranscriptionLive,
+        cloudTranscriptionEntitled,
         partialTranscript,
       ];
 }

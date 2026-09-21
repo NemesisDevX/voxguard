@@ -11,6 +11,8 @@ import 'package:voxguard/core/services/transcription/streaming_transcription_ser
 import 'package:voxguard/features/protection/domain/services/semantic_threat_service.dart';
 import 'package:voxguard/features/protection/domain/services/transcript_buffer.dart';
 import 'package:voxguard/features/protection/presentation/bloc/safecall_bloc.dart';
+import 'package:voxguard/features/paywall/domain/models/subscription_tier.dart';
+import 'helpers/fake_product_access.dart';
 import 'package:voxguard/features/protection/presentation/bloc/safecall_event.dart';
 import 'package:voxguard/features/protection/presentation/bloc/safecall_state.dart';
 import 'package:voxguard/features/protection/domain/models/composite_threat_report.dart';
@@ -269,6 +271,7 @@ void main() {
         demoSource: DemoAudioSource(),
         microphoneSource: mic,
         transcriptionService: stt,
+        productAccess: FakeProductAccess(TierId.sentinel),
       );
       bloc.add(const StartLiveMicSessionEvent());
       await Future<void>.delayed(const Duration(milliseconds: 30));
@@ -294,6 +297,7 @@ void main() {
         demoSource: DemoAudioSource(),
         microphoneSource: mic,
         transcriptionService: stt,
+        productAccess: FakeProductAccess(TierId.sentinel),
       );
       bloc.add(const StartLiveMicSessionEvent());
       await Future<void>.delayed(const Duration(milliseconds: 30));
@@ -305,6 +309,69 @@ void main() {
       await Future<void>.delayed(const Duration(milliseconds: 30));
 
       expect(stt.sentBytes, isNotEmpty);
+      await bloc.close();
+    });
+
+    test('free plan never starts cloud STT — acoustic-only by plan',
+        () async {
+      final mic = FakeMicSource();
+      final stt = FakeSttService();
+      final bloc = SafeCallBloc(
+        demoSource: DemoAudioSource(),
+        microphoneSource: mic,
+        transcriptionService: stt,
+        productAccess: FakeProductAccess(), // free
+      );
+      bloc.add(const StartLiveMicSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      // Mic runs, STT never initializes — no cloud transcript on free.
+      final m = bloc.state as SafeCallMonitoring;
+      expect(m.audioSourceType, AudioSourceType.microphone);
+      expect(m.isTranscriptionLive, isFalse);
+      expect(m.cloudTranscriptionEntitled, isFalse);
+      expect(stt.startCalls, 0);
+      await bloc.close();
+    });
+
+    test('sentinel unlocks STT start when the provider is configured',
+        () async {
+      final mic = FakeMicSource();
+      final stt = FakeSttService();
+      final bloc = SafeCallBloc(
+        demoSource: DemoAudioSource(),
+        microphoneSource: mic,
+        transcriptionService: stt,
+        productAccess: FakeProductAccess(TierId.sentinel),
+      );
+      bloc.add(const StartLiveMicSessionEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 30));
+
+      final m = bloc.state as SafeCallMonitoring;
+      expect(m.cloudTranscriptionEntitled, isTrue);
+      expect(stt.startCalls, 1);
+      await bloc.close();
+    });
+
+    test('demo session stays fully scripted regardless of plan',
+        () async {
+      final stt = FakeSttService();
+      final bloc = SafeCallBloc(
+        demoSource: DemoAudioSource(
+          chunkInterval: const Duration(milliseconds: 10),
+        ),
+        microphoneSource: FakeMicSource(),
+        transcriptionService: stt,
+        productAccess: FakeProductAccess(), // free
+      );
+      bloc.add(const StartDemoSessionEvent());
+      bloc.add(const SimulateDemoAttackEvent());
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+
+      final m = bloc.state as SafeCallMonitoring;
+      expect(m.isDemoMode, isTrue);
+      // Demo transcript is scripted locally — cloud STT never starts.
+      expect(stt.startCalls, 0);
       await bloc.close();
     });
 
@@ -393,6 +460,7 @@ void main() {
         demoSource: DemoAudioSource(),
         microphoneSource: mic,
         transcriptionService: stt,
+        productAccess: FakeProductAccess(TierId.sentinel),
       );
       bloc.add(const StartLiveMicSessionEvent());
       await Future<void>.delayed(const Duration(milliseconds: 40));
@@ -444,6 +512,7 @@ void main() {
         demoSource: DemoAudioSource(),
         microphoneSource: mic,
         transcriptionService: stt,
+        productAccess: FakeProductAccess(TierId.sentinel),
       );
       bloc.add(const StartLiveMicSessionEvent());
       await Future<void>.delayed(const Duration(milliseconds: 40));

@@ -1,9 +1,15 @@
 import 'package:flutter/material.dart';
 
+import 'package:url_launcher/url_launcher.dart';
+
 import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../forensics/presentation/screens/incidents_history_screen.dart';
+import '../../../paywall/domain/models/entitlement_state.dart';
+import '../../../paywall/domain/models/subscription_tier.dart';
+import '../../../paywall/domain/services/i_purchase_service.dart';
+import '../../../paywall/domain/services/purchase_service_locator.dart';
 import '../../../paywall/presentation/screens/paywall_screen.dart';
 import '../../../onboarding/presentation/screens/onboarding_screen.dart';
 import '../../../protection/presentation/safecall_launcher.dart';
@@ -303,6 +309,8 @@ class _SettingsTab extends StatelessWidget {
     return ListView(
       padding: const EdgeInsets.all(20),
       children: [
+        const _SubscriptionCard(),
+        const SizedBox(height: 16),
         const FamilyReceiverCard(),
         const SizedBox(height: 16),
         const TrustedCircleCard(),
@@ -341,5 +349,162 @@ class _SettingsTab extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+/// Subscription section — current plan truth plus store actions.
+/// Reactive to entitlement changes: a purchase/restore/expiration
+/// updates this card without a restart. Never shows internal
+/// entitlement ids; demo backend is labelled "Demo Store".
+class _SubscriptionCard extends StatelessWidget {
+  const _SubscriptionCard();
+
+  @override
+  Widget build(BuildContext context) {
+    final service = PurchaseServiceLocator.instance;
+    return ValueListenableBuilder<EntitlementState>(
+      valueListenable: service.entitlement,
+      builder: (context, entitlement, _) {
+        final tier = SubscriptionTiers.byId(entitlement.tier);
+        final isDemo = entitlement.isDemo;
+        final isUnavailable =
+            entitlement.backend == PurchaseBackendMode.unavailable;
+        return Material(
+          color: AppColors.bgElevated,
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: 14, vertical: 14),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Icon(Icons.workspace_premium_outlined,
+                        color: AppColors.statusWarning, size: 20),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Subscription',
+                        style: AppTypography.titleMedium,
+                      ),
+                    ),
+                    if (isDemo)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.statusWarning
+                              .withValues(alpha: 0.14),
+                          borderRadius: BorderRadius.circular(5),
+                        ),
+                        child: const Text(
+                          'DEMO STORE',
+                          style: TextStyle(
+                            fontSize: 8,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 0.6,
+                            color: AppColors.statusWarning,
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  isUnavailable
+                      ? AppStrings.storeUnavailableNotice
+                      : 'Current plan: ${tier?.name ?? 'Quick Check'}'
+                          '${isDemo && entitlement.tier != TierId.free ? ' (demo)' : ''}',
+                  style: AppTypography.bodyMedium
+                      .copyWith(fontSize: 12),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    TextButton(
+                      onPressed: () => PaywallScreen.show(context),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.accent,
+                        padding: EdgeInsets.zero,
+                        minimumSize: const Size(0, 32),
+                        tapTargetSize:
+                            MaterialTapTargetSize.shrinkWrap,
+                      ),
+                      child: const Text(
+                        'View plans',
+                        style: TextStyle(fontSize: 12),
+                      ),
+                    ),
+                    if (!isUnavailable) ...[
+                      const SizedBox(width: 16),
+                      TextButton(
+                        onPressed: () => _restore(context, service),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.textMuted,
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(0, 32),
+                          tapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          AppStrings.restore,
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                    if (entitlement.managementUrl != null) ...[
+                      const SizedBox(width: 16),
+                      TextButton(
+                        onPressed: () => launchUrl(
+                          entitlement.managementUrl!,
+                          mode: LaunchMode.externalApplication,
+                        ),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.textMuted,
+                          padding: EdgeInsets.zero,
+                          minimumSize: const Size(0, 32),
+                          tapTargetSize:
+                              MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: const Text(
+                          'Manage subscription',
+                          style: TextStyle(fontSize: 12),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _restore(
+      BuildContext context, IPurchaseService service) async {
+    try {
+      final restored = await service.restorePurchases();
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            restored == null
+                ? AppStrings.noPurchasesRestored
+                : 'Purchases restored.',
+          ),
+        ),
+      );
+    } on Exception {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content:
+              Text('Purchases could not be restored right now.'),
+        ),
+      );
+    }
   }
 }

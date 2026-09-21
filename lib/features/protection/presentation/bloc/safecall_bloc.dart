@@ -13,6 +13,7 @@ import '../../../../core/services/transcription/assemblyai_streaming_service.dar
 import '../../../../core/services/transcription/streaming_transcription_service.dart';
 import '../../../forensics/domain/models/incident_report.dart';
 import '../../../forensics/domain/services/incident_repository.dart';
+import '../../../paywall/domain/services/product_access.dart';
 import '../../domain/models/audio_forensic_metrics.dart';
 import '../../domain/models/composite_threat_report.dart';
 import '../../domain/models/semantic_threat_signals.dart';
@@ -48,12 +49,14 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     IAudioStreamSource? microphoneSource,
     DemoAudioSource? demoSource,
     IStreamingTranscriptionService? transcriptionService,
+    IProductAccess? productAccess,
   })  : _acousticService = acousticService ?? AcousticForensicsService(),
         _semanticService = semanticService ?? SemanticThreatService(),
         _fusionEngine = fusionEngine ?? ThreatFusionEngine(),
         _micSource = microphoneSource ?? MicrophoneAudioSource(),
         _demoSource = demoSource ?? DemoAudioSource(),
         _stt = transcriptionService ?? AssemblyAiStreamingService(),
+        _productAccess = productAccess ?? ProductAccessLocator.instance,
         super(const SafeCallInitial()) {
     on<StartLiveMicSessionEvent>(
         (e, emit) => _serialized(() => _onStartLiveMic(e, emit)));
@@ -100,6 +103,11 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   final IAudioStreamSource _micSource;
   final DemoAudioSource _demoSource;
   final IStreamingTranscriptionService _stt;
+
+  /// Product-access layer — gates cloud STT by entitlement. Demo
+  /// sessions never touch this: the scripted transcript path stays
+  /// free for everyone.
+  final IProductAccess _productAccess;
   final Random _rng = Random();
 
   StreamSubscription<AudioChunk>? _audioSub;
@@ -205,10 +213,14 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
 
     _activeSource = _micSource;
 
-    // Start streaming STT when configured. Failure degrades to
-    // acoustic-only — never blocks the session.
+    // Start streaming STT only when the plan entitles it AND the
+    // provider is configured. A paid entitlement cannot manufacture
+    // missing infrastructure; a missing entitlement must not start
+    // the cloud stream even when configured — free Live Mic stays
+    // acoustic-only.
     _sttLive = false;
-    if (_stt.isConfigured) {
+    if (_stt.isConfigured &&
+        _productAccess.capabilities.liveCloudTranscription) {
       try {
         await _stt.start(sampleRate: _micSource.sampleRate);
         _sttSub = _stt.events.listen(
@@ -514,6 +526,8 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
       demoActive: demoActive ?? _demoActive,
       audioAmplitude: _lastAmplitude,
       isTranscriptionLive: _sttLive,
+      cloudTranscriptionEntitled:
+          _productAccess.capabilities.liveCloudTranscription,
       partialTranscript: _partialTranscript,
     );
   }

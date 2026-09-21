@@ -1,32 +1,46 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/app_strings.dart';
+import '../../../../core/constants/legal_links.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/billing_cycle.dart';
+import '../../domain/models/entitlement_state.dart';
 import '../../domain/models/subscription_tier.dart';
 import '../bloc/paywall_bloc.dart';
 import '../bloc/paywall_event.dart';
 import '../bloc/paywall_state.dart';
 
-/// High-conversion subscription modal.
+/// Subscription paywall.
 ///
-/// Push with `Navigator.push`; on success the route pops itself after
-/// showing a confirmation snackbar.
+/// Push with `PaywallScreen.show(context, preselect: tierId)`; on a
+/// verified entitlement the route pops itself after showing a
+/// confirmation snackbar. Three truthful modes:
+/// - real store: localized prices from the current offering;
+/// - demo store: visibly simulated, "no real charge";
+/// - unavailable: free plan only, no fake checkout.
 class PaywallScreen extends StatelessWidget {
-  const PaywallScreen({super.key});
+  const PaywallScreen({super.key, this.preselect});
 
-  static void show(BuildContext context) {
+  /// Tier to highlight on open (e.g. Sentinel from the Live Mic
+  /// upsell, Family Vault from the Family Shield gate).
+  final TierId? preselect;
+
+  static void show(BuildContext context, {TierId? preselect}) {
     Navigator.of(context).push(
-      MaterialPageRoute<void>(builder: (_) => const PaywallScreen()),
+      MaterialPageRoute<void>(
+        builder: (_) => PaywallScreen(preselect: preselect),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => PaywallBloc()..add(const LoadOfferingsEvent()),
+      create: (_) =>
+          PaywallBloc()..add(LoadOfferingsEvent(preselect: preselect)),
       child: const _PaywallView(),
     );
   }
@@ -40,14 +54,14 @@ class _PaywallView extends StatelessWidget {
     return BlocConsumer<PaywallBloc, PaywallState>(
       listenWhen: (_, s) => s is PaywallPurchaseSuccess,
       listener: (context, state) {
-        final tier =
-            (state as PaywallPurchaseSuccess).purchasedTier;
+        final success = state as PaywallPurchaseSuccess;
+        final name = SubscriptionTiers.byId(success.tier)?.name ?? '';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              tier.isFree
-                  ? 'Free plan active'
-                  : '${tier.name} activated — shield upgraded',
+              success.demo
+                  ? AppStrings.demoPlanActivated
+                  : '$name activated — shield upgraded',
             ),
           ),
         );
@@ -80,41 +94,46 @@ class _PaywallContent extends StatelessWidget {
 
   final PaywallState state;
 
-  PaywallLoaded? get _loaded =>
-      state is PaywallLoaded ? state as PaywallLoaded : null;
-
   @override
   Widget build(BuildContext context) {
-    final loaded = _loaded;
+    final loaded = state is PaywallLoaded ? state as PaywallLoaded : null;
     if (loaded == null) return const SizedBox.shrink();
     final bloc = context.read<PaywallBloc>();
+    final isDemo = loaded.backend == PurchaseBackendMode.demoStore;
+    final isUnavailable =
+        loaded.backend == PurchaseBackendMode.unavailable;
 
     return Column(
       children: [
-        // ── Header: dismiss + security badge ──
+        // ── Header: dismiss + billing truth badge ──
         Padding(
           padding: const EdgeInsets.fromLTRB(8, 4, 16, 0),
           child: Row(
             children: [
               IconButton(
-                icon: const Icon(Icons.close, color: AppColors.textMuted),
+                icon:
+                    const Icon(Icons.close, color: AppColors.textMuted),
                 onPressed: () => Navigator.of(context).maybePop(),
               ),
               const Spacer(),
-              const Icon(
-                Icons.lock_outline,
-                size: 13,
-                color: AppColors.statusSafe,
-              ),
-              const SizedBox(width: 6),
-              const Text(
-                AppStrings.securityBadge,
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textMuted,
-                  letterSpacing: 0.2,
+              if (isDemo)
+                const _DemoBadge()
+              else ...[
+                const Icon(
+                  Icons.lock_outline,
+                  size: 13,
+                  color: AppColors.statusSafe,
                 ),
-              ),
+                const SizedBox(width: 6),
+                const Text(
+                  AppStrings.securityBadge,
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                    letterSpacing: 0.2,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
@@ -131,16 +150,27 @@ class _PaywallContent extends StatelessWidget {
                 AppStrings.paywallSubtitle,
                 style: AppTypography.bodyMedium,
               ),
-              const SizedBox(height: 20),
-              _BillingToggle(
-                cycle: loaded.cycle,
-                onSelect: (c) =>
-                    bloc.add(SelectBillingCycleEvent(c)),
-              ),
               const SizedBox(height: 16),
+              if (isDemo) const _DemoNotice(),
+              if (isUnavailable) const _UnavailableNotice(),
+              if (loaded.notice != null && !isUnavailable)
+                _InlineNotice(message: loaded.notice!),
+              const SizedBox(height: 8),
+              if (loaded.availableCycles.length > 1) ...[
+                _BillingToggle(
+                  cycle: loaded.cycle,
+                  availableCycles: loaded.availableCycles,
+                  onSelect: (c) => bloc.add(SelectBillingCycleEvent(c)),
+                ),
+                const SizedBox(height: 16),
+              ],
               for (final tier in loaded.tiers) ...[
                 _TierCard(
                   tier: tier,
+                  package: loaded.selectedTier == tier
+                      ? loaded.selectedPackage
+                      : null,
+                  priceLabel: _priceLabel(loaded, tier),
                   cycle: loaded.cycle,
                   selected: tier == loaded.selectedTier,
                   onTap: loaded.isPurchasing
@@ -149,8 +179,6 @@ class _PaywallContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 10),
               ],
-              const SizedBox(height: 4),
-              const _TrialBanner(),
             ],
           ),
         ),
@@ -158,14 +186,138 @@ class _PaywallContent extends StatelessWidget {
       ],
     );
   }
+
+  /// Price for the tier's offered cycle — the localized string the
+  /// store returned, or 'Free' for the zero-price plan. Missing
+  /// packages render as 'Not available' (card is hidden anyway).
+  static String _priceLabel(PaywallLoaded loaded, SubscriptionTier t) {
+    if (t.isFree) return 'Free';
+    final offers = loaded.packages[t.tierId];
+    if (offers == null || offers.isEmpty) return '—';
+    final pkg = offers[loaded.cycle] ?? offers.values.first;
+    return '${pkg.priceString}${pkg.cycle.priceSuffix}';
+  }
+}
+
+// ── Truthfulness badges ──────────────────────────────────────────────
+
+class _DemoBadge extends StatelessWidget {
+  const _DemoBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: AppColors.statusWarning.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: AppColors.statusWarning.withValues(alpha: 0.5),
+        ),
+      ),
+      child: const Text(
+        AppStrings.demoStoreBadge,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.8,
+          color: AppColors.statusWarning,
+        ),
+      ),
+    );
+  }
+}
+
+class _DemoNotice extends StatelessWidget {
+  const _DemoNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return _NoticeShell(
+      icon: Icons.science_outlined,
+      color: AppColors.statusWarning,
+      child: const Text(
+        AppStrings.demoStoreNotice,
+        style: AppTypography.bodyMedium,
+      ),
+    );
+  }
+}
+
+class _UnavailableNotice extends StatelessWidget {
+  const _UnavailableNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    return const _NoticeShell(
+      icon: Icons.info_outline,
+      color: AppColors.textMuted,
+      child: Text(
+        AppStrings.storeUnavailableNotice,
+        style: AppTypography.bodyMedium,
+      ),
+    );
+  }
+}
+
+class _InlineNotice extends StatelessWidget {
+  const _InlineNotice({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return _NoticeShell(
+      icon: Icons.info_outline,
+      color: AppColors.accent,
+      child: Text(message, style: AppTypography.bodyMedium),
+    );
+  }
+}
+
+class _NoticeShell extends StatelessWidget {
+  const _NoticeShell({
+    required this.icon,
+    required this.color,
+    required this.child,
+  });
+
+  final IconData icon;
+  final Color color;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, size: 16, color: color),
+          const SizedBox(width: 10),
+          Expanded(child: child),
+        ],
+      ),
+    );
+  }
 }
 
 // ── Billing cycle pill toggle ────────────────────────────────────────
 
 class _BillingToggle extends StatelessWidget {
-  const _BillingToggle({required this.cycle, required this.onSelect});
+  const _BillingToggle({
+    required this.cycle,
+    required this.availableCycles,
+    required this.onSelect,
+  });
 
   final BillingCycle cycle;
+  final List<BillingCycle> availableCycles;
   final ValueChanged<BillingCycle> onSelect;
 
   @override
@@ -179,61 +331,38 @@ class _BillingToggle extends StatelessWidget {
       ),
       child: Row(
         children: [
-          _pill(BillingCycle.monthly, AppStrings.monthly),
-          _pill(BillingCycle.annual, AppStrings.annual,
-              badge: AppStrings.saveBadge),
+          for (final c in BillingCycle.values)
+            _pill(c, c.label, enabled: availableCycles.contains(c)),
         ],
       ),
     );
   }
 
-  Widget _pill(BillingCycle c, String label, {String? badge}) {
+  Widget _pill(BillingCycle c, String label, {required bool enabled}) {
     final active = cycle == c;
     return Expanded(
       child: GestureDetector(
-        onTap: () => onSelect(c),
+        onTap: enabled ? () => onSelect(c) : null,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
             color: active ? AppColors.bgElevated : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
-            border: active
-                ? Border.all(color: AppColors.borderSubtle)
-                : null,
+            border:
+                active ? Border.all(color: AppColors.borderSubtle) : null,
           ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                label,
-                style: AppTypography.labelLarge.copyWith(
-                  color: active
-                      ? AppColors.textPrimary
-                      : AppColors.textMuted,
-                ),
+          child: Center(
+            child: Text(
+              label,
+              style: AppTypography.labelLarge.copyWith(
+                color: !enabled
+                    ? AppColors.textMuted.withValues(alpha: 0.4)
+                    : active
+                        ? AppColors.textPrimary
+                        : AppColors.textMuted,
               ),
-              if (badge != null) ...[
-                const SizedBox(width: 6),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 6, vertical: 2),
-                  decoration: BoxDecoration(
-                    color: AppColors.statusSafe.withValues(alpha: 0.16),
-                    borderRadius: BorderRadius.circular(5),
-                  ),
-                  child: Text(
-                    badge,
-                    style: const TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.6,
-                      color: AppColors.statusSafe,
-                    ),
-                  ),
-                ),
-              ],
-            ],
+            ),
           ),
         ),
       ),
@@ -246,12 +375,20 @@ class _BillingToggle extends StatelessWidget {
 class _TierCard extends StatelessWidget {
   const _TierCard({
     required this.tier,
+    required this.package,
+    required this.priceLabel,
     required this.cycle,
     required this.selected,
     required this.onTap,
   });
 
   final SubscriptionTier tier;
+
+  /// The store package this card would buy — null for Free.
+  final StorePackage? package;
+
+  /// Precomputed localized price label ('Free' for the zero tier).
+  final String priceLabel;
   final BillingCycle cycle;
   final bool selected;
   final VoidCallback? onTap;
@@ -272,9 +409,7 @@ class _TierCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: highlight
-              ? AppColors.bgElevated
-              : AppColors.surfaceCard,
+          color: highlight ? AppColors.bgElevated : AppColors.surfaceCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: borderColor,
@@ -313,7 +448,7 @@ class _TierCard extends StatelessWidget {
                 AnimatedSwitcher(
                   duration: const Duration(milliseconds: 220),
                   child: Text(
-                    tier.priceLabel(cycle),
+                    priceLabel,
                     key: ValueKey('${tier.tierId}-${cycle.name}'),
                     style: AppTypography.statLarge.copyWith(
                       fontSize: 18,
@@ -381,44 +516,6 @@ class _PopularChip extends StatelessWidget {
   }
 }
 
-// ── Trial guarantee banner ───────────────────────────────────────────
-
-class _TrialBanner extends StatelessWidget {
-  const _TrialBanner();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-      decoration: BoxDecoration(
-        color: AppColors.statusSafe.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: AppColors.statusSafe.withValues(alpha: 0.35),
-        ),
-      ),
-      child: Row(
-        children: [
-          const Icon(
-            Icons.verified_user_outlined,
-            size: 18,
-            color: AppColors.statusSafe,
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              AppStrings.trialBanner,
-              style: AppTypography.bodyMedium.copyWith(
-                color: AppColors.textPrimary,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 // ── CTA + footer ─────────────────────────────────────────────────────
 
 class _CtaBar extends StatelessWidget {
@@ -430,6 +527,25 @@ class _CtaBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final bloc = context.read<PaywallBloc>();
     final tier = loaded.selectedTier;
+    final isDemo = loaded.backend == PurchaseBackendMode.demoStore;
+    final isUnavailable =
+        loaded.backend == PurchaseBackendMode.unavailable;
+
+    final String ctaLabel;
+    if (tier.isFree || isUnavailable) {
+      ctaLabel = AppStrings.continueFree;
+    } else if (isDemo) {
+      ctaLabel = AppStrings.activateDemoPlan;
+    } else {
+      ctaLabel = AppStrings.subscribeNow;
+    }
+
+    // "Continue Free" just closes — it is never a store transaction.
+    final VoidCallback? onCta = loaded.isPurchasing
+        ? null
+        : tier.isFree || isUnavailable
+            ? () => Navigator.of(context).maybePop()
+            : () => bloc.add(const PurchaseSelectedEvent());
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
@@ -444,11 +560,7 @@ class _CtaBar extends StatelessWidget {
             width: double.infinity,
             height: 52,
             child: ElevatedButton(
-              onPressed: loaded.isPurchasing
-                  ? null
-                  : () => bloc.add(
-                        PurchaseTierEvent(tier, loaded.cycle),
-                      ),
+              onPressed: onCta,
               style: ElevatedButton.styleFrom(
                 backgroundColor: AppColors.accent,
                 disabledBackgroundColor:
@@ -468,9 +580,7 @@ class _CtaBar extends StatelessWidget {
                       ),
                     )
                   : Text(
-                      tier.isFree
-                          ? AppStrings.continueFree
-                          : AppStrings.startTrial,
+                      ctaLabel,
                       style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w700,
@@ -479,36 +589,56 @@ class _CtaBar extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 10),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _footerLink(AppStrings.terms),
-              _footerLink(AppStrings.privacy),
-              TextButton(
-                onPressed: loaded.isPurchasing
-                    ? null
-                    : () => bloc.add(const RestorePurchasesEvent()),
-                style: TextButton.styleFrom(
-                  foregroundColor: AppColors.textMuted,
-                  padding: EdgeInsets.zero,
-                  minimumSize: const Size(0, 32),
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
-                child: const Text(
-                  AppStrings.restore,
-                  style: TextStyle(fontSize: 12),
-                ),
-              ),
-            ],
-          ),
+          _FooterRow(loaded: loaded),
         ],
       ),
     );
   }
+}
 
-  Widget _footerLink(String label) {
+class _FooterRow extends StatelessWidget {
+  const _FooterRow({required this.loaded});
+
+  final PaywallLoaded loaded;
+
+  @override
+  Widget build(BuildContext context) {
+    final bloc = context.read<PaywallBloc>();
+    final terms = LegalLinks.terms;
+    final privacy = LegalLinks.privacyPolicy;
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        // Legal links render ONLY when a valid https URL is configured —
+        // never dead buttons.
+        if (terms != null) _footerLink(AppStrings.terms, terms),
+        if (privacy != null) _footerLink(AppStrings.privacy, privacy),
+        // Restore only where a store exists to restore from.
+        if (loaded.backend != PurchaseBackendMode.unavailable)
+          TextButton(
+            onPressed: loaded.isPurchasing
+                ? null
+                : () => bloc.add(const RestorePurchasesEvent()),
+            style: TextButton.styleFrom(
+              foregroundColor: AppColors.textMuted,
+              padding: EdgeInsets.zero,
+              minimumSize: const Size(0, 32),
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            ),
+            child: const Text(
+              AppStrings.restore,
+              style: TextStyle(fontSize: 12),
+            ),
+          ),
+      ],
+    );
+  }
+
+  Widget _footerLink(String label, Uri url) {
     return TextButton(
-      onPressed: () {},
+      onPressed: () =>
+          launchUrl(url, mode: LaunchMode.externalApplication),
       style: TextButton.styleFrom(
         foregroundColor: AppColors.textMuted,
         padding: EdgeInsets.zero,
@@ -541,7 +671,8 @@ class _ErrorView extends StatelessWidget {
               color: AppColors.statusDanger,
             ),
             const SizedBox(height: 16),
-            Text(message, textAlign: TextAlign.center,
+            Text(message,
+                textAlign: TextAlign.center,
                 style: AppTypography.bodyLarge),
             const SizedBox(height: 20),
             ElevatedButton(

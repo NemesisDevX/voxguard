@@ -623,6 +623,67 @@ void main() {
     });
   });
 
+  // ── Analysis scope truthfulness (Part B) ────────────────────────
+
+  group('analysis_scope', () {
+    test('FamilyAlertTap parses full/partial scope; absent → full',
+        () {
+      final base = {
+        'kind': 'family_shield_alert',
+        'incident_id': 'INC-1',
+        'risk_level': 'suspicious',
+        'sender_external_id': vg('a'),
+      };
+      expect(
+          FamilyAlertTap.fromAdditionalData(base)!.analysisScope,
+          'full');
+      expect(
+        FamilyAlertTap.fromAdditionalData(
+            {...base, 'analysis_scope': 'partial'})!.analysisScope,
+        'partial',
+      );
+      expect(
+        FamilyAlertTap.fromAdditionalData(
+            {...base, 'analysis_scope': 'full'})!.analysisScope,
+        'full',
+      );
+      // Malformed scope → not a routable alert.
+      expect(
+        FamilyAlertTap.fromAdditionalData(
+            {...base, 'analysis_scope': 'acoustic_only'}),
+        isNull,
+      );
+      // 'safe' is a human resolution, not a danger-alert band.
+      expect(
+        FamilyAlertTap.fromAdditionalData(
+            {...base, 'risk_level': 'safe'}),
+        isNull,
+      );
+    });
+
+    test('scope persists through the received-alert store', () async {
+      final repo = PersistedReceivedFamilyAlertRepository(prefs: prefs);
+      await repo.upsert(ReceivedFamilyAlert(
+        incidentId: 'INC-P',
+        senderExternalId: vg('a'),
+        riskLevel: 'suspicious',
+        receivedAt: DateTime(2026),
+        analysisScope: 'partial',
+      ));
+      final stored = await repo.lookup('${vg('a')}|INC-P');
+      expect(stored!.analysisScope, 'partial');
+      // Malformed persisted scope is dropped, not trusted.
+      final raw = ReceivedFamilyAlert(
+        incidentId: 'INC-BAD',
+        senderExternalId: vg('a'),
+        riskLevel: 'suspicious',
+        receivedAt: DateTime(2026),
+      ).toJson()
+        ..['analysis_scope'] = 'bogus';
+      expect(ReceivedFamilyAlert.fromJson(raw), isNull);
+    });
+  });
+
   // ── FamilyAlertScreen behavior ─────────────────────────────────────
 
   group('FamilyAlertScreen', () {
@@ -739,6 +800,71 @@ void main() {
         find.textContaining('Family update could not be sent'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('partial recording alert — acoustic warning copy, '
+        'never a high-risk call', (tester) async {
+      final partial = ReceivedFamilyAlert(
+        incidentId: 'INC-P1',
+        senderExternalId: vg('a'),
+        riskLevel: 'suspicious',
+        receivedAt: DateTime(2026),
+        analysisScope: 'partial',
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: FamilyAlertScreen(alert: partial, sender: contactMaya),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining(
+            'asked you to verify an elevated acoustic warning from a '
+            'recording'),
+        findsOneWidget,
+      );
+      expect(find.text('PARTIAL ANALYSIS'), findsOneWidget);
+      expect(
+        find.textContaining(
+            'Conversation-risk signals were not analyzed.'),
+        findsOneWidget,
+      );
+      // Never upgrades partial evidence into a call verdict.
+      expect(find.textContaining('high-risk call'), findsNothing);
+      expect(find.text('HIGH RISK'), findsNothing);
+    });
+
+    testWidgets('suspicious full alert uses suspicious wording',
+        (tester) async {
+      final suspicious = ReceivedFamilyAlert(
+        incidentId: 'INC-S1',
+        senderExternalId: vg('a'),
+        riskLevel: 'suspicious',
+        receivedAt: DateTime(2026),
+        analysisScope: 'full',
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: FamilyAlertScreen(alert: suspicious, sender: contactMaya),
+      ));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.textContaining(
+            'received a suspicious-call warning from VoxGuard'),
+        findsOneWidget,
+      );
+      expect(find.text('SUSPICIOUS'), findsOneWidget);
+      expect(find.textContaining('high-risk call'), findsNothing);
+    });
+
+    testWidgets('high-risk full alert uses high-risk wording',
+        (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: FamilyAlertScreen(alert: alert, sender: contactMaya),
+      ));
+      await tester.pumpAndSettle();
+      expect(find.textContaining('may be dealing with a high-risk '
+          'call'), findsOneWidget);
+      expect(find.text('HIGH RISK'), findsOneWidget);
     });
   });
 }

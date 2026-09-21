@@ -79,8 +79,8 @@ test('transcription poll requires relay authorization', async () => {
 test('provider key never ships to the client', async () => {
   const calls = [];
   const res = await handleRequest(
-    jobRequest(new Uint8Array([1, 2, 3])),
-    ENV,
+    jobRequest(new Uint8Array([1, 2, 3]), { auth: 'Bearer key-tok' }),
+    { ...ENV, RELAY_CLIENT_TOKEN: 'key-tok' },
     aaiFetch(calls),
   );
   const body = await res.text();
@@ -98,8 +98,9 @@ test('oversized audio is rejected before reaching the provider',
   // Over the cap — rejected whether caught on Content-Length or the
   // post-read size check.
   const res = await handleRequest(
-    jobRequest(new Uint8Array(MAX_AUDIO_BYTES + 1), { format: null }),
-    { ...ENV },
+    jobRequest(new Uint8Array(MAX_AUDIO_BYTES + 1),
+        { format: null, auth: 'Bearer big-tok' }),
+    { ...ENV, RELAY_CLIENT_TOKEN: 'big-tok' },
     aaiFetch(calls),
   );
   assert.equal(res.status, 413);
@@ -108,8 +109,8 @@ test('oversized audio is rejected before reaching the provider',
 
 test('empty audio body is rejected', async () => {
   const res = await handleRequest(
-    jobRequest(new Uint8Array(0)),
-    ENV,
+    jobRequest(new Uint8Array(0), { auth: 'Bearer empty-tok' }),
+    { ...ENV, RELAY_CLIENT_TOKEN: 'empty-tok' },
     aaiFetch([]),
   );
   assert.equal(res.status, 400);
@@ -117,8 +118,9 @@ test('empty audio body is rejected', async () => {
 
 test('malformed format hint is rejected', async () => {
   const res = await handleRequest(
-    jobRequest(new Uint8Array([1]), { format: 'evil/../..fmt' }),
-    ENV,
+    jobRequest(new Uint8Array([1]),
+        { format: 'evil/../..fmt', auth: 'Bearer fmt-tok' }),
+    { ...ENV, RELAY_CLIENT_TOKEN: 'fmt-tok' },
     aaiFetch([]),
   );
   assert.equal(res.status, 400);
@@ -130,8 +132,8 @@ test('job creation uploads bytes then submits the transcript job', async () => {
   const calls = [];
   const audio = new Uint8Array([9, 8, 7, 6]);
   const res = await handleRequest(
-    jobRequest(audio),
-    ENV,
+    jobRequest(audio, { auth: 'Bearer create-tok' }),
+    { ...ENV, RELAY_CLIENT_TOKEN: 'create-tok' },
     aaiFetch(calls),
   );
   assert.equal(res.status, 202);
@@ -189,8 +191,8 @@ test('invalid job id is rejected without hitting the provider', async () => {
 
 test('provider upload failure → 502, never leaks provider detail', async () => {
   const res = await handleRequest(
-    jobRequest(new Uint8Array([1])),
-    ENV,
+    jobRequest(new Uint8Array([1]), { auth: 'Bearer fail-tok' }),
+    { ...ENV, RELAY_CLIENT_TOKEN: 'fail-tok' },
     async () => new Response('provider secret detail', { status: 500 }),
   );
   assert.equal(res.status, 502);
@@ -200,9 +202,73 @@ test('provider upload failure → 502, never leaks provider detail', async () =>
 
 test('missing provider key → 503, client never sees why', async () => {
   const res = await handleRequest(
-    jobRequest(new Uint8Array([1])),
-    { ...ENV, ASSEMBLYAI_API_KEY: undefined },
+    jobRequest(new Uint8Array([1]), { auth: 'Bearer noconf-tok' }),
+    {
+      ...ENV,
+      ASSEMBLYAI_API_KEY: undefined,
+      RELAY_CLIENT_TOKEN: 'noconf-tok',
+    },
     aaiFetch([]),
   );
   assert.equal(res.status, 503);
+});
+
+// ── Rate limiting (best-effort, per isolate, per relay token) ──────
+
+test('job creation is limited — 6th creation per token → 429', async () => {
+  const env = { ...ENV, RELAY_CLIENT_TOKEN: 'rl-create-tok' };
+  const calls = [];
+  for (let i = 0; i < 5; i++) {
+    const res = await handleRequest(
+      jobRequest(new Uint8Array([i + 1]), { auth: 'Bearer rl-create-tok' }),
+      env,
+      aaiFetch(calls),
+    );
+    assert.equal(res.status, 202, `creation ${i + 1}`);
+  }
+  const res = await handleRequest(
+    jobRequest(new Uint8Array([9]), { auth: 'Bearer rl-create-tok' }),
+    env,
+    aaiFetch(calls),
+  );
+  assert.equal(res.status, 429);
+});
+
+test('polling keeps working on its own bucket after creates exhaust', async () => {
+  const env = { ...ENV, RELAY_CLIENT_TOKEN: 'rl-poll-tok' };
+  // Exhaust the creation budget…
+  for (let i = 0; i < 6; i++) {
+    await handleRequest(
+      jobRequest(new Uint8Array([i + 1]), { auth: 'Bearer rl-poll-tok' }),
+      env,
+      aaiFetch([]),
+    );
+  }
+  // …then a normal amount of polling still succeeds.
+  for (let i = 0; i < 10; i++) {
+    const res = await handleRequest(
+      pollRequest('aai-job-42', { auth: 'Bearer rl-poll-tok' }),
+      env,
+      aaiFetch([], { transcriptStatus: 'processing' }),
+    );
+    assert.equal(res.status, 200, `poll ${i + 1}`);
+  }
+});
+
+test('polling has its own limit — 61st poll per token/min → 429', async () => {
+  const env = { ...ENV, RELAY_CLIENT_TOKEN: 'rl-poll2-tok' };
+  for (let i = 0; i < 60; i++) {
+    const res = await handleRequest(
+      pollRequest('aai-job-42', { auth: 'Bearer rl-poll2-tok' }),
+      env,
+      aaiFetch([], { transcriptStatus: 'processing' }),
+    );
+    assert.equal(res.status, 200, `poll ${i + 1}`);
+  }
+  const res = await handleRequest(
+    pollRequest('aai-job-42', { auth: 'Bearer rl-poll2-tok' }),
+    env,
+    aaiFetch([]),
+  );
+  assert.equal(res.status, 429);
 });

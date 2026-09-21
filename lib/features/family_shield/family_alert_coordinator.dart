@@ -104,6 +104,7 @@ final class FamilyAlertCoordinator {
       senderExternalId: event.senderExternalId,
       riskLevel: event.riskLevel,
       receivedAt: DateTime.now(),
+      analysisScope: event.analysisScope,
     );
     await _alerts.upsert(alert);
     return (await _alerts.lookup(alert.key)) ?? alert;

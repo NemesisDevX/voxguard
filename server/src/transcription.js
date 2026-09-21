@@ -40,6 +40,44 @@ const FORMAT_HINT = /^[a-z0-9]{1,12}$/;
 const UPLOAD_TIMEOUT_MS = 30_000;
 const API_TIMEOUT_MS = 15_000;
 
+// ── Best-effort per-isolate rate limiters ────────────────────────────
+// Job creation spends provider money; polling is cheap. Separate
+// buckets + windows so a normal job can always finish polling while
+// bulk job creation is throttled. This is abuse resistance ONLY —
+// isolate-scoped counters are not distributed auth, durable billing
+// enforcement, or a security boundary.
+const CREATE_LIMIT = 5;                  // job creations
+const CREATE_WINDOW_MS = 10 * 60_000;    // per 10 minutes
+const POLL_LIMIT = 60;                   // status polls
+const POLL_WINDOW_MS = 60_000;           // per minute
+const MAX_BUCKETS = 5000;
+const buckets = new Map();
+
+/** Returns true when `key` has exceeded `limit` inside `windowMs`. */
+function rateLimited(scope, key, limit, windowMs) {
+  const now = Date.now();
+  const id = `${scope}:${key}`;
+  const bucket = buckets.get(id) ?? { count: 0, reset: now + windowMs };
+  if (now > bucket.reset) {
+    bucket.count = 0;
+    bucket.reset = now + windowMs;
+  }
+  bucket.count++;
+  buckets.set(id, bucket);
+  // Bound memory: drop expired buckets once the map grows.
+  if (buckets.size > MAX_BUCKETS) {
+    for (const [k, b] of buckets) {
+      if (now > b.reset) buckets.delete(k);
+    }
+  }
+  return bucket.count > limit;
+}
+
+/** Caller identity for limiting — the presented bearer token. */
+function limiterKey(request) {
+  return request.headers.get('Authorization') ?? 'anonymous';
+}
+
 function jsonResponse(status, body, extraHeaders = {}) {
   return new Response(JSON.stringify(body), {
     status,
@@ -69,6 +107,10 @@ async function createJob(request, env, fetchImpl, cors) {
   if (denied) return withCors(denied, cors);
   if (!env.ASSEMBLYAI_API_KEY) {
     return jsonResponse(503, { error: 'transcription not configured' }, cors);
+  }
+  // Paid-provider boundary — throttled separately from polling.
+  if (rateLimited('create', limiterKey(request), CREATE_LIMIT, CREATE_WINDOW_MS)) {
+    return jsonResponse(429, { error: 'rate limited' }, cors);
   }
 
   // Reject obviously oversized uploads from Content-Length before
@@ -180,6 +222,10 @@ async function pollJob(request, env, fetchImpl, cors, jobId) {
   }
   if (!JOB_ID.test(jobId)) {
     return jsonResponse(400, { error: 'invalid job id' }, cors);
+  }
+  // Cheap polling gets its own, more generous bucket.
+  if (rateLimited('poll', limiterKey(request), POLL_LIMIT, POLL_WINDOW_MS)) {
+    return jsonResponse(429, { error: 'rate limited' }, cors);
   }
 
   const requestId = crypto.randomUUID();

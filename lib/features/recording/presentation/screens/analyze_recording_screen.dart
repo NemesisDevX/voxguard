@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../forensics/presentation/screens/incident_detail_screen.dart';
+import '../../../paywall/domain/models/entitlement_state.dart';
+import '../../../paywall/domain/models/subscription_tier.dart';
+import '../../../paywall/domain/services/product_access.dart';
+import '../../../paywall/presentation/screens/paywall_screen.dart';
 import '../../../protection/domain/models/audio_forensic_metrics.dart';
 import '../../../protection/domain/models/composite_threat_report.dart';
 import '../../domain/models/recording_models.dart';
@@ -25,12 +29,14 @@ class AnalyzeRecordingScreen extends StatefulWidget {
     super.key,
     this.picker,
     this.analyzer,
+    this.productAccess,
   });
 
   /// Injectable seams — tests supply fakes so no platform channel or
   /// network is touched.
   final IRecordingFilePicker? picker;
   final RecordingAnalyzer? analyzer;
+  final IProductAccess? productAccess;
 
   @override
   State<AnalyzeRecordingScreen> createState() =>
@@ -41,7 +47,10 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
   late final IRecordingFilePicker _picker =
       widget.picker ?? const FilePickerRecordingPicker();
   late final RecordingAnalyzer _analyzer =
-      widget.analyzer ?? RecordingAnalyzer();
+      widget.analyzer ??
+          RecordingAnalyzer(productAccess: widget.productAccess);
+  late final IProductAccess _productAccess =
+      widget.productAccess ?? ProductAccessLocator.instance;
 
   PickedRecording? _picked;
   RecordingAudioInfo? _info;
@@ -52,6 +61,12 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
   bool _busy = false;
   bool _cancelRequested = false;
   RecordingStage? _stage;
+
+  /// Stages the analyzer has actually reached this run, in order.
+  /// The progress card renders ONLY these — a stage the pipeline
+  /// skipped (e.g. conversation analysis with no transcript) can
+  /// never appear, let alone look completed.
+  final List<RecordingStage> _stagesRun = [];
   RecordingAnalysisResult? _result;
   String? _error;
 
@@ -97,6 +112,7 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
       _busy = true;
       _cancelRequested = false;
       _stage = RecordingStage.preparing;
+      _stagesRun.clear();
       _error = null;
       _result = null;
     });
@@ -106,7 +122,14 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
         mode: _mode,
         manualTranscript: _manualTranscript.text,
         onStage: (s) {
-          if (mounted) setState(() => _stage = s);
+          if (mounted) {
+            setState(() {
+              _stage = s;
+              if (_stagesRun.isEmpty || _stagesRun.last != s) {
+                _stagesRun.add(s);
+              }
+            });
+          }
         },
         isCancelled: () => _cancelRequested || !mounted,
       );
@@ -212,20 +235,40 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
             setState(() => _mode = RecordingPrivacyMode.onDevice),
       ),
       const SizedBox(height: 8),
-      _PrivacyModeCard(
-        selected: _mode == RecordingPrivacyMode.enhancedTranscription,
-        enabled: transcriptionReady && !analyzing,
-        title: 'Include conversation analysis',
-        subtitle: transcriptionReady
-            ? 'To create a transcript, this recording will be sent '
-                'through VoxGuard\u2019s transcription relay to the '
-                'configured speech-to-text provider. VoxGuard does '
-                'not permanently store the recording.'
-            : 'Cloud transcription isn\u2019t configured in this '
-                'build. Acoustic analysis is still available '
-                'on-device.',
-        onTap: () => setState(
-            () => _mode = RecordingPrivacyMode.enhancedTranscription),
+      // Reactive: a Sentinel purchase unlocks this card without
+      // leaving the screen.
+      ValueListenableBuilder<EntitlementState>(
+        valueListenable: _productAccess.entitlement,
+        builder: (context, entitlement, _) {
+          final entitled =
+              _productAccess.capabilities.enhancedRecording;
+          final unlocked = entitled && transcriptionReady;
+          return _PrivacyModeCard(
+            selected:
+                _mode == RecordingPrivacyMode.enhancedTranscription,
+            enabled: unlocked && !analyzing,
+            locked: !entitled,
+            title: 'Include conversation analysis',
+            subtitle: !entitled
+                ? 'Sentinel Shield adds enhanced transcription — '
+                    'the recording is sent through VoxGuard\u2019s '
+                    'transcription relay only after you opt in. '
+                    'On-device analysis stays free.'
+                : transcriptionReady
+                    ? 'To create a transcript, this recording will '
+                        'be sent through VoxGuard\u2019s transcription '
+                        'relay to the configured speech-to-text '
+                        'provider. VoxGuard does not permanently '
+                        'store the recording.'
+                    : 'Cloud transcription isn\u2019t configured in '
+                        'this build. Acoustic analysis is still '
+                        'available on-device.',
+            onTap: () => setState(
+                () => _mode = RecordingPrivacyMode.enhancedTranscription),
+            onLockedTap: () =>
+                PaywallScreen.show(context, preselect: TierId.sentinel),
+          );
+        },
       ),
       const SizedBox(height: 12),
       // Manual transcript is the on-device alternative — hidden while
@@ -240,7 +283,7 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
         ),
       const SizedBox(height: 20),
       if (analyzing) ...[
-        _StageProgress(stage: _stage!, mode: _mode),
+        _StageProgress(stagesRun: _stagesRun, stage: _stage!),
         const SizedBox(height: 12),
         TextButton.icon(
           onPressed: _cancelAnalysis,
@@ -403,6 +446,8 @@ class _PrivacyModeCard extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.locked = false,
+    this.onLockedTap,
   });
 
   final bool selected;
@@ -411,15 +456,20 @@ class _PrivacyModeCard extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
 
+  /// Plan-gated card: tapping opens the upgrade path instead of
+  /// selecting the mode.
+  final bool locked;
+  final VoidCallback? onLockedTap;
+
   @override
   Widget build(BuildContext context) {
     return Opacity(
-      opacity: enabled ? 1 : 0.55,
+      opacity: enabled || locked ? 1 : 0.55,
       child: Material(
         color: AppColors.surfaceCard,
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
-          onTap: enabled ? onTap : null,
+          onTap: locked ? onLockedTap : (enabled ? onTap : null),
           borderRadius: BorderRadius.circular(14),
           child: Ink(
             padding: const EdgeInsets.all(14),
@@ -435,10 +485,12 @@ class _PrivacyModeCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
-                  selected
-                      ? Icons.radio_button_checked
-                      : Icons.radio_button_off,
-                  color: selected
+                  locked
+                      ? Icons.lock_outline
+                      : selected
+                          ? Icons.radio_button_checked
+                          : Icons.radio_button_off,
+                  color: selected && !locked
                       ? AppColors.accent
                       : AppColors.textMuted,
                   size: 20,
@@ -448,7 +500,18 @@ class _PrivacyModeCard extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(title, style: AppTypography.titleMedium),
+                      Row(
+                        children: [
+                          Flexible(
+                            child: Text(title,
+                                style: AppTypography.titleMedium),
+                          ),
+                          if (locked) ...[
+                            const SizedBox(width: 8),
+                            const _SentinelChip(),
+                          ],
+                        ],
+                      ),
                       const SizedBox(height: 4),
                       Text(
                         subtitle,
@@ -461,6 +524,34 @@ class _PrivacyModeCard extends StatelessWidget {
               ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Small "SENTINEL" tag shown on plan-gated cards.
+class _SentinelChip extends StatelessWidget {
+  const _SentinelChip();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        color: AppColors.accent.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(5),
+        border: Border.all(
+          color: AppColors.accent.withValues(alpha: 0.45),
+        ),
+      ),
+      child: const Text(
+        'SENTINEL',
+        style: TextStyle(
+          fontSize: 8,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.6,
+          color: AppColors.accent,
         ),
       ),
     );
@@ -529,23 +620,12 @@ class _ManualTranscriptSection extends StatelessWidget {
 }
 
 class _StageProgress extends StatelessWidget {
-  const _StageProgress({required this.stage, required this.mode});
+  const _StageProgress({required this.stagesRun, required this.stage});
 
+  /// Stages the analyzer actually emitted, in order — the rendered
+  /// list IS the work performed, never a planned superset.
+  final List<RecordingStage> stagesRun;
   final RecordingStage stage;
-  final RecordingPrivacyMode mode;
-
-  /// Only the stages this mode actually reaches — local-only mode
-  /// never shows an upload/transcribe stage.
-  List<RecordingStage> get _stages => [
-        RecordingStage.preparing,
-        RecordingStage.analyzingAcoustic,
-        if (mode == RecordingPrivacyMode.enhancedTranscription) ...[
-          RecordingStage.uploading,
-          RecordingStage.transcribing,
-        ],
-        RecordingStage.evaluatingConversation,
-        RecordingStage.buildingResult,
-      ];
 
   static const _labels = {
     RecordingStage.preparing: 'Preparing audio',
@@ -559,7 +639,8 @@ class _StageProgress extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final stages = _stages;
+    final stages =
+        stagesRun.isEmpty ? const [RecordingStage.preparing] : stagesRun;
     final current = stages.indexOf(stage);
     return Column(
       children: [

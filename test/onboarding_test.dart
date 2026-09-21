@@ -231,6 +231,13 @@ void main() {
       await tester.tap(find.byIcon(Icons.settings_outlined));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 300));
+      // The subscription card now tops the tab — Trusted Circle sits
+      // below the fold, so scroll the settings ListView to it.
+      await tester.dragUntilVisible(
+        find.text('Trusted Circle'),
+        find.byType(ListView).first,
+        const Offset(0, -200),
+      );
       expect(find.text('Trusted Circle'), findsOneWidget);
       // The entry sits below the fold — drag the settings ListView
       // itself (a second, nested Scrollable exists in the cards).

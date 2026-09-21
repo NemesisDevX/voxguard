@@ -103,6 +103,8 @@ class _SafeCallViewState extends State<_SafeCallView>
         final amplitude = monitoring?.audioAmplitude ?? 0.0;
         final isDemo = monitoring?.isDemoMode ?? true;
         final sttLive = monitoring?.isTranscriptionLive ?? false;
+        final sttEntitled =
+            monitoring?.cloudTranscriptionEntitled ?? false;
         final partial = monitoring?.partialTranscript ?? '';
         final score = report.compositeRiskScore;
 
@@ -155,6 +157,7 @@ class _SafeCallViewState extends State<_SafeCallView>
                         demoActive: demoActive,
                         partial: partial,
                         transcriptionLive: sttLive,
+                        transcriptionEntitled: sttEntitled,
                         isDemoSession: isDemo,
                       ),
                       const SizedBox(height: 16),
@@ -311,6 +314,7 @@ class _TranscriptFeed extends StatefulWidget {
     required this.demoActive,
     required this.partial,
     required this.transcriptionLive,
+    required this.transcriptionEntitled,
     required this.isDemoSession,
   });
 
@@ -324,6 +328,10 @@ class _TranscriptFeed extends StatefulWidget {
 
   /// Whether a streaming STT provider is active this session.
   final bool transcriptionLive;
+
+  /// Whether the current plan entitles cloud transcription — false
+  /// means acoustic-only by plan, not by provider failure.
+  final bool transcriptionEntitled;
 
   /// Whether this is a demo session (scripted transcript).
   final bool isDemoSession;
@@ -356,14 +364,16 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
   }
 
   /// Honest empty-state copy per mode — never implies a live mic
-  /// transcript that isn't happening.
+  /// transcript that isn't happening, and never blames a provider
+  /// outage for what is actually a plan gate.
   String get _emptyLabel {
     if (widget.isDemoSession) {
       return 'Demo transcript will appear here.';
     }
-    return widget.transcriptionLive
-        ? 'Listening for speech…'
-        : 'Voice analysis active — live transcription unavailable.';
+    if (widget.transcriptionLive) return 'Listening for speech…';
+    return widget.transcriptionEntitled
+        ? 'Voice analysis active — live transcription unavailable.'
+        : AppStrings.acousticProtectionActive;
   }
 
   @override

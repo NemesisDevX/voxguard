@@ -7,6 +7,7 @@ import 'core/services/push/onesignal_push_identity_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/family_shield/family_alert_coordinator.dart';
 import 'features/onboarding/presentation/screens/startup_gate.dart';
+import 'features/paywall/domain/services/purchase_service_locator.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -21,6 +22,12 @@ void main() {
   // from the Family Shield card's explicit enable button. No App ID →
   // resolves to `notConfigured`; app never blocks on it.
   unawaited(PushIdentityLocator.instance.initialize());
+  // Purchase backend init is non-blocking and failure-safe: a store
+  // outage resolves entitlement to free, never crashes the app.
+  // Reactive state lets features unlock the moment entitlements land.
+  unawaited(
+    PurchaseServiceLocator.instance.initialize().catchError((_) {}),
+  );
   runApp(VoxGuardApp(coordinator: coordinator));
 }
 

@@ -10,6 +10,7 @@ import '../../../protection/domain/models/audio_forensic_metrics.dart';
 import '../../../protection/domain/models/composite_threat_report.dart';
 import '../../../protection/domain/models/semantic_threat_signals.dart';
 import '../../../protection/domain/models/transcript_snippet.dart';
+import '../../../paywall/domain/services/product_access.dart';
 import '../../../protection/domain/services/acoustic_forensics_service.dart';
 import '../../../protection/domain/services/semantic_threat_service.dart';
 import '../../../protection/domain/services/threat_fusion_engine.dart';
@@ -40,6 +41,7 @@ final class RecordingAnalyzer {
     ThreatFusionEngine? fusionEngine,
     IRecordedTranscriptionService? transcriptionService,
     IIncidentRepository? incidentRepository,
+    IProductAccess? productAccess,
     @visibleForTesting Duration pollInterval = _defaultPollInterval,
   })  : _pollInterval = pollInterval,
         _decoder = decoder ?? const PluginRecordingAudioDecoder(),
@@ -48,10 +50,13 @@ final class RecordingAnalyzer {
         _fusion = fusionEngine ?? ThreatFusionEngine(),
         _transcription =
             transcriptionService ?? RecordedTranscriptionLocator.instance,
-        _incidents = incidentRepository ?? IncidentRepositoryLocator.instance;
+        _incidents = incidentRepository ?? IncidentRepositoryLocator.instance,
+        _productAccess = productAccess ?? ProductAccessLocator.instance;
 
   /// Hackathon-safe bounds — everything is decoded in memory.
-  static const maxSourceBytes = 25 * 1024 * 1024; // 25 MB
+  /// Aliased to [kMaxRecordingSourceBytes], which the picker also
+  /// enforces before bytes are read.
+  static const maxSourceBytes = kMaxRecordingSourceBytes; // 25 MB
   static const maxDuration = Duration(minutes: 15);
 
   /// Stable chunk size matched to the acoustic FFT pipeline (which
@@ -75,6 +80,11 @@ final class RecordingAnalyzer {
   final ThreatFusionEngine _fusion;
   final IRecordedTranscriptionService _transcription;
   final IIncidentRepository _incidents;
+
+  /// Product-access layer — defense-in-depth guard so enhanced
+  /// transcription can never run for a plan that doesn't include it,
+  /// even if the UI gate is bypassed.
+  final IProductAccess _productAccess;
   final Duration _pollInterval;
   final Random _rng = Random();
 
@@ -160,6 +170,17 @@ final class RecordingAnalyzer {
     var transcriptLabel = 'None — acoustic analysis only';
     final manual = manualTranscript?.trim();
     if (mode == RecordingPrivacyMode.enhancedTranscription) {
+      // Defense-in-depth: refuse the upload path for plans without
+      // the capability BEFORE any bytes leave the device — a UI lock
+      // alone is not the boundary.
+      if (!_productAccess.capabilities.enhancedRecording) {
+        throw const RecordingAnalysisException(
+          'Enhanced recording transcription is included with '
+          'Sentinel Shield. On-device acoustic analysis is still '
+          'available.',
+          code: 'entitlementRequired',
+        );
+      }
       if (!_transcription.isConfigured) {
         throw const RecordingAnalysisException(
           'Cloud transcription isn\'t configured in this build. '
@@ -196,7 +217,10 @@ final class RecordingAnalyzer {
     CompositeThreatReport? report;
     if (transcriptText != null && transcriptText.trim().isNotEmpty) {
       stage(RecordingStage.evaluatingConversation);
-      semantic = await _semantic.analyze(transcriptText);
+      // Recording analysis always uses the LOCAL rule engine —
+      // the UI promises transcripts stay on this device, and there
+      // is no separate semantic-cloud consent flow.
+      semantic = _semantic.analyzeLocally(transcriptText);
       report = _fusion.fuse(acoustic, semantic);
     }
     if (cancelled()) return null;

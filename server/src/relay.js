@@ -22,8 +22,14 @@ const MAX_TITLE_LEN = 100;
 const MAX_BODY_LEN = 300;
 
 const VALID_KINDS = new Set(['family_shield_alert', 'family_shield_response']);
-const VALID_RISK_LEVELS = new Set(['safe', 'suspicious', 'highRisk']);
+// A danger alert is never 'safe' — safe is a human RESOLUTION sent via
+// family_shield_response, not an alert risk band.
+const ALERT_RISK_LEVELS = new Set(['suspicious', 'highRisk']);
 const VALID_RESOLUTIONS = new Set(['safe', 'stillSuspicious']);
+// How much of the analysis pipeline produced this alert — 'full'
+// (acoustic + conversation) or 'partial' (acoustic signals only,
+// e.g. an uploaded recording without conversation analysis).
+const VALID_ANALYSIS_SCOPES = new Set(['full', 'partial']);
 
 // Conservative identifier charset — letters, digits, _-:.@ only.
 const SAFE_ID = /^[A-Za-z0-9_\-.:@]{1,64}$/;
@@ -141,8 +147,11 @@ export function validateAlertPayload(body) {
     return validateResponsePayload(body, incidentId);
   }
 
-  if (!VALID_RISK_LEVELS.has(body.risk_level)) {
+  if (!ALERT_RISK_LEVELS.has(body.risk_level)) {
     return { ok: false, error: 'invalid risk_level' };
+  }
+  if (!VALID_ANALYSIS_SCOPES.has(body.analysis_scope)) {
+    return { ok: false, error: 'invalid analysis_scope' };
   }
   if (
     typeof body.sender_external_id !== 'string' ||
@@ -165,9 +174,17 @@ export function validateAlertPayload(body) {
     }
   }
   const title = body.title ?? 'VoxGuard Family Shield';
+  // Fallback copy is scope/risk-aware too — a partial acoustic warning
+  // is never described as a "high-risk call".
   const text = body.body ??
-    'A high-risk call was flagged on a protected device. ' +
-      'Verify with your family member directly.';
+    (body.analysis_scope === 'partial'
+      ? 'Elevated acoustic signals were flagged on a protected device. ' +
+        'Verify with your family member directly.'
+      : body.risk_level === 'highRisk'
+        ? 'A high-risk call was flagged on a protected device. ' +
+          'Verify with your family member directly.'
+        : 'A suspicious-call warning was flagged on a protected device. ' +
+          'Verify with your family member directly.');
   if (typeof title !== 'string' || title.length > MAX_TITLE_LEN) {
     return { ok: false, error: 'invalid title' };
   }
@@ -180,6 +197,7 @@ export function validateAlertPayload(body) {
       kind: 'family_shield_alert',
       incidentId,
       riskLevel: body.risk_level,
+      analysisScope: body.analysis_scope,
       senderExternalId: body.sender_external_id,
       // Dedupe — OneSignal rejects or double-counts duplicate
       // external_ids in include_aliases.
@@ -219,7 +237,9 @@ function validateResponsePayload(body, incidentId) {
       responderExternalId: body.responder_external_id,
       recipients: [body.target_external_id],
       title: 'VoxGuard Family Shield Update',
-      body: 'A trusted person responded to your safety alert.',
+      // Neutral copy — responder_external_id is an opaque identity and
+      // the shared relay does not cryptographically prove trust.
+      body: 'A Family Shield response was received for your safety alert.',
     },
   };
 }
@@ -238,6 +258,9 @@ export function toOneSignalPayload(alert, appId) {
           kind: 'family_shield_alert',
           incident_id: alert.incidentId,
           risk_level: alert.riskLevel,
+          // Whether conversation-risk signals were analyzed — lets the
+          // receiver describe a partial acoustic warning honestly.
+          analysis_scope: alert.analysisScope,
           // Which trusted contact's device raised the alert — opaque
           // vg_… identity only, never a name or phone number.
           sender_external_id: alert.senderExternalId,

@@ -26,6 +26,11 @@ enum AlertDispatchStatus {
   /// Real relay configured but the Trusted Circle is empty — nothing
   /// was sent and nothing should pretend otherwise.
   noRecipients,
+
+  /// Plan gate — the real outbound alert path requires the Family
+  /// Vault capability. Zero relay traffic was attempted. Demo Mode
+  /// (no relay configured) is never gated and never returns this.
+  locked,
 }
 
 /// Outcome of a family-shield broadcast attempt.

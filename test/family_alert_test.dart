@@ -10,6 +10,8 @@ import 'package:voxguard/features/forensics/domain/models/incident_report.dart';
 import 'package:voxguard/features/protection/domain/models/audio_forensic_metrics.dart';
 import 'package:voxguard/features/protection/domain/models/composite_threat_report.dart';
 import 'package:voxguard/features/protection/domain/models/semantic_threat_signals.dart';
+import 'package:voxguard/features/paywall/domain/models/subscription_tier.dart';
+import 'helpers/fake_product_access.dart';
 
 void main() {
   final incident = IncidentReport(
@@ -81,6 +83,7 @@ void main() {
         httpClient: client,
         relayUrl: 'https://relay.example.com/alert',
         senderIdentity: testSender,
+        productAccess: FakeProductAccess(TierId.familyVault),
       );
       expect(service.isRelayConfigured, isTrue);
       expect(service.isDemoMode, isFalse);
@@ -108,8 +111,103 @@ void main() {
       expect(body.containsKey('phone'), isFalse);
       expect(body['incident_id'], 'INC-2026-9001');
       expect(body['risk_level'], 'highRisk');
+      // Full fused analysis → 'full' scope for receiver copy.
+      expect(body['analysis_scope'], 'full');
       // No transcript or audio data leaves the device.
       expect(body.containsKey('transcript'), isFalse);
+    });
+
+    test('partial incident sends analysis_scope partial + honest body',
+        () async {
+      http.Request? captured;
+      final client = http_testing.MockClient((request) async {
+        captured = request;
+        return http.Response('{"ok":true}', 202);
+      });
+      final service = FamilyShieldAlertService(
+        httpClient: client,
+        relayUrl: 'https://relay.example.com/alert',
+        senderIdentity: testSender,
+        productAccess: FakeProductAccess(TierId.familyVault),
+      );
+      // An acoustic-only uploaded recording — persisted as partial.
+      final partial = IncidentReport(
+        id: 'INC-2026-9002',
+        timestamp: DateTime(2026, 9, 20),
+        callerLabel: 'Uploaded Recording',
+        callDurationSeconds: 40,
+        audioDigestSha256: 'aa' * 32,
+        audioSourceLabel: 'Uploaded Recording',
+        transcriptionSourceLabel: 'None — acoustic analysis only',
+        peakRiskScore: 0.8,
+        riskLevel: ThreatRiskLevel.suspicious,
+        threatReasons: const ['Elevated acoustic anomalies'],
+        acousticMetrics: const AudioForensicMetrics(
+          spectralFlux: 0.05,
+          spectralRolloffRatio: 0.08,
+          zeroCrossingRate: 0.03,
+          syntheticVoiceScore: 0.8,
+        ),
+        semanticSignals: const SemanticThreatSignals.empty(),
+        transcriptSnippets: const [],
+        recommendedActions: const ['Verify the speaker'],
+        analysisIsPartial: true,
+      );
+      await service.triggerFamilyEmergencyAlert(
+        incident: partial,
+        familyMemberIds: members,
+      );
+      final body = jsonDecode(captured!.body) as Map<String, dynamic>;
+      expect(body['analysis_scope'], 'partial');
+      expect(body['risk_level'], 'suspicious');
+      // Partial evidence is described as an acoustic warning — never
+      // a "high-risk call".
+      expect(body['body'] as String, contains('acoustic'));
+      expect(body['body'] as String, isNot(contains('high-risk call')));
+    });
+
+    test('suspicious full incident uses suspicious-call wording',
+        () async {
+      http.Request? captured;
+      final client = http_testing.MockClient((request) async {
+        captured = request;
+        return http.Response('{"ok":true}', 202);
+      });
+      final service = FamilyShieldAlertService(
+        httpClient: client,
+        relayUrl: 'https://relay.example.com/alert',
+        senderIdentity: testSender,
+        productAccess: FakeProductAccess(TierId.familyVault),
+      );
+      final suspicious = IncidentReport(
+        id: 'INC-2026-9003',
+        timestamp: DateTime(2026, 9, 20),
+        callerLabel: 'Unknown Caller',
+        callDurationSeconds: 60,
+        audioDigestSha256: 'bb' * 32,
+        audioSourceLabel: 'Live Microphone',
+        transcriptionSourceLabel: 'AssemblyAI Streaming',
+        peakRiskScore: 0.6,
+        riskLevel: ThreatRiskLevel.suspicious,
+        threatReasons: const ['Urgency cues detected'],
+        acousticMetrics: const AudioForensicMetrics(
+          spectralFlux: 0.05,
+          spectralRolloffRatio: 0.08,
+          zeroCrossingRate: 0.03,
+          syntheticVoiceScore: 0.4,
+        ),
+        semanticSignals: const SemanticThreatSignals.empty(),
+        transcriptSnippets: const [],
+        recommendedActions: const ['Verify the caller'],
+      );
+      await service.triggerFamilyEmergencyAlert(
+        incident: suspicious,
+        familyMemberIds: members,
+      );
+      final body = jsonDecode(captured!.body) as Map<String, dynamic>;
+      expect(body['analysis_scope'], 'full');
+      expect(body['body'] as String, contains('suspicious-call'));
+      expect(body['body'] as String, isNot(contains('high-risk')));
     });
 
     test('reports failure on non-2xx responses', () async {
@@ -120,6 +218,7 @@ void main() {
         httpClient: client,
         relayUrl: 'https://relay.example.com/alert',
         senderIdentity: testSender,
+        productAccess: FakeProductAccess(TierId.familyVault),
       );
 
       final result = await service.triggerFamilyEmergencyAlert(
@@ -143,6 +242,7 @@ void main() {
         httpClient: client,
         relayUrl: 'https://relay.example.com/alert',
         senderIdentity: testSender,
+        productAccess: FakeProductAccess(TierId.familyVault),
         relayToken: 'relay-tok',
       );
 
@@ -164,6 +264,7 @@ void main() {
         ),
         relayUrl: 'https://relay.example.com/alert',
         senderIdentity: testSender,
+        productAccess: FakeProductAccess(TierId.familyVault),
       );
       final unavailable = FamilyShieldAlertService(
         httpClient: http_testing.MockClient(
@@ -171,6 +272,7 @@ void main() {
         ),
         relayUrl: 'https://relay.example.com/alert',
         senderIdentity: testSender,
+        productAccess: FakeProductAccess(TierId.familyVault),
       );
 
       final r1 = await rejected.triggerFamilyEmergencyAlert(

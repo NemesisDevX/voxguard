@@ -1,13 +1,25 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../../../../core/constants/app_strings.dart';
 import '../../domain/models/billing_cycle.dart';
+import '../../domain/models/entitlement_state.dart';
+import '../../domain/models/subscription_tier.dart';
 import '../../domain/services/i_purchase_service.dart';
 import '../../domain/services/purchase_service_locator.dart';
 import 'paywall_event.dart';
 import 'paywall_state.dart';
 
-/// Drives the paywall: offerings load, tier/cycle selection, checkout
-/// and restores against the active [IPurchaseService].
+/// Drives the paywall: initialize the backend, map the *current*
+/// offering to purchasable options, run checkout and restores
+/// against the active [IPurchaseService].
+///
+/// Truth rules enforced here:
+/// - a paid tier is only purchasable when the store returned a real
+///   package for it;
+/// - user cancellation is silent, not an error;
+/// - "nothing restored" / "not yet activated" are inline notices,
+///   never unrecoverable error screens;
+/// - the free tier never produces a purchase success.
 final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
   PaywallBloc({IPurchaseService? purchaseService})
       : _service = purchaseService ?? PurchaseServiceLocator.instance,
@@ -15,7 +27,7 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
     on<LoadOfferingsEvent>(_onLoad);
     on<SelectBillingCycleEvent>(_onSelectCycle);
     on<SelectTierEvent>(_onSelectTier);
-    on<PurchaseTierEvent>(_onPurchase);
+    on<PurchaseSelectedEvent>(_onPurchase);
     on<RestorePurchasesEvent>(_onRestore);
   }
 
@@ -26,23 +38,81 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
     Emitter<PaywallState> emit,
   ) async {
     emit(const PaywallLoading());
+    final backend = _service.backendMode;
+
     try {
       await _service.initialize();
-      final tiers = await _service.getOfferings();
-      final selected = tiers.firstWhere(
-        (t) => t.isPopular,
-        orElse: () => tiers.first,
-      );
+    } on PurchaseServiceException catch (e) {
+      emit(PaywallError(e.message));
+      return;
+    } on Exception {
+      emit(const PaywallError(AppStrings.plansLoadError));
+      return;
+    }
+
+    // No store backend configured — free plan only, no checkout.
+    if (backend == PurchaseBackendMode.unavailable) {
       emit(
-        PaywallLoaded(
-          tiers: tiers,
-          selectedTier: selected,
-          cycle: BillingCycle.annual,
+        const PaywallLoaded(
+          backend: PurchaseBackendMode.unavailable,
+          tiers: [SubscriptionTiers.free],
+          packages: {},
+          selectedTier: SubscriptionTiers.free,
+          cycle: BillingCycle.monthly,
+          notice: AppStrings.storeUnavailableNotice,
         ),
       );
-    } on Exception catch (e) {
-      emit(PaywallError('Could not load plans. ${e.toString()}'));
+      return;
     }
+
+    final List<StorePackage> packages;
+    try {
+      packages = await _service.getPackages();
+    } on PurchaseServiceException catch (e) {
+      emit(PaywallError(e.message));
+      return;
+    } on Exception {
+      emit(const PaywallError(AppStrings.plansLoadError));
+      return;
+    }
+
+    final byTier = <TierId, Map<BillingCycle, StorePackage>>{};
+    for (final pkg in packages) {
+      byTier.putIfAbsent(pkg.tierId, () => {})[pkg.cycle] = pkg;
+    }
+
+    // Render tiers that exist in the catalog AND (for paid tiers) in
+    // the current offering. The free plan always renders.
+    final tiers = SubscriptionTiers.catalog
+        .where((t) => t.isFree || (byTier[t.tierId]?.isNotEmpty ?? false))
+        .toList();
+
+    final selected = tiers.firstWhere(
+      (t) => t.tierId == event.preselect,
+      orElse: () => tiers.firstWhere(
+        (t) => t.isPopular,
+        orElse: () => tiers.first,
+      ),
+    );
+
+    // Prefer annual when the selected tier offers it.
+    final cycles = byTier[selected.tierId] ?? const {};
+    final cycle = cycles.containsKey(BillingCycle.annual)
+        ? BillingCycle.annual
+        : BillingCycle.monthly;
+
+    emit(
+      PaywallLoaded(
+        backend: backend,
+        tiers: tiers,
+        packages: byTier,
+        selectedTier: selected,
+        cycle: cycle,
+        notice: tiers.length == 1
+            ? 'No paid plans are available in this store yet.'
+            : null,
+      ),
+    );
   }
 
   void _onSelectCycle(
@@ -50,7 +120,10 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
     Emitter<PaywallState> emit,
   ) {
     final s = state;
-    if (s is PaywallLoaded) emit(s.copyWith(cycle: event.cycle));
+    // Only select a cycle the selected tier actually offers.
+    if (s is PaywallLoaded && s.availableCycles.contains(event.cycle)) {
+      emit(s.copyWith(cycle: event.cycle, clearNotice: true));
+    }
   }
 
   void _onSelectTier(
@@ -58,37 +131,67 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
     Emitter<PaywallState> emit,
   ) {
     final s = state;
-    if (s is PaywallLoaded) emit(s.copyWith(selectedTier: event.tier));
+    if (s is! PaywallLoaded) return;
+    // Clamp the cycle if the newly selected tier doesn't offer it.
+    final offers = s.packages[event.tier.tierId] ?? const {};
+    final cycle = offers.containsKey(s.cycle)
+        ? s.cycle
+        : offers.containsKey(BillingCycle.annual)
+            ? BillingCycle.annual
+            : BillingCycle.monthly;
+    emit(s.copyWith(selectedTier: event.tier, cycle: cycle, clearNotice: true));
   }
 
   Future<void> _onPurchase(
-    PurchaseTierEvent event,
+    PurchaseSelectedEvent event,
     Emitter<PaywallState> emit,
   ) async {
     final s = state;
     if (s is! PaywallLoaded || s.isPurchasing) return;
 
-    // The free tier has no store checkout — activate instantly.
-    if (event.tier.isFree) {
-      emit(PaywallPurchaseSuccess(event.tier));
+    // Free is never a store transaction.
+    if (s.selectedTier.isFree) return;
+
+    final package = s.selectedPackage;
+    if (package == null) {
+      emit(s.copyWith(notice: AppStrings.planNotAvailable));
       return;
     }
 
-    emit(s.copyWith(isPurchasing: true));
+    emit(s.copyWith(isPurchasing: true, clearNotice: true));
     try {
-      final purchased =
-          await _service.purchaseTier(event.tier, event.cycle);
+      final outcome = await _service.purchasePackage(package);
       if (emit.isDone) return;
-      if (purchased != null) {
-        emit(PaywallPurchaseSuccess(purchased));
-      } else {
-        // User cancelled checkout — return to the interactive paywall.
+      final activated = outcome.tier;
+      if (outcome.wasCancelled) {
+        // User dismissed the sheet — back to the interactive paywall.
         emit(s.copyWith(isPurchasing: false));
+      } else if (activated != null && activated != TierId.free) {
+        emit(
+          PaywallPurchaseSuccess(
+            activated,
+            demo: s.backend == PurchaseBackendMode.demoStore,
+          ),
+        );
+      } else {
+        emit(
+          s.copyWith(
+            isPurchasing: false,
+            notice:
+                'The purchase did not activate a plan yet — it may '
+                'take a moment. Use Restore Purchases to check again.',
+          ),
+        );
       }
     } on PurchaseServiceException catch (e) {
-      emit(PaywallError(e.message));
-    } on Exception catch (e) {
-      emit(PaywallError('Purchase failed. ${e.toString()}'));
+      emit(s.copyWith(isPurchasing: false, notice: e.message));
+    } on Exception {
+      emit(
+        s.copyWith(
+          isPurchasing: false,
+          notice: 'The purchase could not be completed.',
+        ),
+      );
     }
   }
 
@@ -99,17 +202,34 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
     final s = state;
     if (s is! PaywallLoaded || s.isPurchasing) return;
 
-    emit(s.copyWith(isPurchasing: true));
+    emit(s.copyWith(isPurchasing: true, clearNotice: true));
     try {
       final restored = await _service.restorePurchases();
       if (emit.isDone) return;
-      if (restored != null) {
-        emit(PaywallPurchaseSuccess(restored));
+      if (restored != null && restored != TierId.free) {
+        emit(
+          PaywallPurchaseSuccess(
+            restored,
+            demo: s.backend == PurchaseBackendMode.demoStore,
+          ),
+        );
       } else {
-        emit(const PaywallError('No previous purchases found.'));
+        emit(
+          s.copyWith(
+            isPurchasing: false,
+            notice: AppStrings.noPurchasesRestored,
+          ),
+        );
       }
-    } on Exception catch (e) {
-      emit(PaywallError('Restore failed. ${e.toString()}'));
+    } on PurchaseServiceException catch (e) {
+      emit(s.copyWith(isPurchasing: false, notice: e.message));
+    } on Exception {
+      emit(
+        s.copyWith(
+          isPurchasing: false,
+          notice: 'Purchases could not be restored right now.',
+        ),
+      );
     }
   }
 }

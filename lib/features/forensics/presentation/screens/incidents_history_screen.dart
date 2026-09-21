@@ -39,20 +39,32 @@ class _IncidentCard extends StatelessWidget {
 
   final IncidentReport incident;
 
-  Color get _riskColor => switch (incident.riskLevel) {
-        ThreatRiskLevel.highRisk => AppColors.statusDanger,
-        ThreatRiskLevel.suspicious => AppColors.statusWarning,
-        ThreatRiskLevel.safe => AppColors.statusSafe,
-      };
+  /// Partial (acoustic-only) records never wear a full-call verdict.
+  Color get _riskColor => incident.analysisIsPartial
+      ? AppColors.statusWarning
+      : switch (incident.riskLevel) {
+          ThreatRiskLevel.highRisk => AppColors.statusDanger,
+          ThreatRiskLevel.suspicious => AppColors.statusWarning,
+          ThreatRiskLevel.safe => AppColors.statusSafe,
+        };
 
-  String get _riskLabel => switch (incident.riskLevel) {
-        ThreatRiskLevel.highRisk => 'HIGH RISK',
-        ThreatRiskLevel.suspicious => 'SUSPICIOUS',
-        ThreatRiskLevel.safe => 'SAFE',
-      };
+  String get _riskLabel => incident.analysisIsPartial
+      ? 'PARTIAL ANALYSIS'
+      : switch (incident.riskLevel) {
+          ThreatRiskLevel.highRisk => 'HIGH RISK',
+          ThreatRiskLevel.suspicious => 'SUSPICIOUS',
+          ThreatRiskLevel.safe => 'SAFE',
+        };
 
   /// "Urgent Money Request + Voice Impersonation" style summary.
+  /// Partial records describe the acoustic signal only.
   String get _summary {
+    if (incident.analysisIsPartial) {
+      final score =
+          (incident.acousticMetrics.syntheticVoiceScore * 100).round();
+      return 'Acoustic anomaly $score/100 — '
+          'conversation-risk not analyzed';
+    }
     final reasons = incident.threatReasons
         .where((r) => r != 'No significant threat indicators')
         .take(2)

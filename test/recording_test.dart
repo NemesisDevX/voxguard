@@ -21,12 +21,18 @@ import 'package:voxguard/features/protection/domain/models/audio_forensic_metric
 import 'package:voxguard/features/protection/domain/models/composite_threat_report.dart';
 import 'package:voxguard/features/protection/domain/models/semantic_threat_signals.dart';
 import 'package:voxguard/features/protection/domain/services/acoustic_forensics_service.dart';
+import 'package:voxguard/features/protection/domain/services/semantic_threat_service.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:voxguard/features/recording/domain/models/recording_models.dart';
 import 'package:voxguard/features/recording/domain/services/recorded_transcription_service.dart';
 import 'package:voxguard/features/recording/domain/services/recording_analyzer.dart';
 import 'package:voxguard/features/recording/domain/services/recording_audio_decoder.dart';
 import 'package:voxguard/features/recording/domain/services/recording_file_picker.dart';
+import 'package:voxguard/features/paywall/domain/models/subscription_tier.dart';
+import 'package:voxguard/features/paywall/domain/services/product_access.dart';
 import 'package:voxguard/features/recording/presentation/screens/analyze_recording_screen.dart';
+
+import 'helpers/fake_product_access.dart';
 
 // ── Fakes ──────────────────────────────────────────────────────────
 
@@ -196,12 +202,14 @@ RecordingAnalyzer _analyzer({
   _SpyAcoustic? acoustic,
   _FakeTranscription? transcription,
   IIncidentRepository? incidents,
+  IProductAccess? productAccess,
 }) {
   return RecordingAnalyzer(
     decoder: decoder ?? _FakeDecoder(),
     acousticService: acoustic ?? _SpyAcoustic(),
     transcriptionService: transcription ?? _FakeTranscription(),
     incidentRepository: incidents ?? InMemoryIncidentRepository(seed: false),
+    productAccess: productAccess,
     pollInterval: Duration.zero,
   );
 }
@@ -486,7 +494,10 @@ void main() {
           status: RecordedTranscriptionStatus.completed,
           text: _scamTranscript,
         ));
-      final analyzer = _analyzer(transcription: transcription);
+      final analyzer = _analyzer(
+        transcription: transcription,
+        productAccess: FakeProductAccess(TierId.sentinel),
+      );
       final result = await analyzer.analyze(
         _file(),
         mode: RecordingPrivacyMode.enhancedTranscription,
@@ -501,7 +512,10 @@ void main() {
         () async {
       final transcription = _FakeTranscription()
         ..submitError = const RecordedTranscriptionException('down');
-      final analyzer = _analyzer(transcription: transcription);
+      final analyzer = _analyzer(
+        transcription: transcription,
+        productAccess: FakeProductAccess(TierId.sentinel),
+      );
       final result = await analyzer.analyze(
         _file(),
         mode: RecordingPrivacyMode.enhancedTranscription,
@@ -515,6 +529,7 @@ void main() {
         () async {
       final analyzer = _analyzer(
         transcription: _FakeTranscription(configured: false),
+        productAccess: FakeProductAccess(TierId.sentinel),
       );
       await expectLater(
         analyzer.analyze(
@@ -823,6 +838,214 @@ void main() {
 
   Widget app(Widget child) => MaterialApp(home: child);
 
+  // ── Local-only semantics (A1) ──────────────────────────────────
+  // The UI promises recording transcripts "stay on this device" —
+  // the semantic pass must never touch the network, even when a dev
+  // Groq key + opt-in flag are BOTH armed.
+  group('recording semantics never leave the device', () {
+    SemanticThreatService armedSemantic(_CountingClient client) =>
+        SemanticThreatService(
+          httpClient: client,
+          apiKey: 'dev-key',
+          devRemoteSemantic: true,
+        );
+
+    test('manual transcript → zero semantic HTTP calls', () async {
+      final client = _CountingClient();
+      final analyzer = RecordingAnalyzer(
+        decoder: _FakeDecoder(),
+        acousticService: _SpyAcoustic(),
+        semanticService: armedSemantic(client),
+        transcriptionService: _FakeTranscription(),
+        incidentRepository: InMemoryIncidentRepository(seed: false),
+        pollInterval: Duration.zero,
+      );
+      final result = await analyzer.analyze(
+        _file(),
+        mode: RecordingPrivacyMode.onDevice,
+        manualTranscript: _scamTranscript,
+      );
+      expect(result, isNotNull);
+      expect(result!.semanticSignals, isNotNull);
+      expect(client.calls, 0);
+    });
+
+    test('AssemblyAI transcript → zero semantic HTTP calls', () async {
+      final client = _CountingClient();
+      final tx = _FakeTranscription();
+      tx.pollQueue.add(const RecordedTranscriptJob(
+        status: RecordedTranscriptionStatus.completed,
+        text: _scamTranscript,
+      ));
+      final analyzer = RecordingAnalyzer(
+        decoder: _FakeDecoder(),
+        acousticService: _SpyAcoustic(),
+        semanticService: armedSemantic(client),
+        transcriptionService: tx,
+        incidentRepository: InMemoryIncidentRepository(seed: false),
+        productAccess: FakeProductAccess(TierId.sentinel),
+        pollInterval: Duration.zero,
+      );
+      final result = await analyzer.analyze(
+        _file(),
+        mode: RecordingPrivacyMode.enhancedTranscription,
+      );
+      expect(result, isNotNull);
+      // Transcription HTTP happened (submit + poll on the fake), but
+      // the SEMANTIC pass made zero network calls of its own.
+      expect(tx.submitCalls, 1);
+      expect(result!.semanticSignals, isNotNull);
+      expect(result.semanticSignals!.financialDemandScore,
+          greaterThan(0));
+      expect(client.calls, 0);
+    });
+
+    test('English + Arabic signals still resolve locally', () {
+      final svc = SemanticThreatService();
+      final en = svc.analyzeLocally(
+          'This is your bank, transfer the money right now and '
+          'tell nobody, your account is suspended');
+      expect(en.financialDemandScore, greaterThan(0));
+      expect(en.urgencyScore, greaterThan(0));
+      final ar = svc.analyzeLocally(_scamTranscript);
+      expect(ar.impersonationClaims, isNotEmpty);
+      expect(ar.financialDemandScore, greaterThan(0));
+      expect(ar.secrecyScore, greaterThan(0));
+    });
+  });
+
+  // ── Dev remote semantic gate (A2) ──────────────────────────────
+  group('dev remote semantic gate', () {
+    const groqOk =
+        '{"choices":[{"message":{"content":"{\\"urgency_score\\":0.9,'
+        '\\"detected_keywords\\":[]}"}}]}';
+
+    test('key alone keeps analysis local — zero HTTP', () async {
+      final client = _CountingClient();
+      final svc = SemanticThreatService(
+          httpClient: client, apiKey: 'dev-key');
+      expect(svc.remoteSemanticEnabled, isFalse);
+      final out = await svc.analyze(_scamTranscript);
+      expect(client.calls, 0);
+      expect(out.financialDemandScore, greaterThan(0));
+    });
+
+    test('flag alone keeps analysis local — zero HTTP', () async {
+      final client = _CountingClient();
+      final svc = SemanticThreatService(
+          httpClient: client, devRemoteSemantic: true);
+      expect(svc.remoteSemanticEnabled, isFalse);
+      await svc.analyze(_scamTranscript);
+      expect(client.calls, 0);
+    });
+
+    test('key + flag → remote path is used', () async {
+      final client = _CountingClient(body: groqOk);
+      final svc = SemanticThreatService(
+        httpClient: client,
+        apiKey: 'dev-key',
+        devRemoteSemantic: true,
+      );
+      expect(svc.remoteSemanticEnabled, isTrue);
+      final out = await svc.analyze(_scamTranscript);
+      expect(client.calls, 1);
+      expect(out.urgencyScore, 0.9);
+    });
+  });
+
+  // ── Progress stages reflect actual work (A5) ───────────────────
+  group('progress stages', () {
+    Future<List<RecordingStage>> run({
+      RecordingPrivacyMode mode = RecordingPrivacyMode.onDevice,
+      String? manual,
+      _FakeTranscription? tx,
+      IProductAccess? access,
+    }) async {
+      final stages = <RecordingStage>[];
+      final analyzer =
+          _analyzer(transcription: tx, productAccess: access);
+      await analyzer.analyze(
+        _file(),
+        mode: mode,
+        manualTranscript: manual,
+        onStage: stages.add,
+      );
+      return stages;
+    }
+
+    test('acoustic-only emits exactly prepare → acoustic → build',
+        () async {
+      final stages = await run();
+      expect(stages, [
+        RecordingStage.preparing,
+        RecordingStage.analyzingAcoustic,
+        RecordingStage.buildingResult,
+      ]);
+      expect(stages.contains(RecordingStage.evaluatingConversation),
+          isFalse);
+      expect(stages.contains(RecordingStage.uploading), isFalse);
+    });
+
+    test('manual transcript adds the conversation stage', () async {
+      final stages = await run(manual: 'send money now');
+      expect(stages, contains(RecordingStage.evaluatingConversation));
+      expect(stages.contains(RecordingStage.uploading), isFalse);
+      expect(stages.contains(RecordingStage.transcribing), isFalse);
+    });
+
+    test('enhanced mode emits upload → transcribe → evaluate',
+        () async {
+      final stages = await run(
+        mode: RecordingPrivacyMode.enhancedTranscription,
+        tx: _FakeTranscription(),
+        access: FakeProductAccess(TierId.sentinel),
+      );
+      expect(stages, containsAllInOrder([
+        RecordingStage.uploading,
+        RecordingStage.transcribing,
+        RecordingStage.evaluatingConversation,
+      ]));
+    });
+  });
+
+  // ── Oversized picker rejection (A6) ────────────────────────────
+  group('oversized picker rejection', () {
+    test('known oversized file → rejected before readAsBytes',
+        () async {
+      final platform = _StubPlatformFile(
+        name: 'huge.mp3',
+        size: kMaxRecordingSourceBytes + 1,
+      );
+      final picker = FilePickerRecordingPicker(
+        pickFile: ({type = FileType.any, allowedExtensions}) async =>
+            platform,
+      );
+      await expectLater(
+        picker.pickRecording(),
+        throwsA(isA<RecordingAnalysisException>()
+            .having((e) => e.code, 'code', 'tooLarge')),
+      );
+      expect(platform.readCalls, 0);
+    });
+
+    test('unknown-size file still reads bytes (post-read cap applies)',
+        () async {
+      final platform = _StubPlatformFile(
+        name: 'ok.mp3',
+        size: null,
+        bytes: Uint8List.fromList([1, 2, 3]),
+      );
+      final picker = FilePickerRecordingPicker(
+        pickFile: ({type = FileType.any, allowedExtensions}) async =>
+            platform,
+      );
+      final picked = await picker.pickRecording();
+      expect(picked, isNotNull);
+      expect(picked!.bytes.length, 3);
+      expect(platform.readCalls, 1);
+    });
+  });
+
   group('Analyze Recording UI', () {
     testWidgets('home tile opens the real screen, not coming soon',
         (tester) async {
@@ -901,6 +1124,8 @@ void main() {
           matching: find.byType(Scrollable),
         ),
       );
+      await tester.ensureVisible(find.text('Analyze recording'));
+      await tester.pumpAndSettle();
       await tester.tap(find.text('Analyze recording'));
       await tester.pumpAndSettle();
       expect(find.text('Threat Score'), findsOneWidget);
@@ -920,16 +1145,143 @@ void main() {
 
     testWidgets('unconfigured transcription disables enhanced mode',
         (tester) async {
+      // Sentinel-entitled but the relay isn't configured — the card
+      // must show the infrastructure-truth copy, not a plan lock.
+      final access = FakeProductAccess(TierId.sentinel);
       await tester.pumpWidget(app(AnalyzeRecordingScreen(
         picker: _FakePicker(_file()),
         analyzer: _analyzer(
           transcription: _FakeTranscription(configured: false),
+          productAccess: access,
         ),
+        productAccess: access,
       )));
       await tester.tap(find.text('Choose audio'));
       await tester.pumpAndSettle();
       expect(find.textContaining('isn\u2019t configured in this'),
           findsOneWidget);
     });
+
+    testWidgets('free plan locks enhanced mode — lock opens the '
+        'Sentinel paywall', (tester) async {
+      final access = FakeProductAccess();
+      await tester.pumpWidget(app(AnalyzeRecordingScreen(
+        picker: _FakePicker(_file()),
+        analyzer: _analyzer(productAccess: access),
+        productAccess: access,
+      )));
+      await tester.tap(find.text('Choose audio'));
+      await tester.pumpAndSettle();
+      // Locked → Sentinel chip + unlock copy, no upload promised.
+      expect(find.text('SENTINEL'), findsOneWidget);
+      expect(find.textContaining('Sentinel Shield adds enhanced'),
+          findsOneWidget);
+    });
+
+    testWidgets('entitlement change unlocks enhanced mode without '
+        'restart', (tester) async {
+      final access = FakeProductAccess();
+      await tester.pumpWidget(app(AnalyzeRecordingScreen(
+        picker: _FakePicker(_file()),
+        analyzer: _analyzer(
+          productAccess: access,
+        ),
+        productAccess: access,
+      )));
+      await tester.tap(find.text('Choose audio'));
+      await tester.pumpAndSettle();
+      expect(find.text('SENTINEL'), findsOneWidget);
+
+      // Purchase lands → ValueListenableBuilder rebuilds the card
+      // unlocked, no restart.
+      access.setTier(TierId.sentinel);
+      await tester.pump();
+      expect(find.text('SENTINEL'), findsNothing);
+      expect(find.textContaining('transcription relay'),
+          findsOneWidget);
+    });
+
+    test('free plan refuses enhanced mode — zero upload calls',
+        () async {
+      final tx = _FakeTranscription();
+      final analyzer = _analyzer(
+        transcription: tx,
+        productAccess: FakeProductAccess(),
+      );
+      await expectLater(
+        analyzer.analyze(
+          _file(),
+          mode: RecordingPrivacyMode.enhancedTranscription,
+        ),
+        throwsA(isA<RecordingAnalysisException>()
+            .having((e) => e.code, 'code', 'entitlementRequired')),
+      );
+      expect(tx.submitCalls, 0);
+    });
+
+    test('sentinel unlocks enhanced mode — upload proceeds',
+        () async {
+      final tx = _FakeTranscription()
+        ..pollQueue.add(const RecordedTranscriptJob(
+          status: RecordedTranscriptionStatus.completed,
+          text: _scamTranscript,
+        ));
+      final analyzer = _analyzer(
+        transcription: tx,
+        productAccess: FakeProductAccess(TierId.sentinel),
+      );
+      final result = await analyzer.analyze(
+        _file(),
+        mode: RecordingPrivacyMode.enhancedTranscription,
+      );
+      expect(result, isNotNull);
+      expect(tx.submitCalls, 1);
+    });
   });
+}
+
+// ── Part A test doubles ──────────────────────────────────────────
+
+/// Counts every outgoing HTTP request — proves the recording
+/// semantic pass never leaves the device.
+final class _CountingClient extends http.BaseClient {
+  _CountingClient({this.body = '{}'});
+  final String body;
+  int calls = 0;
+  @override
+  Future<http.StreamedResponse> send(http.BaseRequest request) async {
+    calls++;
+    return http.StreamedResponse(
+      Stream.value(body.codeUnits),
+      200,
+      request: request,
+    );
+  }
+}
+
+/// Stub PlatformFile — overrides `noSuchMethod` so the members the
+/// picker never calls (uri, xFile, stream) need no real types.
+final class _StubPlatformFile extends PlatformFile {
+  _StubPlatformFile({required this.name, this.size, this.bytes});
+
+  @override
+  final String name;
+  final int? size;
+  final Uint8List? bytes;
+  int readCalls = 0;
+
+  @override
+  int? lengthSync() => size;
+
+  @override
+  Future<int?> length() async => size;
+
+  @override
+  Future<Uint8List> readAsBytes() async {
+    readCalls++;
+    return bytes ?? Uint8List(0);
+  }
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }

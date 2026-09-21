@@ -1,126 +1,312 @@
-import 'dart:io' show Platform;
-
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart' show PlatformException;
+import 'package:flutter/services.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import '../models/billing_cycle.dart';
+import '../models/entitlement_state.dart';
 import '../models/subscription_tier.dart';
 import 'i_purchase_service.dart';
 
-/// Production purchase backend powered by RevenueCat
-/// (`purchases_flutter`). Only constructed on store-supported mobile
-/// platforms with a configured sandbox/production API key.
+/// RevenueCat entitlement identifiers — configured in the RevenueCat
+/// Dashboard and attached to the platform products. See
+/// docs/REVENUECAT_SETUP.md.
+abstract final class RevenueCatEntitlements {
+  RevenueCatEntitlements._();
+
+  static const String sentinel = 'sentinel';
+  static const String familyVault = 'family_vault';
+}
+
+/// Expected custom package identifiers in the CURRENT RevenueCat
+/// Offering. Product ids underneath may differ per store — Flutter
+/// code never sees them.
+abstract final class RevenueCatPackageIds {
+  RevenueCatPackageIds._();
+
+  static const String sentinelMonthly = 'sentinel_monthly';
+  static const String sentinelAnnual = 'sentinel_annual';
+  static const String familyVaultMonthly = 'family_vault_monthly';
+  static const String familyVaultAnnual = 'family_vault_annual';
+}
+
+/// Seam over the static `Purchases` SDK so the service can be unit
+/// tested without platform channels. Production code uses
+/// [PurchasesSdkAdapter]; tests inject a fake.
+abstract interface class IPurchasesAdapter {
+  Future<bool> isConfigured();
+  Future<void> configure(String apiKey);
+  void addCustomerInfoUpdateListener(CustomerInfoUpdateListener listener);
+  Future<Offerings> getOfferings();
+  Future<CustomerInfo> getCustomerInfo();
+  Future<CustomerInfo> purchasePackage(Package package);
+  Future<CustomerInfo> restorePurchases();
+}
+
+/// Real adapter — one-line delegations over the RevenueCat SDK.
+/// Platform-channel only; no logic lives here.
+final class PurchasesSdkAdapter implements IPurchasesAdapter {
+  const PurchasesSdkAdapter();
+
+  @override
+  Future<bool> isConfigured() => Purchases.isConfigured;
+
+  @override
+  Future<void> configure(String apiKey) =>
+      Purchases.configure(PurchasesConfiguration(apiKey));
+
+  @override
+  void addCustomerInfoUpdateListener(CustomerInfoUpdateListener listener) =>
+      Purchases.addCustomerInfoUpdateListener(listener);
+
+  @override
+  Future<Offerings> getOfferings() => Purchases.getOfferings();
+
+  @override
+  Future<CustomerInfo> getCustomerInfo() => Purchases.getCustomerInfo();
+
+  @override
+  Future<CustomerInfo> purchasePackage(Package package) async =>
+      (await Purchases.purchase(PurchaseParams.package(package)))
+          .customerInfo;
+
+  @override
+  Future<CustomerInfo> restorePurchases() => Purchases.restorePurchases();
+}
+
+/// Real-store purchase backend. Wraps RevenueCat's Flutter SDK and
+/// exposes plan truth exclusively through [entitlement] — SDK types
+/// never escape this boundary.
 ///
-/// Keys are injected at build time:
-/// `--dart-define=REVENUECAT_ANDROID_KEY=goog_...`
-/// `--dart-define=REVENUECAT_IOS_KEY=appl_...`
+/// The caller is responsible for only constructing this service on
+/// Android/iOS with a configured public SDK key (see
+/// `purchase_service_factory_io.dart`); [initialize] still fails
+/// truthfully rather than fabricating access if the key is absent.
 final class RevenueCatPurchaseService implements IPurchaseService {
-  RevenueCatPurchaseService();
+  RevenueCatPurchaseService({
+    String? apiKey,
+    IPurchasesAdapter? adapter,
+  })  : _apiKey = apiKey ?? _resolvePlatformKey(),
+        _adapter = adapter ?? const PurchasesSdkAdapter();
 
-  static const String _androidKey =
-      String.fromEnvironment('REVENUECAT_ANDROID_KEY', defaultValue: '');
-  static const String _iosKey =
-      String.fromEnvironment('REVENUECAT_IOS_KEY', defaultValue: '');
+  final String _apiKey;
+  final IPurchasesAdapter _adapter;
 
-  final ValueNotifier<String?> _activeTier = ValueNotifier<String?>(null);
-  bool _configured = false;
+  /// Public SDK keys (safe to embed — NOT secret REST keys) supplied
+  /// at build time:
+  ///   --dart-define=REVENUECAT_ANDROID_KEY=...
+  ///   --dart-define=REVENUECAT_IOS_KEY=...
+  static const _androidKey =
+      String.fromEnvironment('REVENUECAT_ANDROID_KEY');
+  static const _iosKey = String.fromEnvironment('REVENUECAT_IOS_KEY');
 
-  /// Whether RevenueCat can run on this platform with a key present.
-  /// When false, the factory falls back to the sandbox service.
-  static bool get isSupported {
-    if (Platform.isAndroid) return _androidKey.isNotEmpty;
-    if (Platform.isIOS || Platform.isMacOS) return _iosKey.isNotEmpty;
-    return false;
+  final _state = ValueNotifier<EntitlementState>(
+    const EntitlementState(backend: PurchaseBackendMode.realStore),
+  );
+
+  Future<void>? _initFuture;
+  bool _listenerAttached = false;
+
+  /// dart:io-free platform key resolution — the factory only builds
+  /// this service on Android/iOS; tests always inject [apiKey].
+  static String _resolvePlatformKey() {
+    // defaultTargetPlatform is testable and avoids dart:io so the
+    // file stays importable from widget tests on the VM.
+    switch (defaultTargetPlatform) {
+      case TargetPlatform.android:
+        return _androidKey;
+      // RevenueCat issues a single Apple `appl_` key covering both
+      // iOS and macOS.
+      case TargetPlatform.iOS:
+      case TargetPlatform.macOS:
+        return _iosKey;
+      default:
+        return '';
+    }
   }
 
-  /// Store package identifier convention: `<tierId>_<cycle>`,
-  /// e.g. `sentinel_annual`.
-  static String packageId(SubscriptionTier tier, BillingCycle cycle) =>
-      '${tier.tierId.id}_${cycle.name}';
+  /// True when a public SDK key exists for the current platform.
+  /// Used by the purchase-service factory to decide real vs
+  /// unavailable/demo backends.
+  static bool get isSupported => _resolvePlatformKey().isNotEmpty;
 
   @override
-  Future<void> initialize() async {
-    if (_configured) return;
-    final apiKey = Platform.isAndroid ? _androidKey : _iosKey;
-    await Purchases.configure(PurchasesConfiguration(apiKey));
-    _configured = true;
-    await _syncEntitlement();
+  PurchaseBackendMode get backendMode => PurchaseBackendMode.realStore;
+
+  @override
+  ValueListenable<EntitlementState> get entitlement => _state;
+
+  @override
+  Future<void> initialize() {
+    // Idempotent — a second call joins the in-flight/finished future
+    // instead of re-configuring or double-attaching the listener.
+    return _initFuture ??= _doInitialize();
   }
 
-  @override
-  Future<List<SubscriptionTier>> getOfferings() async {
-    // The static catalog drives the paywall UI; RevenueCat packages are
-    // resolved at purchase time by identifier.
-    await Purchases.getOfferings();
-    return SubscriptionTiers.catalog;
-  }
-
-  @override
-  Future<SubscriptionTier?> purchaseTier(
-    SubscriptionTier tier,
-    BillingCycle cycle,
-  ) async {
-    if (tier.isFree) {
-      _activeTier.value = tier.tierId.id;
-      return tier;
-    }
-
-    final offerings = await Purchases.getOfferings();
-    final expectedId = packageId(tier, cycle);
-
-    Package? target;
-    for (final offering in offerings.all.values) {
-      for (final package in offering.availablePackages) {
-        if (package.identifier == expectedId ||
-            package.storeProduct.identifier == expectedId) {
-          target = package;
-          break;
-        }
-      }
-    }
-    if (target == null) {
-      throw PurchaseServiceException(
-        'Store package "$expectedId" is not configured.',
-      );
-    }
-
+  Future<void> _doInitialize() async {
     try {
-      final info = await Purchases.purchasePackage(target);
-      await _syncEntitlement(info);
-      return _activeTier.value == tier.tierId.id ? tier : null;
-    } on PlatformException catch (e) {
-      if (PurchasesErrorHelper.getErrorCode(e) ==
-          PurchasesErrorCode.purchaseCancelledError) {
-        return null; // user cancelled — not an error
+      if (_apiKey.isEmpty) {
+        throw const PurchaseServiceException(
+          'Subscriptions are not configured in this build.',
+        );
       }
+      if (!await _adapter.isConfigured()) {
+        await _adapter.configure(_apiKey);
+      }
+      if (!_listenerAttached) {
+        _adapter.addCustomerInfoUpdateListener(_applyCustomerInfo);
+        _listenerAttached = true;
+      }
+      _applyCustomerInfo(await _adapter.getCustomerInfo());
+    } on PurchaseServiceException {
+      _initFuture = null; // allow a later retry
+      rethrow;
+    } catch (e) {
+      _initFuture = null;
+      _state.value = _state.value.copyWith(
+        status: EntitlementStatus.error,
+        errorMessage: 'Subscriptions could not be initialized.',
+      );
       throw PurchaseServiceException(
-        e.message ?? 'Purchase failed. Please try again.',
+        'Subscriptions could not be initialized.',
+        detail: e.toString(),
       );
     }
   }
 
-  @override
-  Future<SubscriptionTier?> restorePurchases() async {
-    final info = await Purchases.restorePurchases();
-    await _syncEntitlement(info);
-    return SubscriptionTiers.byId(_activeTier.value);
+  /// CustomerInfo is the ONLY authority for plan truth — we never
+  /// infer entitlement from a product id or a returned call.
+  void _applyCustomerInfo(CustomerInfo info) {
+    final entitlements = info.entitlements.all;
+    final tier = entitlements[RevenueCatEntitlements.familyVault]
+                ?.isActive ==
+            true
+        ? TierId.familyVault
+        : entitlements[RevenueCatEntitlements.sentinel]?.isActive ==
+                true
+            ? TierId.sentinel
+            : TierId.free;
+    final url = info.managementURL;
+    _state.value = EntitlementState(
+      tier: tier,
+      backend: PurchaseBackendMode.realStore,
+      status: EntitlementStatus.ready,
+      managementUrl: url == null ? null : Uri.tryParse(url),
+    );
   }
 
-  Future<void> _syncEntitlement([CustomerInfo? info]) async {
-    final customerInfo = info ?? await Purchases.getCustomerInfo();
-    final active = customerInfo.entitlements.active.keys;
-    // Family Vault supersedes Sentinel when both are active.
-    _activeTier.value = active.contains(TierId.familyVault.id)
-        ? TierId.familyVault.id
-        : active.contains(TierId.sentinel.id)
-            ? TierId.sentinel.id
-            : null;
+  /// Maps the *current* Offering's packages only. Unknown identifiers
+  /// are ignored — never fabricated into purchasable rows.
+  @override
+  Future<List<StorePackage>> getPackages() async {
+    final Offerings offerings;
+    try {
+      offerings = await _adapter.getOfferings();
+    } catch (e) {
+      throw PurchaseServiceException(
+        'Plans could not be loaded from the store.',
+        detail: e.toString(),
+      );
+    }
+    final current = offerings.current;
+    if (current == null) return const [];
+    final packages = <StorePackage>[];
+    for (final pkg in current.availablePackages) {
+      final mapped = _mapPackageIdentifier(pkg.identifier);
+      if (mapped == null) continue;
+      packages.add(
+        StorePackage(
+          identifier: pkg.identifier,
+          tierId: mapped.$1,
+          cycle: mapped.$2,
+          priceString: pkg.storeProduct.priceString,
+          title: pkg.storeProduct.title,
+          nativeRef: pkg,
+        ),
+      );
+    }
+    return packages;
+  }
+
+  static (TierId, BillingCycle)? _mapPackageIdentifier(String id) {
+    switch (id) {
+      case RevenueCatPackageIds.sentinelMonthly:
+        return (TierId.sentinel, BillingCycle.monthly);
+      case RevenueCatPackageIds.sentinelAnnual:
+        return (TierId.sentinel, BillingCycle.annual);
+      case RevenueCatPackageIds.familyVaultMonthly:
+        return (TierId.familyVault, BillingCycle.monthly);
+      case RevenueCatPackageIds.familyVaultAnnual:
+        return (TierId.familyVault, BillingCycle.annual);
+    }
+    return null;
   }
 
   @override
-  String? get activeTierId => _activeTier.value;
+  Future<PurchaseOutcome> purchasePackage(StorePackage package) async {
+    final native = package.nativeRef;
+    if (native is! Package) {
+      throw const PurchaseServiceException(
+        'That plan is not available in this store.',
+      );
+    }
+    final CustomerInfo info;
+    try {
+      info = await _adapter.purchasePackage(native);
+    } catch (e) {
+      if (_isCancellation(e)) return PurchaseOutcome.cancelled;
+      throw PurchaseServiceException(
+        _safePurchaseError(e),
+        detail: e.toString(),
+      );
+    }
+    _applyCustomerInfo(info);
+    final tier = _state.value.tier;
+    // Never grant access merely because the call returned — the
+    // verified entitlement is the only success signal.
+    return tier == TierId.free
+        ? PurchaseOutcome.notActivated
+        : PurchaseOutcome.activated(tier);
+  }
 
   @override
-  ValueListenable<String?> get activeTier => _activeTier;
+  Future<TierId?> restorePurchases() async {
+    try {
+      final info = await _adapter.restorePurchases();
+      _applyCustomerInfo(info);
+      final tier = _state.value.tier;
+      return tier == TierId.free ? null : tier;
+    } catch (e) {
+      throw PurchaseServiceException(
+        'Purchases could not be restored right now.',
+        detail: e.toString(),
+      );
+    }
+  }
+
+  static bool _isCancellation(Object e) =>
+      e is PlatformException &&
+      PurchasesErrorHelper.getErrorCode(e) ==
+          PurchasesErrorCode.purchaseCancelledError;
+
+  /// Maps store failures to consumer-safe copy — raw RevenueCat ids,
+  /// provider bodies, and exception text must never reach the UI.
+  static String _safePurchaseError(Object e) {
+    if (e is! PlatformException) {
+      return 'The purchase could not be completed.';
+    }
+    switch (PurchasesErrorHelper.getErrorCode(e)) {
+      case PurchasesErrorCode.networkError:
+        return 'No connection — check your network and try again.';
+      case PurchasesErrorCode.storeProblemError:
+        return 'The store is unavailable right now. Try again later.';
+      case PurchasesErrorCode.purchaseNotAllowedError:
+        return 'Purchases are not allowed on this device or account.';
+      case PurchasesErrorCode.paymentPendingError:
+        return 'The payment is pending approval.';
+      case PurchasesErrorCode.productNotAvailableForPurchaseError:
+        return 'That plan is not available in this store.';
+      default:
+        return 'The purchase could not be completed.';
+    }
+  }
 }

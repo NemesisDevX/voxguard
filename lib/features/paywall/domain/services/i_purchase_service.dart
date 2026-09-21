@@ -1,50 +1,85 @@
 import 'package:flutter/foundation.dart';
 
-import '../models/billing_cycle.dart';
+import '../models/entitlement_state.dart';
 import '../models/subscription_tier.dart';
 
-/// Failure thrown by a purchase service.
-class PurchaseServiceException implements Exception {
-  const PurchaseServiceException(this.message);
+/// A thrown purchase/backend failure. `message` is always a
+/// consumer-safe sentence — raw PlatformException text, RevenueCat
+/// internal ids, and provider bodies must never reach the UI.
+final class PurchaseServiceException implements Exception {
+  const PurchaseServiceException(this.message, {this.detail});
 
+  /// Consumer-safe message.
   final String message;
 
+  /// Optional diagnostic for debug logging — not for display.
+  final String? detail;
+
   @override
-  String toString() => message;
+  String toString() =>
+      'PurchaseServiceException($message${detail == null ? '' : ', $detail'})';
 }
 
-/// Platform-neutral contract for the subscription backend.
+/// Outcome of a store purchase attempt.
+final class PurchaseOutcome {
+  const PurchaseOutcome._({this.tier, this.wasCancelled = false});
+
+  /// Store confirmed the purchase AND CustomerInfo verifies the
+  /// entitlement. The only path that may unlock a paid plan.
+  factory PurchaseOutcome.activated(TierId tier) =>
+      PurchaseOutcome._(tier: tier);
+
+  /// User dismissed the native purchase sheet — NOT an error; the
+  /// paywall simply stays interactive.
+  static const PurchaseOutcome cancelled =
+      PurchaseOutcome._(wasCancelled: true);
+
+  /// The purchase call returned but no entitlement is active yet
+  /// (e.g. pending approval / propagation delay). Not a success —
+  /// no tier may be granted.
+  static const PurchaseOutcome notActivated = PurchaseOutcome._();
+
+  /// Verified active tier after the call — null unless activated.
+  final TierId? tier;
+
+  /// True when the user cancelled the purchase sheet.
+  final bool wasCancelled;
+}
+
+/// Boundary between VoxGuard and the subscription backend.
 ///
-/// Two implementations exist:
-///  - `RevenueCatPurchaseService` — real `purchases_flutter` integration
-///    (Android/iOS/macOS with configured API keys).
-///  - `MockSandboxPurchaseService` — full lifecycle simulation used on
-///    Web/Desktop and whenever sandbox keys are absent.
-///
-/// Selection happens in `purchase_service_factory.dart` via conditional
-/// import so unsupported platforms never compile RevenueCat code.
+/// The rest of the app reads plan truth ONLY through [entitlement];
+/// store SDK types never cross this line. Implementations:
+/// [RevenueCatPurchaseService] (real store), [MockSandboxPurchaseService]
+/// (demo store), [UnavailablePurchaseService] (no backend).
 abstract interface class IPurchaseService {
-  /// One-time SDK/session setup. Idempotent.
+  /// Which backend produced [entitlement]. Drives paywall labelling —
+  /// demo vs real vs unavailable.
+  PurchaseBackendMode get backendMode;
+
+  /// Reactive entitlement truth. Changes on purchases, restores,
+  /// renewals, expirations, and cross-device sync — UI updates
+  /// without restart.
+  ValueListenable<EntitlementState> get entitlement;
+
+  /// Idempotent — repeated calls are safe, no duplicate listeners.
   Future<void> initialize();
 
-  /// Available plans (store offerings or local catalog fallback).
-  Future<List<SubscriptionTier>> getOfferings();
+  /// Packages in the store's *current* offering only. Missing
+  /// packages are simply absent — never fabricated. Empty list on
+  /// the unavailable backend.
+  Future<List<StorePackage>> getPackages();
 
-  /// Purchases [tier] on [cycle]. Returns the activated tier, or null
-  /// when the user cancelled.
-  Future<SubscriptionTier?> purchaseTier(
-    SubscriptionTier tier,
-    BillingCycle cycle,
-  );
+  /// Purchase [package] through the active backend.
+  ///
+  /// `activated` only when CustomerInfo verifies the entitlement —
+  /// never granted merely because the call returned. `cancelled`
+  /// when the user dismissed the sheet. Throws
+  /// [PurchaseServiceException] with consumer-safe text on failure.
+  Future<PurchaseOutcome> purchasePackage(StorePackage package);
 
-  /// Restores prior purchases. Returns the restored tier, or null when
-  /// the store account holds none.
-  Future<SubscriptionTier?> restorePurchases();
-
-  /// Currently active entitlement id (`free`/`sentinel`/`family_vault`),
-  /// or null when only the free plan is in effect.
-  String? get activeTierId;
-
-  /// Reactive view of [activeTierId] so UI badges update instantly.
-  ValueListenable<String?> get activeTier;
+  /// Sync entitlement state from the store's record of this device.
+  /// Returns the verified active tier, or null when nothing was
+  /// restored — the paywall keeps showing its normal layout.
+  Future<TierId?> restorePurchases();
 }

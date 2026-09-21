@@ -7,6 +7,9 @@ import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../forensics/domain/models/incident_report.dart';
 import '../../../forensics/presentation/screens/incident_detail_screen.dart';
+import '../../../paywall/domain/models/entitlement_state.dart';
+import '../../../paywall/domain/models/subscription_tier.dart';
+import '../../../paywall/domain/services/product_access.dart';
 import '../../../paywall/presentation/screens/paywall_screen.dart';
 import '../../domain/models/composite_threat_report.dart';
 import '../../domain/models/semantic_threat_signals.dart';
@@ -106,7 +109,19 @@ class PostCallSafetySheet extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              _UpgradeRow(incident: incident),
+              // Upsell only when the user doesn't already hold the
+              // Family Vault entitlement — paid users never see a
+              // "buy what you own" nudge.
+              ValueListenableBuilder<EntitlementState>(
+                valueListenable:
+                    ProductAccessLocator.instance.entitlement,
+                builder: (context, entitlement, _) {
+                  if (entitlement.tier == TierId.familyVault) {
+                    return const SizedBox.shrink();
+                  }
+                  return _UpgradeRow(incident: incident);
+                },
+              ),
             ] else ...[
               const _SessionEndedCard(),
             ],
@@ -367,58 +382,84 @@ class _FamilyShieldCardState extends State<_FamilyShieldCard> {
   @override
   Widget build(BuildContext context) {
     final demo = FamilyAlertLocator.instance.isDemoMode;
-    return _Section(
-      title: 'FAMILY SHIELD',
-      icon: Icons.family_restroom_outlined,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            demo
-                ? 'Demo Mode — sends a simulated alert to demo contacts; '
-                    'no real notification is delivered.'
-                : 'Alert your configured family contacts.',
-            style: AppTypography.bodyMedium,
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 44,
-            child: OutlinedButton.icon(
-              onPressed: _sending ? null : _send,
-              icon: _sending
-                  ? const SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    )
-                  : const Icon(Icons.broadcast_on_personal, size: 18),
-              label: Text(
+    return ValueListenableBuilder<EntitlementState>(
+      valueListenable: ProductAccessLocator.instance.entitlement,
+      builder: (context, entitlement, _) {
+        // The real outbound path requires Family Vault; demo mode is
+        // ungated so the journey stays demoable for everyone.
+        final locked =
+            !demo && !ProductAccessLocator
+                .instance.capabilities.familyShieldOutbound;
+        return _Section(
+          title: 'FAMILY SHIELD',
+          icon: Icons.family_restroom_outlined,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
                 demo
-                    ? AppStrings.sendDemoFamilyAlert
-                    : 'Send Family Alert',
-                style: const TextStyle(fontWeight: FontWeight.w700),
+                    ? 'Demo Mode — sends a simulated alert to demo '
+                        'contacts; no real notification is delivered.'
+                    : locked
+                        ? AppStrings.familyVaultUnlocksAlerts
+                        : 'Send a Family Shield alert to people in your '
+                            'Trusted Circle.',
+                style: AppTypography.bodyMedium,
               ),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.statusDanger,
-                side: BorderSide(
-                    color: AppColors.statusDanger.withValues(alpha: 0.6)),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 44,
+                child: OutlinedButton.icon(
+                  onPressed: _sending
+                      ? null
+                      : locked
+                          ? () => PaywallScreen.show(context,
+                              preselect: TierId.familyVault)
+                          : _send,
+                  icon: _sending
+                      ? const SizedBox(
+                          width: 16,
+                          height: 16,
+                          child:
+                              CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : Icon(
+                          locked
+                              ? Icons.lock_outline
+                              : Icons.broadcast_on_personal,
+                          size: 18,
+                        ),
+                  label: Text(
+                    demo
+                        ? AppStrings.sendDemoFamilyAlert
+                        : 'Send Family Alert',
+                    style:
+                        const TextStyle(fontWeight: FontWeight.w700),
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.statusDanger,
+                    side: BorderSide(
+                        color: AppColors.statusDanger
+                            .withValues(alpha: 0.6)),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
                 ),
               ),
-            ),
+              if (_result != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  _result!,
+                  style: AppTypography.bodyMedium
+                      .copyWith(color: AppColors.statusSafe),
+                ),
+              ],
+            ],
           ),
-          if (_result != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              _result!,
-              style: AppTypography.bodyMedium
-                  .copyWith(color: AppColors.statusSafe),
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
 }
@@ -435,7 +476,7 @@ class _UpgradeRow extends StatelessWidget {
     return InkWell(
       onTap: () {
         Navigator.of(context).pop();
-        PaywallScreen.show(context);
+        PaywallScreen.show(context, preselect: TierId.familyVault);
       },
       borderRadius: BorderRadius.circular(12),
       child: Container(
@@ -452,7 +493,8 @@ class _UpgradeRow extends StatelessWidget {
             SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Auto-alert relatives on high-risk calls',
+                'Send a Family Shield alert to people in your '
+                'Trusted Circle',
                 style: AppTypography.bodyLarge,
               ),
             ),

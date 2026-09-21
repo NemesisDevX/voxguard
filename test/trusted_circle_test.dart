@@ -11,6 +11,8 @@ import 'package:voxguard/features/forensics/domain/models/incident_report.dart';
 import 'package:voxguard/features/protection/domain/models/audio_forensic_metrics.dart';
 import 'package:voxguard/features/protection/domain/models/composite_threat_report.dart';
 import 'package:voxguard/features/protection/domain/models/semantic_threat_signals.dart';
+import 'package:voxguard/features/paywall/domain/models/subscription_tier.dart';
+import 'helpers/fake_product_access.dart';
 
 String vg(String ch) => 'vg_${ch * 32}';
 
@@ -157,6 +159,7 @@ void main() {
           }),
           relayUrl: 'https://relay.example.com/alert',
           senderIdentity: () async => vg('9'),
+          productAccess: FakeProductAccess(TierId.familyVault),
         );
 
     setUp(() => captured = null);

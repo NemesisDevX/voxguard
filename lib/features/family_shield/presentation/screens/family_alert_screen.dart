@@ -52,6 +52,25 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
 
   String get _senderName => widget.sender?.name ?? '';
   bool get _knownSender => widget.sender != null;
+  bool get _partial => widget.alert.analysisScope == 'partial';
+
+  /// Scope- and risk-aware headline — a partial recording analysis is
+  /// an acoustic warning, never a "high-risk call"; a suspicious
+  /// alert is a warning, never a confirmed scam.
+  String get _headline {
+    if (!_knownSender) {
+      return 'Family Shield alert from an unrecognized '
+          'VoxGuard identity.';
+    }
+    if (_partial) {
+      return '$_senderName asked you to verify an elevated acoustic '
+          'warning from a recording.';
+    }
+    return widget.alert.riskLevel == 'highRisk'
+        ? '$_senderName may be dealing with a high-risk call.'
+        : '$_senderName received a suspicious-call warning '
+            'from VoxGuard.';
+  }
 
   Future<void> _resolve(AlertResolution resolution) async {
     if (_busy || _resolution == resolution) return;
@@ -97,14 +116,7 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            Text(
-              _knownSender
-                  ? '$_senderName may be dealing with a '
-                      'high-risk call.'
-                  : 'Family Shield alert from an unrecognized '
-                      'VoxGuard identity.',
-              style: AppTypography.titleLarge,
-            ),
+            Text(_headline, style: AppTypography.titleLarge),
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.symmetric(
@@ -116,15 +128,25 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
                     color: riskColor.withValues(alpha: 0.5)),
               ),
               child: Text(
-                switch (widget.alert.riskLevel) {
-                  'highRisk' => 'HIGH RISK',
-                  'suspicious' => 'SUSPICIOUS',
-                  _ => 'SAFE',
-                },
+                _partial
+                    ? 'PARTIAL ANALYSIS'
+                    : switch (widget.alert.riskLevel) {
+                        'highRisk' => 'HIGH RISK',
+                        'suspicious' => 'SUSPICIOUS',
+                        _ => 'ALERT',
+                      },
                 style: AppTypography.titleMedium.copyWith(
                     color: riskColor, letterSpacing: 1.2),
               ),
             ),
+            if (_partial) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Conversation-risk signals were not analyzed.',
+                style: AppTypography.bodyMedium
+                    .copyWith(color: AppColors.textMuted),
+              ),
+            ],
             const SizedBox(height: 24),
 
             Text('Verify directly', style: AppTypography.titleMedium),

@@ -1,8 +1,7 @@
 import 'package:equatable/equatable.dart';
 
-import 'billing_cycle.dart';
-
-/// Store-facing product identifier for each plan.
+/// Plan identifiers — these double as the RevenueCat entitlement ids
+/// for paid tiers.
 enum TierId {
   free('free'),
   sentinel('sentinel'),
@@ -21,15 +20,19 @@ enum TierId {
   }
 }
 
-/// Immutable subscription plan definition shown on the paywall.
+/// Display metadata for a plan — name, subtitle, and the features
+/// VoxGuard genuinely implements and enforces.
+///
+/// This model intentionally carries NO prices: real prices come from
+/// the store's current offering ([StorePackage.priceString]), and
+/// inventing static numbers for the real backend would be false
+/// pricing. Feature copy must never claim unimplemented behavior
+/// (no quotas, Live Shield, device management, or shared cloud logs).
 final class SubscriptionTier extends Equatable {
   const SubscriptionTier({
     required this.tierId,
     required this.name,
     required this.subtitle,
-    required this.monthlyPrice,
-    required this.annualPrice,
-    required this.discountLabel,
     required this.features,
     this.isPopular = false,
   });
@@ -37,13 +40,9 @@ final class SubscriptionTier extends Equatable {
   final TierId tierId;
   final String name;
   final String subtitle;
-  final double monthlyPrice;
-  final double annualPrice;
 
-  /// e.g. "SAVE 35%" — empty string for the free tier.
-  final String discountLabel;
-
-  /// Marketing bullet points rendered with checkmarks.
+  /// Capability bullet points rendered with checkmarks — each must
+  /// describe a real, enforced product behavior.
   final List<String> features;
 
   /// Whether this tier gets the highlight border / "MOST POPULAR" chip.
@@ -51,77 +50,70 @@ final class SubscriptionTier extends Equatable {
 
   bool get isFree => tierId == TierId.free;
 
-  /// Raw price for the selected billing cycle.
-  double priceFor(BillingCycle cycle) =>
-      cycle == BillingCycle.monthly ? monthlyPrice : annualPrice;
-
-  /// Human-readable price label, e.g. `$9.99/mo`.
-  String priceLabel(BillingCycle cycle) {
-    if (isFree) return r'$0';
-    return '\$${priceFor(cycle).toStringAsFixed(2)}${cycle.priceSuffix}';
-  }
-
   @override
   List<Object?> get props => [tierId];
 }
 
-/// Static plan catalog — acts as the offering fallback when the store
-/// is unreachable or running on a non-store platform.
+/// The plan catalog — what VoxGuard actually does at each level.
 abstract final class SubscriptionTiers {
   SubscriptionTiers._();
 
+  /// Free — meaningful safety functionality, never crippled.
+  /// Receiving and responding to Family Shield alerts is free
+  /// forever: nobody pays to help protect a family member.
   static const SubscriptionTier free = SubscriptionTier(
     tierId: TierId.free,
     name: 'Quick Check',
-    subtitle: 'Essential protection to try VoxGuard',
-    monthlyPrice: 0,
-    annualPrice: 0,
-    discountLabel: '',
+    subtitle: 'On-device protection essentials',
     features: [
-      '5 call analyses per month',
-      'Standard acoustic voice check',
-      'Basic incident log',
+      'Live Mic acoustic anomaly monitoring',
+      'On-device recording analysis',
+      'Manual transcript check — analyzed locally',
+      'Local incident history',
+      'Receive & respond to Family Shield alerts',
     ],
   );
 
+  /// Sentinel — adds transcript-backed conversation-risk analysis
+  /// where transcription infrastructure is configured. The paid plan
+  /// cannot manufacture missing provider configuration.
   static const SubscriptionTier sentinel = SubscriptionTier(
     tierId: TierId.sentinel,
     name: 'Sentinel Shield',
     subtitle: 'Full dual-engine defense for you',
-    monthlyPrice: 9.99,
-    annualPrice: 79.99,
-    discountLabel: 'SAVE 35%',
     isPopular: true,
     features: [
-      'Unlimited SafeCall & Live Shield',
-      'Dual-engine threat fusion',
-      'Synthetic voice detection',
-      'Incident reports export',
-      'Priority protection updates',
+      'Everything in Quick Check',
+      'Automatic Live Mic transcription & conversation-risk analysis',
+      'Enhanced recording transcription',
+      'Fused multi-signal threat scoring',
+      'Incident report export',
     ],
   );
 
+  /// Family Vault — Sentinel plus real outbound Family Shield alerts
+  /// to the locally saved Trusted Circle. "5 people" are local
+  /// contacts, not managed devices — VoxGuard has no household
+  /// account system.
   static const SubscriptionTier familyVault = SubscriptionTier(
     tierId: TierId.familyVault,
     name: 'Family Vault',
-    subtitle: 'Whole-household scam defense',
-    monthlyPrice: 19.99,
-    annualPrice: 149.99,
-    discountLabel: 'SAVE 38%',
+    subtitle: 'Extend protection to your circle',
     features: [
       'Everything in Sentinel Shield',
-      'Up to 5 protected devices',
-      'Family Shield emergency broadcast',
-      'Shared family threat log',
+      'Send Family Shield alerts to your Trusted Circle',
+      'Up to 5 trusted contacts',
+      'Safety responses loop back privately',
     ],
   );
 
   static const List<SubscriptionTier> catalog = [free, sentinel, familyVault];
 
-  static SubscriptionTier? byId(String? tierId) {
-    if (tierId == null) return null;
-    final id = TierId.fromId(tierId);
+  static SubscriptionTier? byId(TierId? id) {
     if (id == null) return null;
-    return catalog.firstWhere((t) => t.tierId == id);
+    for (final t in catalog) {
+      if (t.tierId == id) return t;
+    }
+    return null;
   }
 }

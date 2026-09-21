@@ -12,15 +12,25 @@ import '../models/semantic_threat_signals.dart';
 /// failure — a deterministic bilingual (EN / Egyptian-Arabic) rule
 /// engine produces the same signal shape locally.
 ///
-/// **Security note:** a client-side Groq key is acceptable for
-/// development/demo builds only. Production deployments should proxy
-/// LLM calls through a server endpoint so no API secret ships inside
-/// the distributed app binary.
+/// **Security note:** remote Groq semantics are a *development-only*
+/// escape hatch — production VoxGuard uses the deterministic local
+/// rule engine. Remote analysis requires BOTH a key AND the explicit
+/// opt-in flag `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true`; a key
+/// alone (e.g. left in a release build) is not enough. A permanent
+/// Groq key must never ship in a released build.
 final class SemanticThreatService {
-  SemanticThreatService({http.Client? httpClient, String? apiKey})
-      : _client = httpClient ?? http.Client(),
+  SemanticThreatService({
+    http.Client? httpClient,
+    String? apiKey,
+    bool? devRemoteSemantic,
+  })  : _client = httpClient ?? http.Client(),
         _apiKey = apiKey ??
-            const String.fromEnvironment('GROQ_API_KEY', defaultValue: '');
+            const String.fromEnvironment('GROQ_API_KEY', defaultValue: ''),
+        _devRemote = devRemoteSemantic ??
+            const bool.fromEnvironment(
+              'VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC',
+              defaultValue: false,
+            );
 
   static const _endpoint =
       'https://api.groq.com/openai/v1/chat/completions';
@@ -30,15 +40,22 @@ final class SemanticThreatService {
   final http.Client _client;
   final String _apiKey;
 
+  /// Explicit developer opt-in for remote transcript analysis. Without
+  /// it — even with a key present — everything stays on-device.
+  final bool _devRemote;
+
+  /// True only when remote Groq analysis is *both* keyed and opted in.
+  bool get remoteSemanticEnabled => _apiKey.isNotEmpty && _devRemote;
+
   /// Analyzes accumulated transcript text and returns threat signals.
   ///
-  /// Falls back to [analyzeLocally] when no API key is configured or
-  /// the remote call fails for any reason.
+  /// Uses Groq only when [remoteSemanticEnabled]; otherwise — and on
+  /// any remote failure — the deterministic local rule engine runs.
   Future<SemanticThreatSignals> analyze(String transcript) async {
     if (transcript.trim().isEmpty) {
       return const SemanticThreatSignals.empty();
     }
-    if (_apiKey.isNotEmpty) {
+    if (remoteSemanticEnabled) {
       try {
         return await _analyzeWithGroq(transcript);
       } on Exception {

@@ -18,6 +18,8 @@ import 'package:web_socket/web_socket.dart'
     show CloseReceived, TextDataReceived, WebSocket;
 import 'package:web_socket_channel/adapter_web_socket_channel.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'helpers/fake_product_access.dart';
+import 'package:voxguard/features/paywall/domain/models/subscription_tier.dart';
 
 // ── Fakes ────────────────────────────────────────────────────────────
 
@@ -404,6 +406,7 @@ void main() {
         demoSource: DemoAudioSource(),
         microphoneSource: FakeMicSource(),
         transcriptionService: stt,
+        productAccess: FakeProductAccess(TierId.sentinel),
       );
       bloc.add(const StartLiveMicSessionEvent());
       await Future<void>.delayed(const Duration(milliseconds: 40));
@@ -430,6 +433,7 @@ void main() {
         demoSource: DemoAudioSource(),
         microphoneSource: FakeMicSource(),
         transcriptionService: stt,
+        productAccess: FakeProductAccess(TierId.sentinel),
       );
       bloc.add(const StartLiveMicSessionEvent());
       while (pairs.isEmpty) {

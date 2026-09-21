@@ -111,8 +111,9 @@ Real DSP on every incoming audio chunk (heuristic prototype — not a validated 
 
 ### Engine B — Semantic Threat Engine
 
-- **Primary**: Groq API (`llama-3.3-70b-versatile`, JSON-mode) for contextual conversation analysis.
-- **Fallback**: a deterministic bilingual rule engine — English + Egyptian-Arabic lexicons for urgency (`بسرعة`, `دلوقتي`), financial demands (`حول`, `جنيه`, `محفظة`, `انستاباي`), secrecy/isolation (`متقولش لحد`, `بيني وبينك`), and impersonation claims (`أنا أخوك`). Zero network dependency.
+- **Production**: a deterministic bilingual rule engine — English + Egyptian-Arabic lexicons for urgency (`بسرعة`, `دلوقتي`), financial demands (`حول`, `جنيه`, `محفظة`, `انستاباي`), secrecy/isolation (`متقولش لحد`, `بيني وبينك`), and impersonation claims (`أنا أخوك`). Zero network dependency.
+- **Developer experimentation only**: direct Groq API calls (`llama-3.3-70b-versatile`, JSON-mode) are gated behind BOTH `GROQ_API_KEY` and the explicit opt-in flag `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true`. Without both, semantics stay local. A permanent Groq key must never ship in a released build — production semantic traffic stays on-device or, in a future sprint, behind a server-side proxy with user consent.
+- **Analyze Recording never calls Groq**: user-provided and provider-produced recording transcripts are analyzed by the local engine only.
 
 ### Threat Fusion Matrix
 
@@ -127,7 +128,7 @@ Real DSP on every incoming audio chunk (heuristic prototype — not a validated 
 | **SafeCall — Live Mic** | Microphone protection session (`LIVE MIC` badge): real PCM → acoustic forensics → AssemblyAI streaming STT when configured → semantic analysis → fused Threat Score. Acoustic analysis keeps working even without STT credentials. |
 | **SafeCall — Demo Attack** | Deterministic judging scenario (`DEMO MODE`): generated PCM + scripted Egyptian-Arabic scam dialogue → same pipeline → evidence chips, highlighted phrases, HIGH RISK escalation, verification flow. |
 | **Live Shield** *(planned)* | Ambient microphone monitor for speakerphone and surrounding conversations — not yet implemented. |
-| **Analyze Recording** | Upload a call recording or voice note (WAV/MP3/M4A/AAC/OGG/OPUS/FLAC, ≤25 MB / ≤15 min) → normalized to the same 16 kHz mono PCM16 the live pipeline uses → chunked acoustic forensics → optional relay-based transcription + semantic analysis → fused verdict, or an honest **Partial Analysis** when conversation signals weren't analyzed. |
+| **Analyze Recording** | Upload a call recording or voice note (common supported formats include WAV/MP3/M4A/AAC/OGG/OPUS/FLAC — codec availability may vary by platform/browser; ≤25 MB / ≤15 min) → normalized to the same 16 kHz mono PCM16 the live pipeline uses → chunked acoustic forensics → optional relay-based transcription + local semantic analysis → fused verdict, or an honest **Partial Analysis** when conversation signals weren't analyzed. |
 
 Every high-risk session auto-persists an **Incident Report**: ID, timestamp, genuine **SHA-256 digest** of the analyzed PCM, audio/transcription source labels (*Live Microphone* / *Generated Demo Audio* / *Uploaded Recording*), consumer-first "Why VoxGuard Flagged This Call" evidence, phrase-highlighted transcript, and recommended verification steps — viewable in the Incidents tab, with raw telemetry under a collapsible *Technical Evidence* section.
 
@@ -156,13 +157,14 @@ After picking a file, the user makes an explicit choice — nothing is uploaded 
 | Family Shield broadcast | — | — | ✅ OneSignal alerts |
 | Shared threat log | — | — | ✅ |
 
-Built on `purchases_flutter` (RevenueCat) behind a decoupled `IPurchaseService` interface:
+Built on `purchases_flutter` (RevenueCat) behind a decoupled `IPurchaseService` interface — three backends, picked by `PurchaseServiceFactory` at first use:
 
-- **`RevenueCatPurchaseService`** — production path on Android/iOS/macOS, keyed via `--dart-define=REVENUECAT_ANDROID_KEY=...`
-- **`MockSandboxPurchaseService`** — full lifecycle simulation (checkout, entitlements, restore) on Web/Desktop and keyless debug sessions
+- **`RevenueCatPurchaseService`** — real store checkout on Android/iOS/macOS, keyed via `--dart-define=REVENUECAT_ANDROID_KEY=...`
+- **`MockSandboxPurchaseService`** — full lifecycle simulation on Web/Desktop and keyless *debug* sessions; the paywall labels itself **DEMO STORE** with "no real charge" copy
+- **`UnavailablePurchaseService`** — keyless *release* builds lock the paywall truthfully ("Subscriptions aren't configured in this build") rather than faking purchases
 - **Conditional-import factory** — `purchases_flutter` is *never compiled* into web builds; every platform gets a working paywall
 
-High-conversion paywall: billing-cycle pill toggle (SAVE 35%), tier cards with a MOST POPULAR highlight, 7-day free trial banner, and an upgrade path surfaced naturally inside the post-call verification flow after a high-risk session.
+**Truthful paywall:** the paywall renders only packages the current Offering returns — localized `priceString`, billing-cycle toggle only when both cycles exist, trial copy only when the store package actually provides one. Entitlement changes propagate live via `EntitlementState`/`ProductAccess` and gate real behavior: Free gets on-device analysis + Family Shield receive/respond, Sentinel unlocks cloud transcription, Family Vault unlocks outbound Family Shield dispatch. Full configuration reference: `docs/REVENUECAT_SETUP.md`.
 
 ---
 
@@ -215,6 +217,7 @@ flutter run                  # attached device
 # Full integrations via --dart-define:
 flutter run \
   --dart-define=GROQ_API_KEY=gsk_... \
+  --dart-define=VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true \
   --dart-define=ASSEMBLYAI_TOKEN_BROKER_URL=https://your-broker.example.com/aai-token \
   --dart-define=REVENUECAT_ANDROID_KEY=goog_... \
   --dart-define=VOXGUARD_ALERT_RELAY_URL=https://your-relay.example.com/alert
@@ -222,11 +225,12 @@ flutter run \
 
 | `--dart-define` | Service | Without it |
 |---|---|---|
-| `GROQ_API_KEY` | Llama-3 semantic analysis (development builds only — production secrets should be proxied server-side) | deterministic bilingual rule engine |
+| `GROQ_API_KEY` + `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true` | **Developer experimentation only** — direct Llama-3 semantic calls require BOTH the key and the opt-in flag; never ship a permanent Groq key in a released build | deterministic bilingual rule engine (the production path) |
 | `ASSEMBLYAI_TOKEN_BROKER_URL` | **Production transcription path** — the client GETs a short-lived streaming token (≤600 s, one-time use) from a trusted broker that holds the provider secret server-side | falls through to the next option |
 | `ASSEMBLYAI_API_KEY` | **Development only** — the client mints its own short-lived token via `GET /v3/token`. Never ship a permanent provider key in a released build | Live Mic runs acoustic-only; UI shows "Live transcription unavailable" |
 | `ASSEMBLYAI_TEMP_TOKEN` | Pre-minted short-lived token (CI/demo convenience) | — |
-| `REVENUECAT_ANDROID_KEY` / `REVENUECAT_IOS_KEY` | real store checkout | sandbox purchase lifecycle |
+| `REVENUECAT_ANDROID_KEY` / `REVENUECAT_IOS_KEY` | real store checkout + entitlement gating | debug → labeled Demo Store; release → truthfully locked paywall |
+| `VOXGUARD_TERMS_URL` / `VOXGUARD_PRIVACY_POLICY_URL` | renders the legal-link buttons on the paywall | buttons never render — dead links are impossible |
 | `VOXGUARD_ALERT_RELAY_URL` | live Family Shield push via the `server/` edge relay (Cloudflare Worker) | explicit Demo Mode broadcast |
 | `VOXGUARD_RELAY_TOKEN` | shared relay client token (`Bearer` auth). **Required when the deployed relay enforces it** — the relay rejects unauthenticated requests with 401. Demo-grade abuse resistance, not a truly private mobile secret | relay returns 401 (alert not sent) |
 | `ONESIGNAL_APP_ID` | enables Family Shield push registration via the OneSignal Flutter SDK — an App ID is a client-safe identifier, not the REST secret | receiver card shows "Push not configured"; app runs normally |

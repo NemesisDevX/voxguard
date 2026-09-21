@@ -15,10 +15,11 @@ Flutter client  ──POST /transcription/jobs──►  relay  ──►  Assem
 
 **Why it exists:** the OneSignal REST API key and the AssemblyAI API
 key must never ship inside the app. The alert client sends only
-`{kind, incident_id, risk_level, family_external_ids, title, body}` —
-no audio, transcript, phone numbers, or credentials. The
-transcription client sends raw audio bytes with a minimal
-`X-Audio-Format` hint — filenames never leave the device.
+`{kind, incident_id, risk_level, analysis_scope, sender_external_id,
+family_external_ids, title, body}` — no audio, transcript, phone
+numbers, or credentials. The transcription client sends raw audio
+bytes with a minimal `X-Audio-Format` hint — filenames never leave
+the device.
 
 ## Runtime
 
@@ -92,20 +93,50 @@ only. Nothing is persisted.
 
 `POST /alert` · `Authorization: Bearer <RELAY_CLIENT_TOKEN>`
 
+### `family_shield_alert` — danger alert to trusted contacts
+
 ```json
 {
   "kind": "family_shield_alert",
   "incident_id": "INC-2026-9001",
   "risk_level": "highRisk",
-  "family_external_ids": ["fam_maya", "fam_omar"],
+  "analysis_scope": "full",
+  "sender_external_id": "vg_0123456789abcdef0123456789abcdef",
+  "family_external_ids": [
+    "vg_fedcba9876543210fedcba9876543210",
+    "vg_aabbccddeeff00112233445566778899"
+  ],
   "title": "VoxGuard Family Shield",
   "body": "A high-risk call was flagged on a protected device. Verify with your family member directly."
 }
 ```
 
 Validation: `kind` enum, `incident_id` safe string ≤64 chars,
-`risk_level ∈ {safe, suspicious, highRisk}`, 1–5 recipients (hard cap,
-Family Vault model), each a safe string ≤64, title ≤100 / body ≤300.
+`risk_level ∈ {suspicious, highRisk}` (a danger alert is never
+`safe` — safe is a human resolution, not an alert band),
+`analysis_scope ∈ {full, partial}` (`partial` = acoustic-only
+analysis, e.g. an uploaded recording with no conversation pass),
+`sender_external_id` and every recipient a strict `vg_<32 lowercase
+hex>` identity, 1–5 recipients (hard cap, Family Vault model),
+title ≤100 / body ≤300.
+
+### `family_shield_response` — human resolution back to the sender
+
+```json
+{
+  "kind": "family_shield_response",
+  "incident_id": "INC-2026-9001",
+  "resolution": "safe",
+  "responder_external_id": "vg_fedcba9876543210fedcba9876543210",
+  "target_external_id": "vg_0123456789abcdef0123456789abcdef"
+}
+```
+
+Validation: `resolution ∈ {safe, stillSuspicious}`, both identities
+strict `vg_<32 hex>`. The response targets exactly one device — the
+original sender — and the notification copy is server-controlled and
+deliberately neutral ("A Family Shield response was received…"):
+`responder_external_id` is an opaque identity, not proof of trust.
 
 ## Responses
 
@@ -114,7 +145,7 @@ Family Vault model), each a safe string ≤64, title ≤100 / body ≤300.
 | 202 | accepted — handed to OneSignal |
 | 400 | invalid payload |
 | 401 | bad/missing relay token |
-| 429 | rate limited (30 req/min per token, best-effort per isolate) |
+| 429 | rate limited — `/alert`: 30 req/min per token; transcription job creation: 5 per 10 min per token; transcription polling: 60/min per token (all best-effort, per isolate) |
 | 502 | OneSignal rejected |
 | 503 | upstream unreachable / relay misconfigured |
 

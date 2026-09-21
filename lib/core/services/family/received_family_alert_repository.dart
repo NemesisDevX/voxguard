@@ -16,6 +16,7 @@ final class ReceivedFamilyAlert {
     required this.senderExternalId,
     required this.riskLevel,
     required this.receivedAt,
+    this.analysisScope = 'full',
     this.resolution = AlertResolution.unresolved,
     this.resolvedAt,
   });
@@ -24,6 +25,10 @@ final class ReceivedFamilyAlert {
   final String senderExternalId;
   final String riskLevel;
   final DateTime receivedAt;
+
+  /// `full` or `partial` — whether conversation-risk signals were
+  /// analyzed on the sender's side. Drives scope-honest receiver copy.
+  final String analysisScope;
   final AlertResolution resolution;
   final DateTime? resolvedAt;
 
@@ -40,6 +45,7 @@ final class ReceivedFamilyAlert {
         senderExternalId: senderExternalId,
         riskLevel: riskLevel,
         receivedAt: receivedAt,
+        analysisScope: analysisScope,
         resolution: resolution ?? this.resolution,
         resolvedAt: resolvedAt ?? this.resolvedAt,
       );
@@ -49,6 +55,7 @@ final class ReceivedFamilyAlert {
         'sender_external_id': senderExternalId,
         'risk_level': riskLevel,
         'received_at': receivedAt.toIso8601String(),
+        'analysis_scope': analysisScope,
         'resolution': resolution.name,
         if (resolvedAt != null) 'resolved_at': resolvedAt!.toIso8601String(),
       };
@@ -78,11 +85,18 @@ final class ReceivedFamilyAlert {
     if (receivedAt == null) return null;
     final resolution = AlertResolution.values.asNameMap()[resName];
     if (resolution == null) return null;
+    // Rows persisted before analysis_scope existed were all live-call
+    // alerts — 'full' is the honest default; malformed values drop.
+    final scope = json['analysis_scope'];
+    if (scope != null && scope != 'full' && scope != 'partial') {
+      return null;
+    }
     return ReceivedFamilyAlert(
       incidentId: incidentId,
       senderExternalId: sender,
       riskLevel: risk,
       receivedAt: receivedAt,
+      analysisScope: scope is String ? scope : 'full',
       resolution: resolution,
       resolvedAt: DateTime.tryParse('${json['resolved_at'] ?? ''}'),
     );

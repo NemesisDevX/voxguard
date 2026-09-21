@@ -5,6 +5,11 @@ import '../../../protection/domain/models/audio_forensic_metrics.dart';
 import '../../../protection/domain/models/composite_threat_report.dart';
 import '../../../protection/domain/models/semantic_threat_signals.dart';
 
+/// Hard cap on source-file size — enforced by the picker BEFORE
+/// bytes are loaded when the platform reports a size up front, and
+/// again by the analyzer on the picked model.
+const int kMaxRecordingSourceBytes = 25 * 1024 * 1024; // 25 MB
+
 /// A user-selected audio file. Bytes are held in memory only for the
 /// duration of the analysis — never written to VoxGuard storage.
 final class PickedRecording {

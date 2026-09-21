@@ -65,6 +65,7 @@ final class FamilyAlertTap {
     required this.incidentId,
     required this.riskLevel,
     required this.senderExternalId,
+    this.analysisScope = 'full',
   });
 
   final String incidentId;
@@ -74,9 +75,17 @@ final class FamilyAlertTap {
   /// raised the alert. P0.2C uses this for the resolution screen.
   final String senderExternalId;
 
-  /// Risk bands shared with the relay contract — anything else is
-  /// not a routable Family Shield event.
-  static const _validRiskLevels = {'safe', 'suspicious', 'highRisk'};
+  /// `full` (acoustic + conversation) or `partial` (acoustic only).
+  /// Drives scope-honest copy on the receiving device — a partial
+  /// recording analysis is never described as a flagged call.
+  final String analysisScope;
+
+  /// Risk bands shared with the relay contract — a danger alert is
+  /// never 'safe' (that is a human resolution, not an alert band).
+  static const _validRiskLevels = {'suspicious', 'highRisk'};
+
+  /// Valid analysis scopes; absent (legacy alerts) → 'full'.
+  static const _validScopes = {'full', 'partial'};
 
   static final _externalIdPattern = RegExp(r'^vg_[0-9a-f]{32}$');
 
@@ -99,10 +108,16 @@ final class FamilyAlertTap {
     if (sender is! String || !_externalIdPattern.hasMatch(sender)) {
       return null;
     }
+    // Optional routing metadata — legacy alerts predate the field and
+    // were all live-call analyses, so 'full' is the honest default.
+    // A present-but-malformed scope drops the event entirely.
+    final scope = data['analysis_scope'];
+    if (scope != null && !_validScopes.contains(scope)) return null;
     return FamilyAlertTap(
       incidentId: incidentId,
       riskLevel: riskLevel,
       senderExternalId: sender,
+      analysisScope: scope is String ? scope : 'full',
     );
   }
 }

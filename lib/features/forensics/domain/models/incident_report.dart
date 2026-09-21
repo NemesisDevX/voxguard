@@ -110,16 +110,25 @@ final class IncidentReport extends Equatable {
         ...semanticSignals.impersonationClaims,
       ];
 
-  /// Plain-text summary for the share/copy action.
+  /// Plain-text summary for the share/copy action. A partial
+  /// (acoustic-only) report must never present a fused Threat Score —
+  /// conversation-risk signals were not analyzed.
   String toShareText() {
     final reasons = threatReasons.join('; ');
+    final assessment = analysisIsPartial
+        ? 'Analysis: Partial — acoustic signals only\n'
+            'Acoustic anomaly score: '
+            '${(acousticMetrics.syntheticVoiceScore * 100).round()}/100\n'
+            'Conversation-risk signals were not analyzed.\n'
+        : 'Risk: ${riskLevel.name} — Threat Score: '
+            '${(peakRiskScore * 100).round()}/100\n';
     return 'VoxGuard Incident Report\n'
         'ID: $id\n'
         'Time: $timestampLabel\n'
         'Caller: $callerLabel\n'
         'Duration: $durationLabel\n'
-        'Risk: ${riskLevel.name} — Threat Score: ${(peakRiskScore * 100).round()}/100\n'
-        'Threats: $reasons\n'
+        '$assessment'
+        'Signals: $reasons\n'
         'Audio source: $audioSourceLabel\n'
         'Transcription: $transcriptionSourceLabel\n'
         'Audio SHA-256: $audioDigestSha256\n'

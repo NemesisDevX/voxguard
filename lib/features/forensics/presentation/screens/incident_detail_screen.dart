@@ -9,6 +9,9 @@ import '../../../../core/services/family/received_family_alert_repository.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/threat_phrase_highlighter.dart';
+import '../../../paywall/domain/models/subscription_tier.dart';
+import '../../../paywall/domain/services/product_access.dart';
+import '../../../paywall/presentation/screens/paywall_screen.dart';
 import '../../../protection/domain/models/composite_threat_report.dart';
 import '../../../protection/domain/models/semantic_threat_signals.dart';
 import '../../../protection/domain/models/transcript_snippet.dart';
@@ -21,19 +24,39 @@ class IncidentDetailScreen extends StatelessWidget {
 
   final IncidentReport incident;
 
-  Color get _riskColor => switch (incident.riskLevel) {
-        ThreatRiskLevel.highRisk => AppColors.statusDanger,
-        ThreatRiskLevel.suspicious => AppColors.statusWarning,
-        ThreatRiskLevel.safe => AppColors.statusSafe,
-      };
+  /// A partial record is an acoustic warning, not a call verdict —
+  /// it renders in warning color with its own label.
+  Color get _riskColor => incident.analysisIsPartial
+      ? AppColors.statusWarning
+      : switch (incident.riskLevel) {
+          ThreatRiskLevel.highRisk => AppColors.statusDanger,
+          ThreatRiskLevel.suspicious => AppColors.statusWarning,
+          ThreatRiskLevel.safe => AppColors.statusSafe,
+        };
 
-  String get _riskLabel => switch (incident.riskLevel) {
-        ThreatRiskLevel.highRisk => 'CRITICAL / HIGH RISK',
-        ThreatRiskLevel.suspicious => 'SUSPICIOUS',
-        ThreatRiskLevel.safe => 'SAFE',
-      };
+  String get _riskLabel => incident.analysisIsPartial
+      ? 'PARTIAL ANALYSIS'
+      : switch (incident.riskLevel) {
+          ThreatRiskLevel.highRisk => 'CRITICAL / HIGH RISK',
+          ThreatRiskLevel.suspicious => 'SUSPICIOUS',
+          ThreatRiskLevel.safe => 'SAFE',
+        };
 
   Future<void> _broadcast(BuildContext context) async {
+    final demo = FamilyAlertLocator.instance.isDemoMode;
+    // Real outbound alerts are a Family Vault capability — the
+    // service enforces the same gate, this is the UI boundary.
+    if (!demo &&
+        !ProductAccessLocator
+            .instance.capabilities.familyShieldOutbound) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(AppStrings.familyVaultUnlocksAlerts),
+        ),
+      );
+      PaywallScreen.show(context, preselect: TierId.familyVault);
+      return;
+    }
     // Demo Mode → labelled demo contacts; real relay → persisted
     // Trusted Circle only (empty circle yields a truthful no-op).
     final repo = FamilyAlertLocator.instance.isDemoMode
@@ -277,19 +300,39 @@ class _HeaderCard extends StatelessWidget {
             style: AppTypography.bodyMedium,
           ),
           const SizedBox(height: 10),
-          Row(
-            children: [
-              Text(
-                '${AppStrings.threatScoreLabel} ',
-                style: AppTypography.labelLarge
-                    .copyWith(color: AppColors.textMuted),
-              ),
-              Text(
-                '${(incident.peakRiskScore * 100).round()}/100',
-                style: AppTypography.statLarge.copyWith(color: color),
-              ),
-            ],
-          ),
+          if (incident.analysisIsPartial) ...[
+            Row(
+              children: [
+                Text(
+                  'Acoustic anomaly ',
+                  style: AppTypography.labelLarge
+                      .copyWith(color: AppColors.textMuted),
+                ),
+                Text(
+                  '${(incident.acousticMetrics.syntheticVoiceScore * 100).round()}/100',
+                  style: AppTypography.statLarge.copyWith(color: color),
+                ),
+              ],
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Conversation-risk signals were not analyzed.',
+              style: AppTypography.bodyMedium,
+            ),
+          ] else
+            Row(
+              children: [
+                Text(
+                  '${AppStrings.threatScoreLabel} ',
+                  style: AppTypography.labelLarge
+                      .copyWith(color: AppColors.textMuted),
+                ),
+                Text(
+                  '${(incident.peakRiskScore * 100).round()}/100',
+                  style: AppTypography.statLarge.copyWith(color: color),
+                ),
+              ],
+            ),
         ],
       ),
     );
@@ -303,11 +346,22 @@ class _WhyFlaggedCard extends StatelessWidget {
 
   final IncidentReport incident;
 
+  /// Source-aware title — an uploaded recording is not a call, and a
+  /// partial analysis is an acoustic warning rather than a verdict.
+  String get _title {
+    if (incident.audioSourceLabel == 'Uploaded Recording') {
+      return incident.analysisIsPartial
+          ? 'WHY VOXGUARD FOUND ELEVATED ACOUSTIC SIGNALS'
+          : 'WHY VOXGUARD FLAGGED THIS RECORDING';
+    }
+    return 'WHY VOXGUARD FLAGGED THIS CALL';
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = incident.semanticSignals;
     return _Card(
-      title: 'WHY VOXGUARD FLAGGED THIS CALL',
+      title: _title,
       icon: Icons.help_outline,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

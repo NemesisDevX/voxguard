@@ -37,7 +37,7 @@ dependencies:
   flutter_bloc: ^9.1.1
   http: ^1.2.0
   equatable: ^2.0.5
-  purchases_flutter: ^8.6.0
+  purchases_flutter: 10.13.1
   record: ^6.2.1
   crypto: ^3.0.7
   web_socket_channel: ^3.0.3

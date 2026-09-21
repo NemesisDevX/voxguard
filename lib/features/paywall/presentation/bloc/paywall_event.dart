@@ -12,8 +12,16 @@ sealed class PaywallEvent extends Equatable {
 }
 
 /// Fetch offerings and build the initial view-model.
+/// [preselect] opens the paywall with a specific plan highlighted —
+/// e.g. Sentinel from the Live Mic upsell, Family Vault from the
+/// Family Shield gate.
 final class LoadOfferingsEvent extends PaywallEvent {
-  const LoadOfferingsEvent();
+  const LoadOfferingsEvent({this.preselect});
+
+  final TierId? preselect;
+
+  @override
+  List<Object?> get props => [preselect];
 }
 
 /// Toggle Monthly ↔ Annual.
@@ -36,15 +44,11 @@ final class SelectTierEvent extends PaywallEvent {
   List<Object?> get props => [tier];
 }
 
-/// Execute checkout for the given tier/cycle combination.
-final class PurchaseTierEvent extends PaywallEvent {
-  const PurchaseTierEvent(this.tier, this.cycle);
-
-  final SubscriptionTier tier;
-  final BillingCycle cycle;
-
-  @override
-  List<Object?> get props => [tier, cycle];
+/// Execute checkout for the currently selected tier/cycle. The bloc
+/// resolves the actual [StorePackage] from the loaded offering — the
+/// UI never picks raw packages.
+final class PurchaseSelectedEvent extends PaywallEvent {
+  const PurchaseSelectedEvent();
 }
 
 /// Restore previously purchased entitlements.

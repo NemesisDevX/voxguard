@@ -19,4 +19,8 @@ final class PurchaseServiceLocator {
   /// Test hook — inject a fake service before the bloc/UI resolves it.
   @visibleForTesting
   static set instance(IPurchaseService service) => _instance = service;
+
+  /// Test hook — clear the cached singleton between tests.
+  @visibleForTesting
+  static void reset() => _instance = null;
 }

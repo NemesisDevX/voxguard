@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../features/forensics/domain/models/incident_report.dart';
+import '../../../features/paywall/domain/services/product_access.dart';
+import '../../../features/protection/domain/models/composite_threat_report.dart';
 import '../family/received_family_alert_repository.dart';
 import '../push/onesignal_push_identity_service.dart';
 import 'family_alert_service.dart';
@@ -28,6 +30,7 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
     String? relayUrl,
     String? relayToken,
     Future<String> Function()? senderIdentity,
+    IProductAccess? productAccess,
   })  : _client = httpClient ?? http.Client(),
         _relayUrl = relayUrl ??
             const String.fromEnvironment(
@@ -40,7 +43,8 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
               defaultValue: '',
             ),
         _senderIdentity =
-            senderIdentity ?? PushIdentityLocator.instance.voxGuardIdentity;
+            senderIdentity ?? PushIdentityLocator.instance.voxGuardIdentity,
+        _productAccess = productAccess ?? ProductAccessLocator.instance;
 
   static const _timeout = Duration(seconds: 8);
 
@@ -57,6 +61,11 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
   /// `sender_external_id` so receivers can tell which trusted
   /// contact raised the alert. Opaque id only, never name/phone.
   final Future<String> Function() _senderIdentity;
+
+  /// Product-access layer — the real outbound path requires Family
+  /// Vault. Demo Mode (no relay) is never gated: simulated alerts
+  /// must stay demoable for everyone.
+  final IProductAccess _productAccess;
 
   final ValueNotifier<bool> _enabled = ValueNotifier<bool>(true);
 
@@ -82,6 +91,18 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
       return const AlertDispatchResult(
         status: AlertDispatchStatus.disabled,
         detail: 'Family Shield is disabled.',
+      );
+    }
+
+    // Plan gate — defense-in-depth at the operation boundary. The
+    // real relay path requires Family Vault; zero network I/O happens
+    // for entitled-less callers. Demo Mode below stays ungated.
+    if (isRelayConfigured &&
+        !_productAccess.capabilities.familyShieldOutbound) {
+      return const AlertDispatchResult(
+        status: AlertDispatchStatus.locked,
+        detail: 'Family Vault lets you send safety alerts to your '
+            'Trusted Circle.',
       );
     }
 
@@ -177,12 +198,30 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
       'kind': 'family_shield_alert',
       'incident_id': incident.id,
       'risk_level': incident.riskLevel.name,
+      // Partial (acoustic-only) records must never arrive described
+      // as a fully analyzed call.
+      'analysis_scope': incident.analysisIsPartial ? 'partial' : 'full',
       'sender_external_id': senderExternalId,
       'family_external_ids': familyMemberIds,
       'title': '🚨 VoxGuard Family Shield Alert',
-      'body': 'A high-risk call was flagged on a protected device. '
-          'Verify directly with your relative before any funds move.',
+      'body': _alertBody(incident),
     };
+  }
+
+  /// Scope- and risk-aware notification body — a partial recording
+  /// analysis is an acoustic warning, not a "high-risk call".
+  static String _alertBody(IncidentReport incident) {
+    if (incident.analysisIsPartial) {
+      return 'Elevated acoustic signals were flagged in a recording '
+          'on a protected device. Conversation-risk signals were not '
+          'analyzed — verify directly with your relative.';
+    }
+    return incident.riskLevel == ThreatRiskLevel.highRisk
+        ? 'A high-risk call was flagged on a protected device. '
+            'Verify directly with your relative before any funds move.'
+        : 'A suspicious-call warning was flagged on a protected '
+            'device. Verify directly with your relative before any '
+            'funds move.';
   }
 
   /// Sends a `family_shield_response` back to the alerting device.

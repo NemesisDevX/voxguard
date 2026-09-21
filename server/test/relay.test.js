@@ -34,6 +34,7 @@ const VALID_BODY = {
   kind: 'family_shield_alert',
   incident_id: 'INC-2026-9001',
   risk_level: 'highRisk',
+  analysis_scope: 'full',
   sender_external_id: SENDER_ID,
   family_external_ids: [RECIP_A, RECIP_B],
   title: 'VoxGuard Family Shield',
@@ -81,8 +82,64 @@ test('valid alert → 202 + correct OneSignal payload + Key auth', async () => {
     kind: 'family_shield_alert',
     incident_id: 'INC-2026-9001',
     risk_level: 'highRisk',
+    analysis_scope: 'full',
     sender_external_id: SENDER_ID,
   });
+});
+
+// ── analysis_scope + alert risk bands ────────────────────────────
+
+test('missing/malformed analysis_scope → 400', async () => {
+  const env = { ...ENV, RELAY_CLIENT_TOKEN: 'scope-tok' };
+  for (const analysis_scope of [
+    undefined,
+    '',
+    'acoustic_only',
+    'FULL',
+    'live_call',
+    1,
+    null,
+  ]) {
+    const res = await handleRequest(
+      alertRequest(
+        { ...VALID_BODY, analysis_scope },
+        { auth: 'Bearer scope-tok' },
+      ),
+      env,
+      okFetch({}),
+    );
+    assert.equal(res.status, 400, `analysis_scope=${analysis_scope}`);
+  }
+});
+
+test('analysis_scope is preserved in OneSignal data', async () => {
+  const captured = {};
+  const env = { ...ENV, RELAY_CLIENT_TOKEN: 'scope2-tok' };
+  const res = await handleRequest(
+    alertRequest(
+      { ...VALID_BODY, analysis_scope: 'partial', risk_level: 'suspicious' },
+      { auth: 'Bearer scope2-tok' },
+    ),
+    env,
+    okFetch(captured),
+  );
+  assert.equal(res.status, 202);
+  assert.equal(JSON.parse(captured.init.body).data.analysis_scope, 'partial');
+});
+
+test('safe is not a valid danger-alert risk_level → 400', async () => {
+  const env = { ...ENV, RELAY_CLIENT_TOKEN: 'safe-tok' };
+  for (const risk_level of ['safe', 'critical', 'medium', 1, null]) {
+    const res = await handleRequest(
+      alertRequest(
+        { ...VALID_BODY, risk_level },
+        { auth: 'Bearer safe-tok' },
+      ),
+      env,
+      okFetch({}),
+    );
+    assert.equal(res.status, 400, `risk_level=${risk_level}`);
+  }
 });
 
 // ── sender_external_id ────────────────────────────────────────────
@@ -131,6 +188,7 @@ test('sender id reaches OneSignal data — no name/phone fields', async () => {
     'kind',
     'incident_id',
     'risk_level',
+    'analysis_scope',
     'sender_external_id',
   ]);
   const raw = captured.init.body;
@@ -415,11 +473,13 @@ test('valid response event → 202, single target, generic copy', async () => {
     resolution: 'safe',
     responder_external_id: RECIP_A,
   });
-  // Copy is server-fixed and PII-free — never client-supplied text.
+  // Copy is server-fixed, neutral and PII-free — the responder's
+  // opaque identity is not proof of trust, so the notification never
+  // claims "a trusted person" responded.
   assert.equal(payload.headings.en, 'VoxGuard Family Shield Update');
   assert.equal(
     payload.contents.en,
-    'A trusted person responded to your safety alert.',
+    'A Family Shield response was received for your safety alert.',
   );
 });
 
