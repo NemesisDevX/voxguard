@@ -35,8 +35,14 @@ final class AudioForensicMetrics extends Equatable {
   /// Engine A output: likelihood the voice is synthetic (0.0 – 1.0).
   final double syntheticVoiceScore;
 
+  /// Acoustic-anomaly score at or above this reads as "elevated" —
+  /// the single source of truth for acoustic elevation, used by the
+  /// fusion engine's reason list and the Signal Lens warning tint.
+  static const double elevatedThreshold = 0.70;
+
   /// Whether the synthetic-voice indicator is in the elevated band.
-  bool get isSyntheticElevated => syntheticVoiceScore >= 0.70;
+  bool get isSyntheticElevated =>
+      syntheticVoiceScore >= elevatedThreshold;
 
   Map<String, dynamic> toJson() => {
         'spectral_flux': spectralFlux,

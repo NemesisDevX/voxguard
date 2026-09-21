@@ -22,9 +22,11 @@ verified on hardware.
 > microphone — a caller on speakerphone, a voice note, or a message
 > played nearby — and surfaces risk signals in real time:
 >
-> • **ThreatCore** — a calm, glanceable risk indicator that escalates
->   only when the evidence does.
-> • **Multi-signal threat radar** — acoustic anomaly indicators plus
+> • **Signal Lens** — two evidence paths, one human decision:
+>   conversation-risk signals and acoustic anomaly indicators render
+>   as separate layers that diverge under pressure, and a missing
+>   layer stays visibly incomplete instead of pretending to be safe.
+> • **Two-signal evidence** — acoustic anomaly indicators plus
 >   conversation-risk signals (urgency, financial demands, secrecy
 >   requests, impersonation claims) analyzed on-device in English and
 >   Egyptian Arabic.

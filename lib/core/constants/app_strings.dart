@@ -1,12 +1,73 @@
 /// Centralized user-facing strings for VoxGuard.
+///
+/// Every sentence that embeds the product name composes it from
+/// [appName] — the pending public rename touches this file, not
+/// the screens.
 abstract final class AppStrings {
   AppStrings._();
 
   // ── Global ───────────────────────────────────────────────────────
   static const String appName = 'VoxGuard';
 
+  /// Sentences embedding the product name — the rename seam.
+  static const String howItWorksTitle = 'How $appName Works';
+  static const String exploreApp = 'Explore $appName';
+  static const String unrecognizedIdentity =
+      'An unrecognized $appName identity';
+  static const String safecallIntro =
+      '$appName listens through your microphone for suspicious voice '
+      'and conversation patterns.';
+  static const String familyAlertUnknownSender =
+      'Family Shield alert from an unrecognized $appName identity.';
+  static const String pushAlertTitle = '🚨 $appName Family Shield Alert';
+  static const String incidentReportTitle = '$appName Incident Report';
+  static const String recordingUnreadable =
+      '$appName could not read this recording — it may be corrupted '
+      'or an unsupported format.';
+  static const String recordingUndecodable =
+      '$appName could not decode this recording — the format may not '
+      'be supported on this device.';
+  static const String recordingAnalyzerIntro =
+      '$appName examines acoustic anomalies and, when you choose '
+      'transcription, conversation-risk signals.';
+  static const String partialRecordingNote =
+      'Conversation-risk signals were not analyzed, so $appName '
+      'cannot produce a complete Threat Score.';
+  static const String enhancedModeLockedDesc =
+      'Sentinel Shield adds enhanced transcription — the recording '
+      'is sent through $appName\u2019s transcription relay only after '
+      'you opt in. On-device analysis stays free.';
+  static const String enhancedModeReadyDesc =
+      'To create a transcript, this recording will be sent through '
+      '$appName\u2019s transcription relay to the configured '
+      'speech-to-text provider. $appName does not permanently store '
+      'the recording.';
+
+  // ── Onboarding prose ─────────────────────────────────────────────
+  static const String onboardingSignalsBody =
+      'During a SafeCall session you start yourself, $appName '
+      'listens for risk signals — never identity certainty — and '
+      'explains what it heard in plain language.';
+  static const String onboardingNoInterception =
+      '$appName does not intercept your phone\'s cellular calls — a '
+      'protection session is always your choice.';
+  static const String onboardingFamilyBody =
+      'When a call feels wrong, people you trust can help you '
+      'decide. Each $appName installation receives an opaque Family '
+      'Shield ID — trusted people save it in their own Trusted '
+      'Circle to receive your private safety alerts and respond.';
+  static const String onboardingPrivacyMic =
+      'Microphone audio is processed in memory while a session runs '
+      '— $appName never stores an audio recording. Live Mic asks for '
+      'microphone access only when you choose it; Demo Mode works '
+      'without it.';
+  static const String onboardingPrivacyAlerts =
+      'Family Shield alerts carry only an opaque $appName ID, an '
+      'incident reference, and a risk band — never audio, '
+      'transcripts, names, or phone numbers.';
+
   // ── Home ─────────────────────────────────────────────────────────
-  static const String shieldStatusReady = 'VoxGuard Ready';
+  static const String shieldStatusReady = '$appName Ready';
   static const String shieldSubtitle = 'Real-time voice defense standing by';
   static const String quickActions = 'PROTECTION';
 
@@ -18,7 +79,7 @@ abstract final class AppStrings {
   static const String protectionCheckTitle = 'Start a protection check';
   static const String protectionCheckDesc =
       'Use speakerphone or play suspicious audio nearby — '
-      'VoxGuard listens for risk signals.';
+      '$appName listens for risk signals.';
   static const String protectionCheckCta = 'Start SafeCall';
 
   static const String analyzeRecording = 'Analyze Recording';
@@ -47,10 +108,9 @@ abstract final class AppStrings {
   static const String maskedNumber = '+1 (•••) ••• ••42';
   static const String endCall = 'End';
 
-  static const String threatRadarTitle = 'MULTI-SIGNAL THREAT RADAR';
   static const String liveBadge = 'LIVE';
 
-  static const String signalSynthetic = 'Synthetic Voice Indicators';
+  static const String signalSynthetic = 'Acoustic Anomaly Indicators';
   static const String signalUrgency = 'Urgent Pressure';
   static const String signalFinancial = 'Financial Transfer Demand';
   static const String signalSecrecy = 'Secrecy & Isolation Request';
@@ -76,6 +136,22 @@ abstract final class AppStrings {
   static const String endCallAndVerify = 'End call & verify';
   static const String technicalDetails = 'TECHNICAL DETAILS';
 
+  // ── Signal Lens — acoustic-only (incomplete) state ───────────────
+  //
+  // Missing signal ≠ safe: when conversation analysis has not run the
+  // lens is explicitly incomplete — never SAFE, never a fused verdict.
+  static const String signalPartialState = 'ACOUSTIC ONLY';
+  static const String acousticAnomalyLabel = 'ACOUSTIC ANOMALY';
+  static const String conversationNotAnalyzed =
+      'Conversation-risk signals have not been analyzed.';
+  static const String acousticOnlyMonitoring =
+      'Acoustic monitoring is active. Conversation analysis requires '
+      'transcription.';
+  static const String bannerAcousticOnly =
+      'Acoustic monitoring only — conversation signals not analyzed';
+  static const String bannerAcousticElevated =
+      'Acoustic anomaly elevated — conversation signals not analyzed';
+
   static const String liveTranscript = 'LIVE TRANSCRIPT';
   static const String transcriptEmpty =
       'Transcript appears here during a protected call.';
@@ -86,7 +162,7 @@ abstract final class AppStrings {
   static const String paywallTitle =
       'Two signals.\nOne human decision.';
   static const String paywallSubtitle =
-      'VoxGuard flags risk — you verify. Paid plans extend what the '
+      '$appName flags risk — you verify. Paid plans extend what the '
       'two signals can see.';
   static const String securityBadge =
       'Billing handled by your app store';
@@ -134,7 +210,7 @@ abstract final class AppStrings {
   static const String postCallVerifyCta = 'Verify independently';
   static const String callSavedNumberHint =
       'Call the person back using a number you already trust.';
-  static const String whyFlaggedTitle = 'Why VoxGuard Flagged This Call';
+  static const String whyFlaggedTitle = 'Why $appName Flagged This Call';
   static const String verifyIdentityTitle = 'Verify Identity';
   static const String verifyIdentityBody =
       'Call the person back using a number you already trust — never '

@@ -9,7 +9,9 @@ import 'package:voxguard/features/forensics/domain/models/incident_report.dart';
 import 'package:voxguard/features/protection/domain/models/audio_forensic_metrics.dart';
 import 'package:voxguard/features/protection/domain/models/composite_threat_report.dart';
 import 'package:voxguard/features/protection/domain/models/semantic_threat_signals.dart';
+import 'package:voxguard/features/protection/domain/models/transcript_snippet.dart';
 import 'package:voxguard/features/protection/presentation/bloc/safecall_bloc.dart';
+import 'package:voxguard/features/protection/presentation/bloc/safecall_event.dart';
 import 'package:voxguard/features/protection/presentation/bloc/safecall_state.dart';
 import 'package:voxguard/features/protection/presentation/screens/safecall_screen.dart';
 import 'package:voxguard/features/protection/presentation/widgets/post_call_safety_sheet.dart';
@@ -109,7 +111,11 @@ void main() {
         'visibly absent, never fabricated', (tester) async {
       await pump(
         tester,
-        const SignalLens(score: 0.5, acousticScore: 0.4),
+        const SignalLens(
+          score: 0.5,
+          acousticScore: 0.4,
+          conversationAnalyzed: false,
+        ),
         disableAnimations: true,
         size: const Size(320, 700),
       );
@@ -117,8 +123,11 @@ void main() {
       expect(find.text('NOT ANALYZED'), findsOneWidget);
       expect(find.textContaining('Conversation'), findsOneWidget);
       // The acoustic layer still reports its real evidence.
-      expect(find.text('40'), findsOneWidget);
-      expect(find.text('CAUTION'), findsOneWidget);
+      expect(find.text('40'), findsWidgets);
+      // Missing signal ≠ safe — the lens is explicitly incomplete.
+      expect(find.text('ACOUSTIC ONLY'), findsOneWidget);
+      expect(find.text('CAUTION'), findsNothing);
+      expect(find.text('SAFE'), findsNothing);
     });
 
     testWidgets('full lens — both layers report their evidence',
@@ -129,6 +138,7 @@ void main() {
           score: 0.8,
           acousticScore: 0.7,
           semanticScore: 0.6,
+          conversationAnalyzed: true,
         ),
         disableAnimations: true,
       );
@@ -144,7 +154,7 @@ void main() {
       await pump(
         tester,
         const SignalLens(score: 0.85, acousticScore: 0.8,
-            semanticScore: 0.9),
+            semanticScore: 0.9, conversationAnalyzed: true),
         disableAnimations: true,
       );
       // pumpAndSettle completing proves the breathing controller is
@@ -154,27 +164,95 @@ void main() {
     });
   });
 
+  group('acoustic-only truthfulness', () {
+    // Regression: fusion weights semantic × 0.65, so an acoustic-only
+    // composite is capped at 0.35 — below CAUTION. Rendering that as
+    // a band label would let a strongly elevated voice anomaly read
+    // as SAFE. The lens must stay explicitly incomplete instead.
+    testWidgets('acoustic 1.0 without conversation — never SAFE, '
+        'no fused verdict', (tester) async {
+      await pump(
+        tester,
+        const SignalLens(
+          // What the fused composite actually reports for acoustic
+          // 1.0 with no semantic evidence: 0.35.
+          score: 0.35,
+          acousticScore: 1.0,
+          conversationAnalyzed: false,
+        ),
+        disableAnimations: true,
+      );
+      await tester.pumpAndSettle();
+      for (final band in ['SAFE', 'CAUTION', 'HIGH RISK']) {
+        expect(find.text(band), findsNothing, reason: '$band shown');
+      }
+      // No fused risk-signal verdict…
+      expect(find.text('RISK SIGNAL'), findsNothing);
+      expect(find.text('35'), findsNothing);
+      // …but the acoustic evidence that exists is displayed.
+      expect(find.text('ACOUSTIC ONLY'), findsOneWidget);
+      expect(find.text('ACOUSTIC ANOMALY'), findsOneWidget);
+      expect(find.text('100'), findsWidgets);
+      // Accessibility announces the missing layer too.
+      expect(
+        find.byWidgetPredicate((w) =>
+            w is Semantics &&
+            (w.properties.label ?? '')
+                .contains('Conversation analysis not run')),
+        findsWidgets,
+      );
+    });
+
+    testWidgets('acoustic-only with low anomaly — incomplete, '
+        'never SAFE', (tester) async {
+      await pump(
+        tester,
+        const SignalLens(
+          score: 0.05,
+          acousticScore: 0.15,
+          conversationAnalyzed: false,
+        ),
+        disableAnimations: true,
+      );
+      await tester.pumpAndSettle();
+      expect(find.text('ACOUSTIC ONLY'), findsOneWidget);
+      expect(find.text('ACOUSTIC ANOMALY'), findsOneWidget);
+      for (final band in ['SAFE', 'CAUTION', 'HIGH RISK']) {
+        expect(find.text(band), findsNothing, reason: '$band shown');
+      }
+    });
+  });
+
   group('high-risk verification moment', () {
     testWidgets('live session — pause message and verify-first CTA',
         (tester) async {
       await tester.pumpWidget(MaterialApp(
         home: SafeCallScreen(
-          bloc: SafeCallBloc.seeded(const SafeCallMonitoring(
+          // Non-const: TranscriptSnippet carries a DateTime.
+          bloc: SafeCallBloc.seeded(SafeCallMonitoring(
             acoustic: acoustic,
-            semantic: SemanticThreatSignals(
+            semantic: const SemanticThreatSignals(
               urgencyScore: 0.9,
               financialDemandScore: 1.0,
               secrecyScore: 0.8,
               detectedKeywords: ['transfer'],
               impersonationClaims: ['أنا أخوك'],
             ),
-            report: CompositeThreatReport(
+            report: const CompositeThreatReport(
               compositeRiskScore: 0.9,
               riskLevel: ThreatRiskLevel.highRisk,
               primaryThreatReasons: ['Urgent money demand detected'],
               recommendedAction: 'End the call',
             ),
-            transcript: [],
+            // A high composite requires real conversation evidence —
+            // the seeded transcript keeps scope consistent.
+            transcript: [
+              TranscriptSnippet(
+                speaker: 'Caller',
+                text: 'Transfer the money now',
+                timestamp: DateTime(2026, 9, 20, 14, 31),
+              ),
+            ],
             audioSourceType: AudioSourceType.demo,
           )),
         ),
@@ -287,13 +365,105 @@ void main() {
       await pump(
         tester,
         const SignalLens(score: 0.9, acousticScore: 0.8,
-            semanticScore: 0.85),
+            semanticScore: 0.85, conversationAnalyzed: true),
         disableAnimations: true,
         size: const Size(320, 700),
         textScale: 1.5,
       );
       await tester.pumpAndSettle();
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('SafeCall acoustic-only session', () {
+    SafeCallMonitoring acousticOnly({
+      bool entitled = false,
+      bool sttLive = false,
+    }) =>
+        SafeCallMonitoring(
+          acoustic: const AudioForensicMetrics(
+            spectralFlux: 0.3,
+            spectralRolloffRatio: 0.6,
+            zeroCrossingRate: 0.2,
+            syntheticVoiceScore: 0.9, // elevated — fusion caps at 0.315
+          ),
+          semantic: const SemanticThreatSignals.empty(),
+          report: const CompositeThreatReport(
+            compositeRiskScore: 0.315,
+            riskLevel: ThreatRiskLevel.safe,
+            primaryThreatReasons: [
+              'Synthetic-voice indicators elevated'
+            ],
+            recommendedAction: 'Continue monitoring',
+          ),
+          transcript: const [],
+          audioSourceType: AudioSourceType.microphone,
+          isTranscriptionLive: sttLive,
+          cloudTranscriptionEntitled: entitled,
+        );
+
+    testWidgets('free Live Mic without STT — incomplete, never '
+        'SAFE, explains the plan gate', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: SafeCallScreen(
+          bloc: SafeCallBloc.seeded(acousticOnly()),
+        ),
+      ));
+      await settle(tester);
+      expect(find.text('ACOUSTIC ONLY'), findsOneWidget);
+      expect(find.text('ACOUSTIC ANOMALY'), findsOneWidget);
+      expect(
+        find.textContaining('Conversation analysis requires '
+            'transcription'),
+        findsOneWidget,
+      );
+      for (final band in ['SAFE', 'CAUTION', 'HIGH RISK']) {
+        expect(find.text(band), findsNothing, reason: '$band shown');
+      }
+      expect(find.text('RISK SIGNAL'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('entitled Live Mic, transcription unavailable, no '
+        'transcript yet — no false full verdict', (tester) async {
+      await tester.pumpWidget(MaterialApp(
+        home: SafeCallScreen(
+          bloc: SafeCallBloc.seeded(
+              acousticOnly(entitled: true, sttLive: false)),
+        ),
+      ));
+      await settle(tester);
+      expect(find.text('ACOUSTIC ONLY'), findsOneWidget);
+      expect(
+        find.textContaining(
+            'Conversation-risk signals have not been analyzed'),
+        findsOneWidget,
+      );
+      for (final band in ['SAFE', 'CAUTION', 'HIGH RISK']) {
+        expect(find.text(band), findsNothing, reason: '$band shown');
+      }
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('semantic evidence arrival flips the lens to full '
+        'fused mode', (tester) async {
+      final bloc = SafeCallBloc.seeded(
+          acousticOnly(entitled: true, sttLive: true));
+      await tester.pumpWidget(MaterialApp(
+        home: SafeCallScreen(bloc: bloc),
+      ));
+      await settle(tester);
+      expect(find.text('ACOUSTIC ONLY'), findsOneWidget);
+
+      // Real caller text arrives → conversation engine runs.
+      bloc.add(const IncomingTranscriptSnippetEvent(
+          speaker: 'Caller', text: 'hello, can you hear me'));
+      await settle(tester, 10);
+
+      expect(find.text('ACOUSTIC ONLY'), findsNothing);
+      expect(find.text('RISK SIGNAL'), findsOneWidget);
+      expect(find.text('NOT ANALYZED'), findsNothing);
+      await tester.pumpWidget(const SizedBox());
     });
   });
 }

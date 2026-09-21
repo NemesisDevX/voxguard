@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:audio_decoder/audio_decoder.dart';
 
+import '../../../../core/constants/app_strings.dart';
 import '../models/recording_models.dart';
 
 /// VoxGuard seam over the platform audio decoder. All analysis runs on
@@ -42,8 +43,7 @@ final class PluginRecordingAudioDecoder implements IRecordingAudioDecoder {
       );
     } catch (_) {
       throw RecordingAnalysisException(
-        'VoxGuard could not read this recording — it may be '
-        'corrupted or an unsupported format.',
+        AppStrings.recordingUnreadable,
         code: 'unsupported',
       );
     }
@@ -62,8 +62,7 @@ final class PluginRecordingAudioDecoder implements IRecordingAudioDecoder {
       );
     } catch (_) {
       throw RecordingAnalysisException(
-        'VoxGuard could not decode this recording — the format may '
-        'not be supported on this device.',
+        AppStrings.recordingUndecodable,
         code: 'decodeFailed',
       );
     }

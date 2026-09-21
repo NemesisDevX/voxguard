@@ -221,7 +221,7 @@ class _ResponseRow extends StatelessWidget {
     return FutureBuilder<String>(
       future: _responderName(),
       builder: (context, snap) {
-        final name = snap.data ?? 'An unrecognized VoxGuard identity';
+        final name = snap.data ?? AppStrings.unrecognizedIdentity;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
@@ -258,7 +258,7 @@ class _ResponseRow extends StatelessWidget {
       if (c.externalId == response.responderExternalId) return c.name;
     }
     // Unknown id — opaque, not evidence of trust.
-    return 'An unrecognized VoxGuard identity';
+    return AppStrings.unrecognizedIdentity;
   }
 }
 

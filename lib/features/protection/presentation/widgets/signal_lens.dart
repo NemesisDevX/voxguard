@@ -2,8 +2,10 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../domain/models/audio_forensic_metrics.dart';
 
 /// VoxGuard's product signature: the **Signal Lens** — two signal
 /// paths read by one human decision.
@@ -19,11 +21,19 @@ import '../../../../core/theme/app_typography.dart';
 ///
 /// The composite score stays a *risk signal* — it is never presented
 /// as a probability, and the lens is deliberately not a speedometer.
+///
+/// **Missing signal ≠ safe.** When [conversationAnalyzed] is false the
+/// lens enters its incomplete state: no SAFE/CAUTION/HIGH RISK band,
+/// no fused composite readout — just the acoustic evidence that
+/// actually exists. The fusion weighting (semantic × 0.65) would
+/// otherwise cap an acoustic-only composite at 0.35 and let a strongly
+/// elevated voice anomaly read as "SAFE", which is a lie.
 class SignalLens extends StatefulWidget {
   const SignalLens({
     super.key,
     required this.score,
     required this.acousticScore,
+    required this.conversationAnalyzed,
     this.semanticScore,
     this.amplitude = 0,
     this.isDemoAudio = false,
@@ -31,11 +41,18 @@ class SignalLens extends StatefulWidget {
     this.showLegend = true,
   });
 
-  /// Composite risk signal, 0.0–1.0.
+  /// Composite risk signal, 0.0–1.0 — shown only when
+  /// [conversationAnalyzed] is true.
   final double score;
 
-  /// Engine B evidence, 0.0–1.0. **null means the conversation layer
-  /// never ran** — the lens renders it as visibly incomplete.
+  /// Whether the conversation/semantic engine actually produced
+  /// evidence this session. **Explicit scope, not inferred from a
+  /// score:** false means the conversation layer never ran, so the
+  /// lens must not render a fused band or verdict.
+  final bool conversationAnalyzed;
+
+  /// Engine B evidence, 0.0–1.0. Expected to be non-null when
+  /// [conversationAnalyzed] is true; ignored in the partial state.
   final double? semanticScore;
 
   /// Engine A evidence (synthetic-voice / acoustic anomaly), 0.0–1.0.
@@ -102,25 +119,51 @@ class _SignalLensState extends State<SignalLens>
 
   @override
   Widget build(BuildContext context) {
-    final color = AppColors.forThreat(widget.score);
+    // Partial scope: the conversation layer never ran. The lens must
+    // not mint a SAFE/CAUTION/HIGH RISK band or a fused /100 verdict
+    // from a composite that structurally ignores the missing layer.
+    final partial = !widget.conversationAnalyzed;
+    final semantic =
+        partial ? null : (widget.semanticScore ?? 0.0);
+    final acoustic100 =
+        (widget.acousticScore * 100).round().clamp(0, 100);
+    // Acoustic elevation reuses the domain threshold — the lens does
+    // not duplicate fusion/verdict logic.
+    final acousticElevated =
+        widget.acousticScore >= AudioForensicMetrics.elevatedThreshold;
+    final color = partial
+        ? (acousticElevated
+            ? AppColors.statusWarning
+            : AppColors.textMuted)
+        : AppColors.forThreat(widget.score);
     final score100 = (widget.score * 100).round().clamp(0, 100);
     final reduceMotion =
         MediaQuery.maybeDisableAnimationsOf(context) ?? false;
-    final stateText = SignalLens.stateLabel(widget.score);
+    final stateText = partial
+        ? AppStrings.signalPartialState
+        : SignalLens.stateLabel(widget.score);
+    final centerNumber = partial ? acoustic100 : score100;
+    final centerCaption =
+        partial ? AppStrings.acousticAnomalyLabel : 'RISK SIGNAL';
+    // The instability driver is the evidence on display — in partial
+    // mode that is the acoustic score, not the capped composite.
+    final motionScore = partial ? widget.acousticScore : widget.score;
+    final semanticsLabel = partial
+        ? 'Partial signal — acoustic anomaly $acoustic100 of 100. '
+            'Conversation analysis not run.'
+        : 'Risk signal $stateText, $score100 of 100. '
+            'Acoustic analysis $acoustic100 of 100.';
 
     Widget lens(double animatedScore, double phase, double amp) =>
         SizedBox(
           width: widget.size,
           height: widget.size,
           child: Semantics(
-            label:
-                'Risk signal $stateText, $score100 of 100. '
-                '${widget.semanticScore == null ? 'Conversation analysis not run. ' : ''}'
-                'Acoustic analysis ${(widget.acousticScore * 100).round()} of 100.',
+            label: semanticsLabel,
             child: CustomPaint(
               painter: _SignalLensPainter(
                 score: animatedScore,
-                semanticScore: widget.semanticScore,
+                semanticScore: semantic,
                 acousticScore: widget.acousticScore,
                 color: color,
                 phase: phase,
@@ -155,11 +198,14 @@ class _SignalLensState extends State<SignalLens>
                       ),
                     ),
                     const SizedBox(height: 4),
-                    RichText(
-                      text: TextSpan(
+                    // Text.rich inherits DefaultTextStyle — RichText
+                    // alone leaves spans unfonted (Ahem boxes in
+                    // capture harness, engine fallback on device).
+                    Text.rich(
+                      TextSpan(
                         children: [
                           TextSpan(
-                            text: '$score100',
+                            text: '$centerNumber',
                             style: AppTypography.statLarge.copyWith(
                               color: AppColors.textPrimary,
                               fontSize: widget.size * 0.13,
@@ -175,7 +221,7 @@ class _SignalLensState extends State<SignalLens>
                       ),
                     ),
                     Text(
-                      'RISK SIGNAL',
+                      centerCaption,
                       style: AppTypography.labelSmall.copyWith(
                         fontSize: widget.size * 0.038,
                         letterSpacing: 1.4,
@@ -191,13 +237,13 @@ class _SignalLensState extends State<SignalLens>
     // Reduced-motion: render the final state directly — no ambient
     // breathing loop, no score tween.
     final Widget animatedLens = reduceMotion
-        ? lens(widget.score, 0.0, 0.0)
+        ? lens(motionScore, 0.0, 0.0)
         : AnimatedBuilder(
             animation: _breath,
             builder: (context, _) {
               final amp = widget.amplitude.clamp(0.0, 1.0);
               return TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: widget.score),
+                tween: Tween(begin: 0, end: motionScore),
                 duration: const Duration(milliseconds: 500),
                 curve: Curves.easeOutCubic,
                 builder: (context, animatedScore, _) =>
@@ -213,7 +259,7 @@ class _SignalLensState extends State<SignalLens>
         if (widget.showLegend) ...[
           const SizedBox(height: 14),
           _Legend(
-            semanticScore: widget.semanticScore,
+            semanticScore: semantic,
             acousticScore: widget.acousticScore,
           ),
         ],

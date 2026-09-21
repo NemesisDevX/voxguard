@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../features/forensics/domain/models/incident_report.dart';
+import '../../constants/app_strings.dart';
 import '../../../features/paywall/domain/services/product_access.dart';
 import '../../../features/protection/domain/models/composite_threat_report.dart';
 import '../family/received_family_alert_repository.dart';
@@ -203,7 +204,7 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
       'analysis_scope': incident.analysisIsPartial ? 'partial' : 'full',
       'sender_external_id': senderExternalId,
       'family_external_ids': familyMemberIds,
-      'title': '🚨 VoxGuard Family Shield Alert',
+      'title': AppStrings.pushAlertTitle,
       'body': _alertBody(incident),
     };
   }

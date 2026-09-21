@@ -157,7 +157,7 @@ void main() {
     PurchaseServiceLocator.instance = MockSandboxPurchaseService(
         networkDelay: Duration.zero, checkoutDelay: Duration.zero);
 
-    // 1 — Home / ThreatCore hero
+    // 1 — Home / readiness hero
     await shot(tester, const HomeScreen(), '01_home_threatcore');
 
     // 2 — Onboarding (privacy-first trust flow)

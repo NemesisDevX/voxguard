@@ -63,8 +63,7 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
   /// alert is a warning, never a confirmed scam.
   String get _headline {
     if (!_knownSender) {
-      return 'Family Shield alert from an unrecognized '
-          'VoxGuard identity.';
+      return AppStrings.familyAlertUnknownSender;
     }
     if (_partial) {
       return '$_senderName asked you to verify an elevated acoustic '
@@ -73,7 +72,7 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
     return widget.alert.riskLevel == 'highRisk'
         ? '$_senderName may be dealing with a high-risk call.'
         : '$_senderName received a suspicious-call warning '
-            'from VoxGuard.';
+            'from ${AppStrings.appName}.';
   }
 
   Future<void> _resolve(AlertResolution resolution) async {

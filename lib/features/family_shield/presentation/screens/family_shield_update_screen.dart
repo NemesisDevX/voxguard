@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/services/family/family_shield_response.dart';
 import '../../../../core/services/family/received_family_alert_repository.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -28,7 +29,7 @@ class FamilyShieldUpdateScreen extends StatelessWidget {
         isSafe ? AppColors.statusSafe : AppColors.statusWarning;
     // An opaque vg_… id is not proof of trust — never label an
     // unrecognized identity as a "trusted person".
-    final who = responderName ?? 'An unrecognized VoxGuard identity';
+    final who = responderName ?? AppStrings.unrecognizedIdentity;
     return Scaffold(
       appBar: AppBar(title: const Text('Family Shield Update')),
       body: SafeArea(

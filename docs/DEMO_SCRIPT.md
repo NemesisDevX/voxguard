@@ -6,13 +6,13 @@ fully on-device — recording works offline.
 
 | Time | Beat | Screen / action | VO |
 |------|------|-----------------|----|
-| 0:00–0:12 | Problem + promise | Title card: *"VoxGuard — hear the threat before you trust the voice."* Cut to Home (ThreatCore, calm). | "Voice scams now sound exactly like your family. VoxGuard gives you a second of doubt before you act." |
-| 0:12–0:38 | Threat escalation | SafeCall → Demo Attack → Simulate scam. ThreatCore pulses amber → crimson; Arabic transcript lands RTL; evidence chips stack (impersonation, money demand, secrecy). | "A caller claims to be family, demands money, insists on secrecy. VoxGuard's engines flag it live." |
-| 0:38–0:55 | Evidence + verify | Scroll transcript — flagged phrases highlighted. Show threat radar meters at 100%. End call → incident report. | "Not a verdict — evidence. Every signal is shown so you can verify independently." |
+| 0:00–0:12 | Problem + promise | Title card: *"VoxGuard — hear the threat before you trust the voice."* Cut to Home (readiness hero, calm). | "Voice scams now sound exactly like your family. VoxGuard gives you a second of doubt before you act." |
+| 0:12–0:38 | Threat escalation | SafeCall → Demo Attack → Simulate scam. The Signal Lens paths diverge amber → oxide red; Arabic transcript lands RTL; evidence chips stack (impersonation, money demand, secrecy). | "A caller claims to be family, demands money, insists on secrecy. VoxGuard's engines flag it live." |
+| 0:38–0:55 | Evidence + verify | Scroll transcript — flagged phrases highlighted. Show signal detail meters elevated. End call → incident report. | "Not a verdict — evidence. Every signal is shown so you can verify independently." |
 | 0:55–1:15 | Family Shield loop | Device A: post-call sheet → send Family Shield alert. Device B: notification arrives → "Dad received a suspicious-call warning" → Call Dad / Mark Safe / Still Suspicious. Response lands back on A. | "One tap alerts your Trusted Circle — no audio, no transcript, just the signal. They verify by calling the number they already trust." |
 | 1:15–1:35 | Recording analysis honesty | Analyze Recording → pick file → result shows **Partial Analysis** when only acoustics ran; transcript-backed result shows full fused score. | "If only acoustics were analyzed, VoxGuard says so — partial analysis, never a fake verdict." |
 | 1:35–1:48 | Plans | Paywall → three tiers, store prices, restore. (Keyed build: real Offering; demo build: labeled Demo Store.) | "Free protection for everyone. Sentinel adds live transcription; Family Vault alerts your circle for real." |
-| 1:48–2:00 | Impact + close | Montage: ThreatCore crimson → family alert → Mark Safe green. End card: VoxGuard mark + tagline + categories. | "Scams win when panic replaces verification. VoxGuard buys the pause that stops them." |
+| 1:48–2:00 | Impact + close | Montage: Signal Lens high-risk → family alert → Mark Safe green. End card: VoxGuard mark + tagline + categories. | "Scams win when panic replaces verification. VoxGuard buys the pause that stops them." |
 
 ## Capture notes
 

@@ -12,7 +12,8 @@ enum ThreatMeterStyle {
   status,
 }
 
-/// A single real-time signal meter in the SafeCall threat radar.
+/// A single real-time signal meter in the SafeCall technical-details
+/// section — supporting evidence, visually secondary to the lens.
 ///
 /// Animates smoothly toward [value] and shifts its accent color
 /// green → amber → red as the score rises.

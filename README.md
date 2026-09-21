@@ -76,9 +76,9 @@ VoxGuard's answer is **multi-signal threat fusion**: acoustic anomaly indicators
 │           └────────┬───────────────┬────────┘                    │
 │                  ▼               ▼                               │
 │        ┌──────────────┐  ┌──────────────────┐                   │
-│        │ ThreatCore   │  │ Incident Report  │                   │
-│        │ HUD (score   │  │ persisted        │                   │
-│        │  + evidence) │  │ (fingerprint,    │                   │
+│        │ Signal Lens  │  │ Incident Report  │                   │
+│        │ HUD (two     │  │ persisted        │                   │
+│        │  signals →   │  │ (fingerprint,    │                   │
 │        │              │  │  telemetry,      │                   │
 │        │              │  │  transcript)     │                   │
 │        └──────────────┘  └────────┬─────────┘                   │
@@ -254,7 +254,7 @@ flutter run \
 | `VOXGUARD_TEST_FAMILY_EXTERNAL_ID` | dev-only recipient override — a real `vg_…` id from a second device for the two-device push smoke test | persisted Trusted Circle used |
 | `VOXGUARD_RECORDING_TRANSCRIPTION_URL` | prerecorded transcription relay base URL (`POST/GET /transcription/jobs` on the same Worker) — provider key stays server-side | enhanced transcription mode disabled; acoustic-only analysis remains |
 
-**Demo path**: Home → *Start SafeCall* → *Demo Attack* → tap **Simulate Scam** (FAB) → Arabic demo dialogue streams in with phrase highlights + evidence chips → ThreatCore escalates SAFE → CAUTION → HIGH RISK → end the call → post-call sheet walks *why flagged → verify identity → demo family alert → incident report*.
+**Demo path**: Home → *Start SafeCall* → *Demo Attack* → tap **Simulate Scam** (FAB) → Arabic demo dialogue streams in with phrase highlights + evidence chips → the Signal Lens diverges SAFE → CAUTION → HIGH RISK → end the call → post-call sheet walks *why flagged → verify identity → demo family alert → incident report*.
 
 **Live Mic path**: *Start SafeCall* → *Live Mic* → grant microphone permission → speak (or play suspicious audio on speakerphone) near the device → amplitude reacts, acoustic metrics update, transcript streams in when a transcription credential (`ASSEMBLYAI_TOKEN_BROKER_URL` or the dev-only `ASSEMBLYAI_API_KEY`) is set → semantic signals escalate the Threat Score.
 

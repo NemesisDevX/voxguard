@@ -199,8 +199,7 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
         ),
         const SizedBox(height: 10),
         const Text(
-          'VoxGuard examines acoustic anomalies and, when you choose '
-          'transcription, conversation-risk signals.',
+          AppStrings.recordingAnalyzerIntro,
           textAlign: TextAlign.center,
           style: AppTypography.bodyMedium,
         ),
@@ -256,16 +255,9 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
             locked: !entitled,
             title: 'Include conversation analysis',
             subtitle: !entitled
-                ? 'Sentinel Shield adds enhanced transcription — '
-                    'the recording is sent through VoxGuard\u2019s '
-                    'transcription relay only after you opt in. '
-                    'On-device analysis stays free.'
+                ? AppStrings.enhancedModeLockedDesc
                 : transcriptionReady
-                    ? 'To create a transcript, this recording will '
-                        'be sent through VoxGuard\u2019s transcription '
-                        'relay to the configured speech-to-text '
-                        'provider. VoxGuard does not permanently '
-                        'store the recording.'
+                    ? AppStrings.enhancedModeReadyDesc
                     : 'Cloud transcription isn\u2019t configured in '
                         'this build. Acoustic analysis is still '
                         'available on-device.',
@@ -769,8 +761,7 @@ class _PartialResultHeader extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           const Text(
-            'Conversation-risk signals were not analyzed, so VoxGuard '
-            'cannot produce a complete Threat Score.',
+            AppStrings.partialRecordingNote,
             textAlign: TextAlign.center,
             style: AppTypography.bodyMedium,
           ),
@@ -947,7 +938,7 @@ class _AcousticCard extends StatelessWidget {
               Text(
                 partial
                     ? 'Acoustic anomaly score'
-                    : 'Synthetic voice indicators',
+                    : AppStrings.signalSynthetic,
                 style: AppTypography.bodyMedium,
               ),
               const Spacer(),

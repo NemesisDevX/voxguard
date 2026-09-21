@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 
+import '../../../../core/constants/app_strings.dart';
 import '../../../protection/domain/models/audio_forensic_metrics.dart';
 import '../../../protection/domain/models/composite_threat_report.dart';
 import '../../../protection/domain/models/semantic_threat_signals.dart';
@@ -122,7 +123,7 @@ final class IncidentReport extends Equatable {
             'Conversation-risk signals were not analyzed.\n'
         : 'Risk: ${riskLevel.name} — Threat Score: '
             '${(peakRiskScore * 100).round()}/100\n';
-    return 'VoxGuard Incident Report\n'
+    return '${AppStrings.incidentReportTitle}\n'
         'ID: $id\n'
         'Time: $timestampLabel\n'
         'Caller: $callerLabel\n'

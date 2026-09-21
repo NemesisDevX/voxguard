@@ -15,9 +15,10 @@ or accounts — nothing unverified is claimed DONE.
 | Live Shield removed from release UI | DONE | roadmap-only in README |
 | Responsive + large-text smoke | DONE | `test/responsive_smoke_test.dart` |
 | Arabic/RTL first-strong-direction detection | DONE | `threat_phrase_highlighter.dart` + tests |
-| Reduced-motion respect (ThreatCore) | DONE | `MediaQuery.disableAnimations` wired |
+| Reduced-motion respect (Signal Lens) | DONE | `MediaQuery.disableAnimations` wired — ambient breathing stops, state still renders |
+| Acoustic-only truthfulness | DONE | `SignalLens.conversationAnalyzed` — missing conversation layer renders `ACOUSTIC ONLY` + real acoustic anomaly, never a fused SAFE verdict; `test/design_state_test.dart` |
 | Display name `VoxGuard` normalized | DONE | Android label, iOS `CFBundleDisplayName`, web title/manifest |
-| Original VoxGuard icon — all densities + adaptive + web | DONE | `tool/generate_icons.py` → mipmap-*/AppIcon/web icons |
+| Original VoxGuard icon — all densities + adaptive + web | DONE — **provisional** | `tool/generate_icons.py` → mipmap-*/AppIcon/web icons; shield motif predates the Signal Lens direction — final icon ships with the public rebrand per the SignalMark visual language |
 | Branded launch screens (Android + iOS) | DONE | `launch_background.xml`, `LaunchScreen.storyboard` |
 | `web/privacy.html` + `web/terms.html` | DONE | honest current-behavior copy; GitHub Issues as project support route |
 | Legal link defaults | DONE | `LegalLinks` defaults to the deployed GitHub Pages URLs; `VOXGUARD_*_URL` dart-defines remain valid overrides |
@@ -32,7 +33,7 @@ or accounts — nothing unverified is claimed DONE.
 | Purchase QA checklist | DONE | `docs/REVENUECAT_QA.md` |
 | Hardware QA matrix | DONE | `docs/FINAL_QA.md` |
 | 1179×2556 screenshots (7) | DONE | `submission/screenshots/` — real renders at native size, verified dimensions |
-| 1024×1024 icon | DONE | `submission/voxguard-icon-1024.png` verified dimensions |
+| 1024×1024 icon | DONE — provisional | `submission/voxguard-icon-1024.png` verified dimensions; not the final Design Award identity — pending public rebrand |
 | MIT license (Next Gen OSS requirement) | DONE | `LICENSE` |
 
 ## External requirements — none fabricated
@@ -63,13 +64,13 @@ or accounts — nothing unverified is claimed DONE.
 | RevenueCat Project ID | BLOCKED_EXTERNAL | dashboard value for Devpost form |
 | Devpost submission | BLOCKED_EXTERNAL | manual submission before Sep 30, 2026 11:45 PM PDT |
 
-## Automated verification (latest run — foundation freeze)
+## Automated verification (latest run — acoustic-only correctness pass)
 
 | Check | Result |
 |-------|--------|
 | `flutter pub get` | PASS |
 | `flutter analyze` | PASS — 0 issues |
-| `flutter test` | PASS — 287/287 |
+| `flutter test` | PASS — 303/303 |
 | `flutter build web --release --base-href /voxguard/` | PASS |
 | `flutter build apk --debug` | PASS |
 | `cd server && npm ci && npm test` | PASS — 41/41 |

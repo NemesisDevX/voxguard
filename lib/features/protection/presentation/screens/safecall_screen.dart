@@ -128,13 +128,21 @@ class _SafeCallViewState extends State<_SafeCallView>
         final partial = monitoring?.partialTranscript ?? '';
         final score = report.compositeRiskScore;
 
-        // The conversation layer exists only when semantic evidence
-        // has actually flowed — never fabricate it for acoustic-only
-        // sessions.
-        final semanticRan = transcript.isNotEmpty ||
-            sttLive ||
-            (isDemo && demoActive);
-        final semanticScore = semanticRan ? semantic.combinedScore : null;
+        // The conversation layer exists only when caller text has
+        // actually arrived for analysis — STT being connected is not
+        // evidence, and an acoustic-only composite must never render
+        // as a fused verdict (semantic×0.65 caps it at 0.35 → a false
+        // SAFE even when acoustic anomalies are elevated).
+        final conversationAnalyzed =
+            transcript.isNotEmpty || partial.isNotEmpty;
+        final semanticScore =
+            conversationAnalyzed ? semantic.combinedScore : null;
+        final acousticElevated = acoustic?.isSyntheticElevated ?? false;
+        // Supporting copy for the incomplete state — honest about
+        // WHY there is no conversation signal (plan gate vs pending).
+        final partialSupport = (!isDemo && !sttEntitled)
+            ? AppStrings.acousticOnlyMonitoring
+            : AppStrings.conversationNotAnalyzed;
 
         return Scaffold(
           appBar: AppBar(
@@ -176,23 +184,33 @@ class _SafeCallViewState extends State<_SafeCallView>
                           semanticScore: semanticScore,
                           acousticScore:
                               acoustic?.syntheticVoiceScore ?? 0,
+                          conversationAnalyzed: conversationAnalyzed,
                           amplitude: amplitude,
                           isDemoAudio: isDemo,
                         ),
                       ),
                       const SizedBox(height: 10),
                       // Human interpretation — the message first,
-                      // the number second.
+                      // the number second. In acoustic-only scope this
+                      // slot explains the missing signal instead of
+                      // printing a fused-band interpretation.
                       Center(
                         child: AnimatedSwitcher(
                           duration: const Duration(milliseconds: 300),
                           child: Text(
-                            SignalLens.interpretation(score),
-                            key: ValueKey(
-                                SignalLens.stateLabel(score)),
+                            conversationAnalyzed
+                                ? SignalLens.interpretation(score)
+                                : partialSupport,
+                            key: ValueKey(conversationAnalyzed
+                                ? SignalLens.stateLabel(score)
+                                : 'acoustic-only'),
                             textAlign: TextAlign.center,
                             style: AppTypography.bodyLarge.copyWith(
-                              color: AppColors.forThreat(score),
+                              color: conversationAnalyzed
+                                  ? AppColors.forThreat(score)
+                                  : (acousticElevated
+                                      ? AppColors.statusWarning
+                                      : AppColors.textMuted),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -246,6 +264,8 @@ class _SafeCallViewState extends State<_SafeCallView>
                 ),
                 _SessionActionBar(
                   report: report,
+                  conversationAnalyzed: conversationAnalyzed,
+                  acousticElevated: acousticElevated,
                   onEndCall: () => context
                       .read<SafeCallBloc>()
                       .add(const EndCallEvent()),
@@ -803,9 +823,22 @@ class _WaveformCard extends StatelessWidget {
 /// Bottom action surface — calm by default; at high risk it becomes
 /// the PAUSE → VERIFY moment: a human decision, not an alarm.
 class _SessionActionBar extends StatelessWidget {
-  const _SessionActionBar({required this.report, required this.onEndCall});
+  const _SessionActionBar({
+    required this.report,
+    required this.conversationAnalyzed,
+    required this.acousticElevated,
+    required this.onEndCall,
+  });
 
   final CompositeThreatReport report;
+
+  /// Whether conversation/semantic evidence exists this session —
+  /// the calm strip must not claim "all signals nominal" while a
+  /// whole signal layer is missing.
+  final bool conversationAnalyzed;
+
+  /// Whether the acoustic layer alone reads elevated.
+  final bool acousticElevated;
   final VoidCallback onEndCall;
 
   @override
@@ -816,6 +849,19 @@ class _SessionActionBar extends StatelessWidget {
 
     if (!highRisk) {
       // Calm strip — a quiet status line, not a competing banner.
+      final stripColor = !conversationAnalyzed
+          ? (acousticElevated
+              ? AppColors.statusWarning
+              : AppColors.textMuted)
+          : color;
+      final stripText = !conversationAnalyzed
+          ? (acousticElevated
+              ? AppStrings.bannerAcousticElevated
+              : AppStrings.bannerAcousticOnly)
+          : report.riskLevel == ThreatRiskLevel.suspicious
+              ? report.primaryThreatReasons.firstOrNull ??
+                  AppStrings.bannerElevatedDetail
+              : AppStrings.bannerProtectedDetail;
       return Container(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
         padding:
@@ -828,19 +874,18 @@ class _SessionActionBar extends StatelessWidget {
         child: Row(
           children: [
             Icon(
-              report.riskLevel == ThreatRiskLevel.suspicious
-                  ? Icons.visibility_outlined
-                  : Icons.check_circle_outline,
-              color: color,
+              !conversationAnalyzed
+                  ? Icons.graphic_eq
+                  : report.riskLevel == ThreatRiskLevel.suspicious
+                      ? Icons.visibility_outlined
+                      : Icons.check_circle_outline,
+              color: stripColor,
               size: 18,
             ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
-                report.riskLevel == ThreatRiskLevel.suspicious
-                    ? report.primaryThreatReasons.firstOrNull ??
-                        AppStrings.bannerElevatedDetail
-                    : AppStrings.bannerProtectedDetail,
+                stripText,
                 style: AppTypography.bodyMedium,
               ),
             ),
@@ -979,8 +1024,7 @@ class _ModePickerView extends StatelessWidget {
             ),
             const SizedBox(height: 8),
             const Text(
-              'VoxGuard listens through your microphone for '
-              'suspicious voice and conversation patterns.',
+              AppStrings.safecallIntro,
               style: AppTypography.bodyMedium,
               textAlign: TextAlign.center,
             ),

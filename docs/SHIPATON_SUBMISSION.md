@@ -15,7 +15,7 @@ eligibility that has not been executed — external steps are marked.
 | Public YouTube/Vimeo demo video < 2 min, on-device footage | `BLOCKED_EXTERNAL` — script ready: `docs/DEMO_SCRIPT.md` |
 | Text description of features | DONE — `docs/STORE_METADATA.md` |
 | 1179×2556 screenshot(s), no device frame | **DONE** — `submission/screenshots/` (7 frames rendered at exact native resolution) |
-| 1024×1024 icon | **DONE** — `submission/voxguard-icon-1024.png` (verified 1024×1024) |
+| 1024×1024 icon | **DONE (provisional)** — `submission/voxguard-icon-1024.png` verified 1024×1024; shield motif is a placeholder pending the public rebrand — the final icon follows the SignalMark direction (`docs/DESIGN_SYSTEM.md`) |
 | App works as shown in video/description | Partially — device QA matrix pending: `docs/FINAL_QA.md` |
 
 ## Project identity
@@ -81,14 +81,19 @@ Store clearly labeled elsewhere.
 
 Judgable design details:
 
-- **ThreatCore** — the signature visual: a breathing shield ring
-  that shifts emerald → amber → crimson with the fused score.
-- **Progressive evidence hierarchy** — score first, then evidence
-  chips, then flagged transcript phrases, then forensic detail.
+- **Signal Lens** — the signature visual: two evidence paths
+  (conversation + acoustic) that run together when calm and diverge
+  under risk — *two signals → one human decision*. An absent layer
+  renders as a broken outline, never fabricated.
+- **Evidence-first hierarchy** — state and human interpretation
+  first, then evidence chips, then flagged transcript phrases, then
+  collapsed technical detail; the score never leads alone.
 - **Privacy-first onboarding** — permission rationale before any
   system prompt.
 - **Partial-analysis honesty** — acoustic-only results are labeled
-  "Partial Analysis" everywhere they appear, including share text.
+  "Partial Analysis" / "ACOUSTIC ONLY" everywhere they appear,
+  including share text; a missing conversation signal can never
+  render as a fused SAFE verdict.
 - **Family Shield human-resolution loop** — the receiver *verifies
   independently*; the app never declares a caller safe.
 - **Calm safety palette** — graphite base, restrained accents, no

@@ -416,7 +416,7 @@ class _SettingsTab extends StatelessWidget {
                       color: AppColors.textMuted, size: 20),
                   SizedBox(width: 12),
                   Expanded(
-                    child: Text('How VoxGuard Works',
+                    child: Text(AppStrings.howItWorksTitle,
                         style: AppTypography.titleMedium),
                   ),
                   Icon(Icons.chevron_right,

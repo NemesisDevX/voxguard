@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../../core/constants/app_strings.dart';
 import '../../../../core/services/push/onesignal_push_identity_service.dart';
 import '../../../../core/services/push/push_identity_service.dart';
 import '../../../../core/theme/app_colors.dart';
@@ -306,9 +307,7 @@ class _SignalsPage extends StatelessWidget {
       title: 'Two signals. One human decision.',
       children: [
         Text(
-          'During a SafeCall session you start yourself, VoxGuard '
-          'listens for risk signals — never identity certainty — and '
-          'explains what it heard in plain language.',
+          AppStrings.onboardingSignalsBody,
           style: AppTypography.bodyMedium,
         ),
         SizedBox(height: 14),
@@ -318,8 +317,7 @@ class _SignalsPage extends StatelessWidget {
             'assistive heuristic, not a forensic verdict.'),
         _Bullet('The Risk Signal score is a signal, not the '
             'probability that a call is fake.'),
-        _Bullet('VoxGuard does not intercept your phone\'s cellular '
-            'calls — a protection session is always your choice.'),
+        _Bullet(AppStrings.onboardingNoInterception),
       ],
     );
   }
@@ -380,11 +378,7 @@ class _FamilyShieldPage extends StatelessWidget {
       title: 'Family Shield: a second set of eyes.',
       children: [
         const Text(
-          'When a call feels wrong, people you trust can help you '
-          'decide. Each VoxGuard installation receives an opaque '
-          'Family Shield ID — trusted people save it in their own '
-          'Trusted Circle to receive your private safety alerts '
-          'and respond.',
+          AppStrings.onboardingFamilyBody,
           style: AppTypography.bodyMedium,
         ),
         const SizedBox(height: 14),
@@ -500,16 +494,11 @@ class _ReadyPage extends StatelessWidget {
       iconColor: AppColors.statusSafe,
       title: 'Your voice stays in your control.',
       children: [
-        const _Bullet('Microphone audio is processed in memory while '
-            'a session runs — VoxGuard never stores an audio '
-            'recording. Live Mic asks for microphone access only '
-            'when you choose it; Demo Mode works without it.'),
+        const _Bullet(AppStrings.onboardingPrivacyMic),
         const _Bullet('When cloud transcription is configured, live '
             'audio streams to the configured transcription provider '
             'to produce transcript text for analysis.'),
-        const _Bullet('Family Shield alerts carry only an opaque '
-            'VoxGuard ID, an incident reference, and a risk band — '
-            'never audio, transcripts, names, or phone numbers.'),
+        const _Bullet(AppStrings.onboardingPrivacyAlerts),
         const SizedBox(height: 6),
         const Text(
           'Evidence → Pause → Verify → People you trust',
@@ -544,7 +533,7 @@ class _ReadyPage extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: onExplore,
-              child: const Text('Explore VoxGuard'),
+              child: const Text(AppStrings.exploreApp),
             ),
           ),
         ],
