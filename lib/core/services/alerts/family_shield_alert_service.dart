@@ -4,13 +4,13 @@ import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../features/forensics/domain/models/incident_report.dart';
-import '../../constants/app_strings.dart';
 import '../../../features/paywall/domain/services/product_access.dart';
 import '../../../features/protection/domain/models/composite_threat_report.dart';
 import '../family/received_family_alert_repository.dart';
 import '../push/onesignal_push_identity_service.dart';
 import 'family_alert_service.dart';
 import 'family_contact_repository.dart';
+import '../../l10n/l10n.dart';
 
 /// Family Shield broadcast client.
 ///
@@ -89,9 +89,9 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
     required List<String> familyMemberIds,
   }) async {
     if (!_enabled.value) {
-      return const AlertDispatchResult(
+      return AlertDispatchResult(
         status: AlertDispatchStatus.disabled,
-        detail: 'Family Shield is disabled.',
+        detail: l10n.msgFamilyDisabled,
       );
     }
 
@@ -100,10 +100,9 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
     // for entitled-less callers. Demo Mode below stays ungated.
     if (isRelayConfigured &&
         !_productAccess.capabilities.familyShieldOutbound) {
-      return const AlertDispatchResult(
+      return AlertDispatchResult(
         status: AlertDispatchStatus.locked,
-        detail: 'Family Vault lets you send safety alerts to your '
-            'Trusted Circle.',
+        detail: l10n.familyVaultUnlocksAlerts,
       );
     }
 
@@ -120,10 +119,9 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
     // Real mode + empty Trusted Circle → send nothing. Demo ids are
     // never substituted as a fallback.
     if (isRelayConfigured && recipients.isEmpty) {
-      return const AlertDispatchResult(
+      return AlertDispatchResult(
         status: AlertDispatchStatus.noRecipients,
-        detail: 'Add someone to your Trusted Circle before sending '
-            'a Family Shield alert.',
+        detail: l10n.msgNeedTrustedContact,
       );
     }
 
@@ -135,8 +133,7 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
       debugPrint('[FamilyShield·demo] ${jsonEncode(payload)}');
       return AlertDispatchResult(
         status: AlertDispatchStatus.simulated,
-        detail:
-            'Demo alert broadcast to ${recipients.length} family member(s).',
+        detail: l10n.msgDemoAlertDelivered(recipients.length),
       );
     }
 
@@ -158,8 +155,7 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
         // confirmed delivery to a device.
         return AlertDispatchResult(
           status: AlertDispatchStatus.accepted,
-          detail: 'Alert accepted for delivery to '
-              '${recipients.length} family member(s).',
+          detail: l10n.msgAlertDelivered(recipients.length),
         );
       }
       // Relay rejected the request (auth or payload) vs. the relay or
@@ -170,17 +166,17 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
           response.statusCode == 429) {
         return AlertDispatchResult(
           status: AlertDispatchStatus.rejected,
-          detail: 'Relay rejected the alert (${response.statusCode}).',
+          detail: l10n.msgRelayRejected(response.statusCode),
         );
       }
       return AlertDispatchResult(
         status: AlertDispatchStatus.unavailable,
-        detail: 'Alert service unavailable (${response.statusCode}).',
+        detail: l10n.msgAlertUnavailable(response.statusCode),
       );
     } on Exception {
-      return const AlertDispatchResult(
+      return AlertDispatchResult(
         status: AlertDispatchStatus.unavailable,
-        detail: 'Network error — alert could not be sent.',
+        detail: l10n.msgAlertNetworkError,
       );
     }
   }
@@ -204,7 +200,7 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
       'analysis_scope': incident.analysisIsPartial ? 'partial' : 'full',
       'sender_external_id': senderExternalId,
       'family_external_ids': familyMemberIds,
-      'title': AppStrings.pushAlertTitle,
+      'title': l10n.pushAlertTitle,
       'body': _alertBody(incident),
     };
   }
@@ -213,16 +209,11 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
   /// analysis is an acoustic warning, not a "high-risk call".
   static String _alertBody(IncidentReport incident) {
     if (incident.analysisIsPartial) {
-      return 'Elevated acoustic signals were flagged in a recording '
-          'on a monitored device. Conversation-risk signals were not '
-          'analyzed — verify directly with your relative.';
+      return l10n.pushAlertBodyPartial;
     }
     return incident.riskLevel == ThreatRiskLevel.highRisk
-        ? 'A high-risk call was flagged on a monitored device. '
-            'Verify directly with your relative before any funds move.'
-        : 'A suspicious-call warning was flagged on a monitored '
-            'device. Verify directly with your relative before any '
-            'funds move.';
+        ? l10n.pushAlertBodyHigh
+        : l10n.pushAlertBodySuspicious;
   }
 
   /// Sends a `family_shield_response` back to the alerting device.
@@ -235,23 +226,23 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
     required String targetExternalId,
   }) async {
     if (!_enabled.value) {
-      return const AlertDispatchResult(
+      return AlertDispatchResult(
         status: AlertDispatchStatus.disabled,
-        detail: 'Family Shield is disabled.',
+        detail: l10n.msgFamilyDisabled,
       );
     }
     // `unresolved` is a local state, never a wire resolution — reject
     // client-side without any network I/O.
     if (resolution == AlertResolution.unresolved) {
-      return const AlertDispatchResult(
+      return AlertDispatchResult(
         status: AlertDispatchStatus.rejected,
-        detail: 'Choose Safe or Still Suspicious before responding.',
+        detail: l10n.msgResolutionRequired,
       );
     }
     if (!FamilyContactRules.externalIdPattern.hasMatch(targetExternalId)) {
-      return const AlertDispatchResult(
+      return AlertDispatchResult(
         status: AlertDispatchStatus.rejected,
-        detail: 'Response target is not a valid Family Shield ID.',
+        detail: l10n.msgInvalidShieldId,
       );
     }
     final payload = {
@@ -264,9 +255,9 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
 
     if (!isRelayConfigured) {
       debugPrint('[FamilyShield·demo-response] ${jsonEncode(payload)}');
-      return const AlertDispatchResult(
+      return AlertDispatchResult(
         status: AlertDispatchStatus.simulated,
-        detail: 'Demo — response simulated, nothing left this device.',
+        detail: l10n.msgDemoResponseSent,
       );
     }
 
@@ -284,9 +275,9 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
           .timeout(_timeout);
 
       if (response.statusCode == 200 || response.statusCode == 202) {
-        return const AlertDispatchResult(
+        return AlertDispatchResult(
           status: AlertDispatchStatus.accepted,
-          detail: 'Family update sent.',
+          detail: l10n.msgFamilyUpdateSent,
         );
       }
       if (response.statusCode == 400 ||
@@ -295,17 +286,17 @@ final class FamilyShieldAlertService implements IFamilyAlertService {
           response.statusCode == 429) {
         return AlertDispatchResult(
           status: AlertDispatchStatus.rejected,
-          detail: 'Relay rejected the response (${response.statusCode}).',
+          detail: l10n.msgResponseRejected(response.statusCode),
         );
       }
       return AlertDispatchResult(
         status: AlertDispatchStatus.unavailable,
-        detail: 'Alert service unavailable (${response.statusCode}).',
+        detail: l10n.msgAlertUnavailable(response.statusCode),
       );
     } on Exception {
-      return const AlertDispatchResult(
+      return AlertDispatchResult(
         status: AlertDispatchStatus.unavailable,
-        detail: 'Network error — response could not be sent.',
+        detail: l10n.msgResponseNetworkError,
       );
     }
   }

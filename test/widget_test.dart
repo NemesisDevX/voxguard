@@ -3,13 +3,16 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:voxguard/core/services/preferences/app_preferences.dart';
 import 'package:voxguard/main.dart';
 
 void main() {
   testWidgets('VoxGuard home renders shield dashboard', (tester) async {
-    // Completed onboarding → the app opens directly into Home.
+    // Completed setup + onboarding → the app opens directly into Home.
     SharedPreferences.setMockInitialValues(
         const {'voxguard.onboarding_version': 1});
+    AppPreferencesLocator.instance =
+        AppPreferences.inMemory(setupCompleted: true);
     await tester.pumpWidget(const VoxGuardApp());
     await tester.pump();
 

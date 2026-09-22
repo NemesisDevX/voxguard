@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/app_palette.dart';
 
 /// How the meter's current value is rendered on the trailing edge.
 enum ThreatMeterStyle {
@@ -45,20 +45,21 @@ class ThreatMeterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: p.surfaceCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       child: TweenAnimationBuilder<double>(
         tween: Tween<double>(end: value.clamp(0.0, 1.0)),
         duration: const Duration(milliseconds: 700),
         curve: Curves.easeOutCubic,
         builder: (context, animated, _) {
-          final color = AppColors.forThreat(animated);
+          final color = p.forThreat(animated);
           return Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -84,7 +85,7 @@ class ThreatMeterCard extends StatelessWidget {
                 child: LinearProgressIndicator(
                   value: animated,
                   minHeight: 6,
-                  backgroundColor: AppColors.borderSubtle.withValues(alpha: 0.6),
+                  backgroundColor: p.borderSubtle.withValues(alpha: 0.6),
                   valueColor: AlwaysStoppedAnimation<Color>(color),
                 ),
               ),
@@ -113,10 +114,11 @@ class _TrailingValue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     if (style == ThreatMeterStyle.status) {
       final elevated = value >= 0.5;
       final chipColor =
-          elevated ? AppColors.statusWarning : AppColors.statusSafe;
+          elevated ? p.statusWarning : p.statusSafe;
       return Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
         decoration: BoxDecoration(

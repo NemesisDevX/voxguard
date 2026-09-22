@@ -25,6 +25,7 @@ import '../../domain/services/threat_fusion_engine.dart';
 import '../../domain/services/transcript_buffer.dart';
 import 'safecall_event.dart';
 import 'safecall_state.dart';
+import '../../../../core/l10n/l10n.dart';
 
 /// Orchestrates a SafeCall protection session.
 ///
@@ -208,34 +209,24 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     _resetSession();
 
     if (!_micSource.isSupported) {
-      emit(const SafeCallError(
-        message: 'Microphone capture is not supported on this '
-            'platform. Try Demo Mode instead.',
-      ));
+      emit(SafeCallError(message: l10n.msgMicUnsupported));
       return;
     }
 
     final permission = await _micSource.ensurePermission();
     switch (permission) {
       case MicPermissionState.unsupported:
-        emit(const SafeCallError(
-          message: 'Microphone capture is not supported on this '
-              'platform. Try Demo Mode instead.',
-        ));
+        emit(SafeCallError(message: l10n.msgMicUnsupported));
         return;
       case MicPermissionState.permanentlyDenied:
       case MicPermissionState.restricted:
-        emit(const SafeCallError(
-          message: 'Microphone access is blocked. Enable it in system '
-              'settings, or use Demo Mode.',
+        emit(SafeCallError(
+          message: l10n.msgMicBlocked,
           permanentlyDenied: true,
         ));
         return;
       case MicPermissionState.denied:
-        emit(const SafeCallError(
-          message: 'Microphone permission was denied. Grant access to '
-              'run Live Mic, or use Demo Mode.',
-        ));
+        emit(SafeCallError(message: l10n.msgMicDenied));
         return;
       case MicPermissionState.granted:
         break;
@@ -286,10 +277,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
       await _micSource.start();
     } catch (_) {
       await _teardownAudio();
-      emit(const SafeCallError(
-        message: 'Microphone failed to start. Check the device and '
-            'retry, or use Demo Mode.',
-      ));
+      emit(SafeCallError(message: l10n.msgMicStartFailed));
       return;
     }
 

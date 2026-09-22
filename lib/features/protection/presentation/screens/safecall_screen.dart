@@ -2,12 +2,9 @@ import 'dart:async';
 import 'dart:math';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:permission_handler/permission_handler.dart';
 
-import '../../../../core/constants/app_strings.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/threat_phrase_highlighter.dart';
 import '../../domain/models/composite_threat_report.dart';
@@ -18,6 +15,11 @@ import '../bloc/safecall_event.dart';
 import '../bloc/safecall_state.dart';
 import '../widgets/signal_lens.dart';
 import '../widgets/threat_meter_card.dart';
+import '../../../../core/l10n/l10n.dart';
+import '../../../../core/l10n/localized_text.dart';
+import '../../../../core/theme/app_palette.dart';
+import '../../../../core/services/haptics/app_haptics.dart';
+import '../../../../core/services/preferences/app_preferences.dart';
 
 /// SafeCall active-session screen.
 ///
@@ -91,6 +93,7 @@ class _SafeCallViewState extends State<_SafeCallView>
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return BlocConsumer<SafeCallBloc, SafeCallState>(
       listenWhen: (prev, current) =>
           current is SafeCallEnded || _bandEscalated(prev, current),
@@ -98,7 +101,7 @@ class _SafeCallViewState extends State<_SafeCallView>
         if (state is SafeCallEnded) {
           Navigator.of(context).pop(state);
         } else {
-          unawaited(HapticFeedback.mediumImpact());
+          AppHaptics.confirm();
         }
       },
       builder: (context, state) {
@@ -142,12 +145,12 @@ class _SafeCallViewState extends State<_SafeCallView>
         // Supporting copy for the incomplete state — honest about
         // WHY there is no conversation signal (plan gate vs pending).
         final partialSupport = (!isDemo && !sttEntitled)
-            ? AppStrings.acousticOnlyMonitoring
-            : AppStrings.conversationNotAnalyzed;
+            ? l10n.acousticOnlyMonitoring
+            : l10n.conversationNotAnalyzed;
 
         return Scaffold(
           appBar: AppBar(
-            title: const Text(AppStrings.safeCallTitle),
+            title: Text(l10n.safeCallTitle),
             actions: [
               if (isDemo)
                 const Padding(
@@ -208,10 +211,10 @@ class _SafeCallViewState extends State<_SafeCallView>
                             textAlign: TextAlign.center,
                             style: AppTypography.bodyLarge.copyWith(
                               color: conversationAnalyzed
-                                  ? AppColors.forThreat(score)
+                                  ? p.forThreat(score)
                                   : (acousticElevated
-                                      ? AppColors.statusWarning
-                                      : AppColors.textMuted),
+                                      ? p.statusWarning
+                                      : p.textMuted),
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -254,7 +257,7 @@ class _SafeCallViewState extends State<_SafeCallView>
                       const SizedBox(height: 16),
                       _TechnicalDetails(
                         waveAnimation: _waveController,
-                        tint: AppColors.forThreat(score),
+                        tint: p.forThreat(score),
                         amplitude: amplitude,
                         syntheticScore:
                             acoustic?.syntheticVoiceScore ?? 0,
@@ -277,22 +280,22 @@ class _SafeCallViewState extends State<_SafeCallView>
           floatingActionButton: isDemo
               ? FloatingActionButton.extended(
                   onPressed: () {
-                    unawaited(HapticFeedback.lightImpact());
+                    AppHaptics.tap();
                     context
                         .read<SafeCallBloc>()
                         .add(const SimulateDemoAttackEvent());
                   },
                   backgroundColor: demoActive
-                      ? AppColors.statusDanger
-                      : AppColors.bgElevated,
-                  foregroundColor: AppColors.textPrimary,
+                      ? p.statusDanger
+                      : p.bgElevated,
+                  foregroundColor: p.textPrimary,
                   icon: Icon(
                     demoActive ? Icons.stop : Icons.science_outlined,
                   ),
                   label: Text(
                     demoActive
-                        ? AppStrings.stopSimulation
-                        : AppStrings.simulateScam,
+                        ? l10n.stopSimulation
+                        : l10n.simulateScam,
                   ),
                 )
               : null,
@@ -312,18 +315,19 @@ class _CallerCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: p.surfaceCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       child: Row(
         children: [
-          const Icon(
+          Icon(
             Icons.hearing,
-            color: AppColors.textMuted,
+            color: p.textMuted,
             size: 22,
           ),
           const SizedBox(width: 14),
@@ -331,13 +335,13 @@ class _CallerCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  AppStrings.safeCallActive,
+                Text(
+                  l10n.safeCallActive,
                   style: AppTypography.labelSmall,
                 ),
                 const SizedBox(height: 3),
                 Text(
-                  '${AppStrings.unknownCaller} · $durationLabel',
+                  '${l10n.unknownCaller} · $durationLabel',
                   style: AppTypography.bodyMedium,
                 ),
               ],
@@ -349,21 +353,21 @@ class _CallerCard extends StatelessWidget {
                 onTap: onEndCall,
                 customBorder: const CircleBorder(),
                 child: Container(
-                  width: 48,
-                  height: 48,
-                  decoration: const BoxDecoration(
+                  width: context.isGuided ? 60 : 48,
+                  height: context.isGuided ? 60 : 48,
+                  decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: AppColors.statusDanger,
+                    color: p.statusDanger,
                   ),
-                  child: const Icon(
+                  child: Icon(
                     Icons.call_end,
                     color: Colors.white,
-                    size: 22,
+                    size: context.isGuided ? 26 : 22,
                   ),
                 ),
               ),
               const SizedBox(height: 4),
-              const Text(AppStrings.endCall, style: AppTypography.labelSmall),
+              Text(l10n.endCall, style: AppTypography.labelSmall),
             ],
           ),
         ],
@@ -434,21 +438,22 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
   /// outage for what is actually a plan gate.
   String get _emptyLabel {
     if (widget.isDemoSession) {
-      return 'Demo transcript will appear here.';
+      return l10n.transcriptDemoPending;
     }
-    if (widget.transcriptionLive) return 'Listening for speech…';
+    if (widget.transcriptionLive) return l10n.transcriptListening;
     return widget.transcriptionEntitled
-        ? 'Voice analysis active — live transcription unavailable.'
-        : AppStrings.acousticProtectionActive;
+        ? l10n.transcriptNoLive
+        : l10n.acousticProtectionActive;
   }
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: p.surfaceCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -463,15 +468,15 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.subtitles_outlined,
                     size: 18,
-                    color: AppColors.accent,
+                    color: p.accent,
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      AppStrings.liveTranscript,
+                      l10n.liveTranscript,
                       style: AppTypography.labelSmall,
                     ),
                   ),
@@ -486,12 +491,12 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
                       child: Text(
                         '${widget.snippets.length}',
                         style: AppTypography.labelSmall
-                            .copyWith(color: AppColors.accent),
+                            .copyWith(color: p.accent),
                       ),
                     ),
                   Icon(
                     _expanded ? Icons.expand_less : Icons.expand_more,
-                    color: AppColors.textMuted,
+                    color: p.textMuted,
                     size: 20,
                   ),
                 ],
@@ -549,9 +554,10 @@ class _TranscriptLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isCaller = snippet.speaker == AppStrings.speakerCaller;
+    final p = context.palette;
+    final isCaller = snippet.speaker == l10n.speakerCaller;
     final style = AppTypography.bodyLarge
-        .copyWith(fontSize: 13.5, color: AppColors.textPrimary);
+        .copyWith(fontSize: 13.5, color: p.textPrimary);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
@@ -564,7 +570,7 @@ class _TranscriptLine extends StatelessWidget {
               snippet.speaker,
               style: AppTypography.labelSmall.copyWith(
                 color:
-                    isCaller ? AppColors.statusWarning : AppColors.statusSafe,
+                    isCaller ? p.statusWarning : p.statusSafe,
               ),
             ),
           ),
@@ -581,6 +587,7 @@ class _TranscriptLine extends StatelessWidget {
                   snippet.text,
                   flaggedPhrases,
                   baseStyle: style,
+                  palette: context.palette,
                 ),
               ),
             ),
@@ -600,21 +607,22 @@ class _EvidenceChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final (color, icon) = switch (category) {
       EvidenceCategory.impersonation => (
-          AppColors.statusDanger,
+          p.statusDanger,
           Icons.person_search_outlined
         ),
       EvidenceCategory.moneyRequest => (
-          AppColors.statusDanger,
+          p.statusDanger,
           Icons.payments_outlined
         ),
       EvidenceCategory.urgency => (
-          AppColors.statusWarning,
+          p.statusWarning,
           Icons.priority_high
         ),
       EvidenceCategory.secrecy => (
-          AppColors.statusWarning,
+          p.statusWarning,
           Icons.visibility_off_outlined
         ),
     };
@@ -631,7 +639,7 @@ class _EvidenceChip extends StatelessWidget {
           Icon(icon, size: 12, color: color),
           const SizedBox(width: 5),
           Text(
-            category.label,
+            context.evidenceLabel(category.label),
             style: AppTypography.labelSmall
                 .copyWith(color: color, fontSize: 10),
           ),
@@ -670,11 +678,12 @@ class _TechnicalDetailsState extends State<_TechnicalDetails> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: p.surfaceCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -689,21 +698,21 @@ class _TechnicalDetailsState extends State<_TechnicalDetails> {
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
               child: Row(
                 children: [
-                  const Icon(
+                  Icon(
                     Icons.biotech_outlined,
                     size: 18,
-                    color: AppColors.textMuted,
+                    color: p.textMuted,
                   ),
                   const SizedBox(width: 10),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      AppStrings.technicalDetails,
+                      l10n.technicalDetails,
                       style: AppTypography.labelSmall,
                     ),
                   ),
                   Icon(
                     _expanded ? Icons.expand_less : Icons.expand_more,
-                    color: AppColors.textMuted,
+                    color: p.textMuted,
                     size: 20,
                   ),
                 ],
@@ -726,28 +735,28 @@ class _TechnicalDetailsState extends State<_TechnicalDetails> {
                   ),
                   const SizedBox(height: 12),
                   ThreatMeterCard(
-                    title: AppStrings.signalSynthetic,
+                    title: l10n.signalSynthetic,
                     value: widget.syntheticScore,
                     icon: Icons.record_voice_over_outlined,
                     style: ThreatMeterStyle.status,
-                    normalLabel: AppStrings.statusNormal,
-                    elevatedLabel: AppStrings.statusElevated,
+                    normalLabel: l10n.statusNormal,
+                    elevatedLabel: l10n.statusElevated,
                   ),
                   const SizedBox(height: 10),
                   ThreatMeterCard(
-                    title: AppStrings.signalUrgency,
+                    title: l10n.signalUrgency,
                     value: widget.semantic.urgencyScore,
                     icon: Icons.priority_high,
                   ),
                   const SizedBox(height: 10),
                   ThreatMeterCard(
-                    title: AppStrings.signalFinancial,
+                    title: l10n.signalFinancial,
                     value: widget.semantic.financialDemandScore,
                     icon: Icons.payments_outlined,
                   ),
                   const SizedBox(height: 10),
                   ThreatMeterCard(
-                    title: AppStrings.signalSecrecy,
+                    title: l10n.signalSecrecy,
                     value: widget.semantic.secrecyScore,
                     icon: Icons.visibility_off_outlined,
                   ),
@@ -782,14 +791,15 @@ class _WaveformCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final amp = amplitude.clamp(0.0, 1.0);
     return Container(
       height: 84,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: AppColors.bgSurface,
+        color: p.bgSurface,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       child: AnimatedBuilder(
         animation: animation,
@@ -844,33 +854,34 @@ class _SessionActionBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final score = report.compositeRiskScore;
-    final color = AppColors.forThreat(score);
+    final color = p.forThreat(score);
     final highRisk = report.riskLevel == ThreatRiskLevel.highRisk;
 
     if (!highRisk) {
       // Calm strip — a quiet status line, not a competing banner.
       final stripColor = !conversationAnalyzed
           ? (acousticElevated
-              ? AppColors.statusWarning
-              : AppColors.textMuted)
+              ? p.statusWarning
+              : p.textMuted)
           : color;
       final stripText = !conversationAnalyzed
           ? (acousticElevated
-              ? AppStrings.bannerAcousticElevated
-              : AppStrings.bannerAcousticOnly)
+              ? l10n.bannerAcousticElevated
+              : l10n.bannerAcousticOnly)
           : report.riskLevel == ThreatRiskLevel.suspicious
               ? report.primaryThreatReasons.firstOrNull ??
-                  AppStrings.bannerElevatedDetail
-              : AppStrings.bannerProtectedDetail;
+                  l10n.bannerElevatedDetail
+              : l10n.bannerProtectedDetail;
       return Container(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
         padding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.bgSurface,
+          color: p.bgSurface,
           borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: AppColors.borderSubtle),
+          border: Border.all(color: p.borderSubtle),
         ),
         child: Row(
           children: [
@@ -903,10 +914,10 @@ class _SessionActionBar extends StatelessWidget {
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.statusDanger.withValues(alpha: 0.10),
+        color: p.statusDanger.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: AppColors.statusDanger.withValues(alpha: 0.7),
+            color: p.statusDanger.withValues(alpha: 0.7),
             width: 1.2),
       ),
       child: Column(
@@ -914,20 +925,20 @@ class _SessionActionBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            AppStrings.pauseHeadline,
+            l10n.pauseHeadline,
             style: AppTypography.titleLarge.copyWith(
-              color: AppColors.statusDanger,
+              color: p.statusDanger,
             ),
           ),
           const SizedBox(height: 4),
           Text(
             report.primaryThreatReasons.firstOrNull ??
-                AppStrings.bannerThreatDetail,
+                l10n.bannerThreatDetail,
             style: AppTypography.bodyMedium,
           ),
           const SizedBox(height: 6),
-          const Text(
-            AppStrings.callSavedNumberHint,
+          Text(
+            l10n.callSavedNumberHint,
             style: AppTypography.bodyMedium,
           ),
           const SizedBox(height: 12),
@@ -936,16 +947,16 @@ class _SessionActionBar extends StatelessWidget {
             height: 46,
             child: FilledButton.icon(
               onPressed: () {
-                unawaited(HapticFeedback.lightImpact());
+                AppHaptics.tap();
                 onEndCall();
               },
               icon: const Icon(Icons.verified_user_outlined, size: 18),
-              label: const Text(
-                AppStrings.endCallAndVerify,
+              label: Text(
+                l10n.endCallAndVerify,
                 style: TextStyle(fontWeight: FontWeight.w700),
               ),
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.statusDanger,
+                backgroundColor: p.statusDanger,
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
@@ -967,16 +978,17 @@ class _PartialLine extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const SizedBox(
+          SizedBox(
             width: 48,
             child: Text(
               '…',
-              style: TextStyle(color: AppColors.textMuted),
+              style: TextStyle(color: p.textMuted),
             ),
           ),
           Expanded(
@@ -986,7 +998,7 @@ class _PartialLine extends StatelessWidget {
                   isRtlText(text) ? TextDirection.rtl : TextDirection.ltr,
               style: AppTypography.bodyLarge.copyWith(
                 fontSize: 13.5,
-                color: AppColors.textMuted,
+                color: p.textMuted,
                 fontStyle: FontStyle.italic,
               ),
             ),
@@ -1008,15 +1020,16 @@ class _ModePickerView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final error = state is SafeCallError ? state as SafeCallError : null;
     return Scaffold(
-      appBar: AppBar(title: const Text(AppStrings.safeCallTitle)),
+      appBar: AppBar(title: Text(l10n.safeCallTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
           children: [
-            const Icon(Icons.graphic_eq,
-                size: 52, color: AppColors.accent),
+            Icon(Icons.graphic_eq,
+                size: 52, color: p.accent),
             const SizedBox(height: 16),
             const Text(
               'Start a Protection Session',
@@ -1024,23 +1037,21 @@ class _ModePickerView extends StatelessWidget {
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
-            const Text(
-              AppStrings.safecallIntro,
+            Text(
+              l10n.safecallIntro,
               style: AppTypography.bodyMedium,
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 28),
             _ModeCard(
               icon: Icons.mic,
-              title: 'Live Mic',
-              description:
-                  'Analyze real microphone audio — speakerphone calls '
-                  'or a voice played nearby.',
-              accent: AppColors.statusSafe,
-              badge: 'REAL SESSION',
+              title: l10n.modeLiveMic,
+              description: l10n.modeLiveMicDesc,
+              accent: p.statusSafe,
+              badge: l10n.modeLiveMicBadge,
               primary: true,
               onTap: () {
-                unawaited(HapticFeedback.lightImpact());
+                AppHaptics.tap();
                 context
                     .read<SafeCallBloc>()
                     .add(const StartLiveMicSessionEvent());
@@ -1049,15 +1060,13 @@ class _ModePickerView extends StatelessWidget {
             const SizedBox(height: 12),
             _ModeCard(
               icon: Icons.science_outlined,
-              title: 'Demo Attack',
-              description:
-                  'Run the scripted judging scenario — generated '
-                  'audio and demo transcript. Nothing is real audio.',
-              accent: AppColors.accent,
-              badge: 'DEMONSTRATION',
+              title: l10n.modeDemo,
+              description: l10n.modeDemoDesc,
+              accent: p.accent,
+              badge: l10n.modeDemoBadge,
               primary: false,
               onTap: () {
-                unawaited(HapticFeedback.lightImpact());
+                AppHaptics.tap();
                 context
                     .read<SafeCallBloc>()
                     .add(const StartDemoSessionEvent());
@@ -1068,19 +1077,19 @@ class _ModePickerView extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.statusWarning.withValues(alpha: 0.10),
+                  color: p.statusWarning.withValues(alpha: 0.10),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: AppColors.statusWarning.withValues(alpha: 0.5)),
+                      color: p.statusWarning.withValues(alpha: 0.5)),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.warning_amber_rounded,
-                        size: 18, color: AppColors.statusWarning),
+                    Icon(Icons.warning_amber_rounded,
+                        size: 18, color: p.statusWarning),
                     const SizedBox(width: 10),
                     Expanded(
-                      child: Text(error.message,
+                      child: Text(context.serviceMessage(error.message),
                           style: AppTypography.bodyMedium),
                     ),
                   ],
@@ -1092,7 +1101,7 @@ class _ModePickerView extends StatelessWidget {
                   child: TextButton.icon(
                     onPressed: _openSettings,
                     icon: const Icon(Icons.settings_outlined, size: 16),
-                    label: const Text('Open System Settings'),
+                    label: Text(l10n.actionOpenSystemSettings),
                   ),
                 ),
             ],
@@ -1133,8 +1142,9 @@ class _ModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Material(
-      color: primary ? AppColors.bgElevated : AppColors.surfaceCard,
+      color: primary ? p.bgElevated : p.surfaceCard,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onTap,
@@ -1148,17 +1158,18 @@ class _ModeCard extends StatelessWidget {
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.all(18),
+            padding: EdgeInsets.all(context.isGuided ? 22 : 18),
             child: Row(
               children: [
                 Container(
-                  width: 50,
-                  height: 50,
+                  width: context.isGuided ? 60 : 50,
+                  height: context.isGuided ? 60 : 50,
                   decoration: BoxDecoration(
                     color: accent.withValues(alpha: 0.14),
                     borderRadius: BorderRadius.circular(14),
                   ),
-                  child: Icon(icon, color: accent, size: 24),
+                  child: Icon(icon, color: accent,
+                      size: context.isGuided ? 28 : 24),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -1167,7 +1178,11 @@ class _ModeCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          Text(title, style: AppTypography.titleMedium),
+                          Text(title,
+                              style: AppTypography.titleMedium.copyWith(
+                                  fontSize: context.isGuided
+                                      ? 17.5
+                                      : null)),
                           const SizedBox(width: 8),
                           Flexible(
                             child: Container(
@@ -1198,8 +1213,8 @@ class _ModeCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const Icon(Icons.chevron_right,
-                    color: AppColors.textMuted),
+                Icon(Icons.chevron_right,
+                    color: p.textMuted),
               ],
             ),
           ),
@@ -1216,26 +1231,27 @@ class _LiveMicBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.statusDanger.withValues(alpha: 0.12),
+        color: p.statusDanger.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-            color: AppColors.statusDanger.withValues(alpha: 0.5)),
+            color: p.statusDanger.withValues(alpha: 0.5)),
       ),
-      child: const Row(
+      child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(Icons.mic, size: 11, color: AppColors.statusDanger),
+          Icon(Icons.mic, size: 11, color: p.statusDanger),
           SizedBox(width: 4),
           Text(
-            'LIVE MIC',
+            l10n.modeLiveBadgeShort,
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.1,
-              color: AppColors.statusDanger,
+              color: p.statusDanger,
             ),
           ),
         ],
@@ -1253,15 +1269,16 @@ class _DemoBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: compact ? 7 : 10,
         vertical: compact ? 3 : 5,
       ),
       decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: 0.10),
+        color: p.accent.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.accent.withValues(alpha: 0.45)),
+        border: Border.all(color: p.accent.withValues(alpha: 0.45)),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -1269,16 +1286,16 @@ class _DemoBadge extends StatelessWidget {
           Icon(
             Icons.science_outlined,
             size: compact ? 10 : 12,
-            color: AppColors.accent,
+            color: p.accent,
           ),
           const SizedBox(width: 4),
           Text(
-            compact ? 'DEMO' : 'DEMO MODE',
+            compact ? l10n.demoBadgeCompact : l10n.modeDemoModeLabel,
             style: TextStyle(
               fontSize: compact ? 9 : 10,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.1,
-              color: AppColors.accent,
+              color: p.accent,
             ),
           ),
         ],
@@ -1311,6 +1328,7 @@ class _LiveBadgeState extends State<_LiveBadge>
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final reduceMotion =
         MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     if (reduceMotion && _controller.isAnimating) {
@@ -1319,38 +1337,38 @@ class _LiveBadgeState extends State<_LiveBadge>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.statusSafe.withValues(alpha: 0.12),
+        color: p.statusSafe.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(8),
         border: Border.all(
-          color: AppColors.statusSafe.withValues(alpha: 0.5),
+          color: p.statusSafe.withValues(alpha: 0.5),
         ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           reduceMotion
-              ? const Icon(
+              ? Icon(
                   Icons.circle,
                   size: 8,
-                  color: AppColors.statusSafe,
+                  color: p.statusSafe,
                 )
               : FadeTransition(
                   opacity:
                       Tween(begin: 0.35, end: 1.0).animate(_controller),
-                  child: const Icon(
+                  child: Icon(
                     Icons.circle,
                     size: 8,
-                    color: AppColors.statusSafe,
+                    color: p.statusSafe,
                   ),
                 ),
           const SizedBox(width: 6),
-          const Text(
-            AppStrings.liveBadge,
+          Text(
+            l10n.liveBadge,
             style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w700,
               letterSpacing: 1.2,
-              color: AppColors.statusSafe,
+              color: p.statusSafe,
             ),
           ),
         ],

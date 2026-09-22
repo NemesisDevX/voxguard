@@ -15,9 +15,15 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:voxguard/core/services/alerts/family_contact_repository.dart';
+import 'package:voxguard/core/services/preferences/app_preferences.dart';
+import 'package:voxguard/core/theme/app_theme.dart';
+import 'package:voxguard/features/onboarding/presentation/screens/welcome_setup_screen.dart';
+import 'package:voxguard/features/settings/presentation/screens/settings_screen.dart';
+import 'package:voxguard/l10n/generated/app_localizations.dart';
 import 'package:voxguard/core/services/family/received_family_alert_repository.dart';
 import 'package:voxguard/features/family_shield/presentation/screens/family_alert_screen.dart';
 import 'package:voxguard/features/forensics/domain/models/incident_report.dart';
@@ -87,13 +93,23 @@ Future<void> _loadRoboto() async {
   }
 }
 
-Widget _shell(Widget child) {
-  final base = ThemeData(
-      brightness: Brightness.dark,
-      platform: TargetPlatform.android);
+Widget _shell(Widget child,
+    {Brightness brightness = Brightness.dark, Locale? locale}) {
+  final base = (brightness == Brightness.dark
+          ? AppTheme.dark()
+          : AppTheme.light())
+      .copyWith(platform: TargetPlatform.android);
   const fallback = ['NotoNaskh'];
   return MaterialApp(
     debugShowCheckedModeBanner: false,
+    locale: locale,
+    supportedLocales: AppLocalizations.supportedLocales,
+    localizationsDelegates: const [
+      AppLocalizations.delegate,
+      GlobalMaterialLocalizations.delegate,
+      GlobalWidgetsLocalizations.delegate,
+      GlobalCupertinoLocalizations.delegate,
+    ],
     // Explicit families: test-rendered text otherwise resolves to
     // the hollow Ahem box font; the fallback covers Arabic glyphs.
     theme: base.copyWith(
@@ -135,19 +151,29 @@ void main() {
       },
     );
   });
-  setUp(() => PurchaseServiceLocator.reset());
+  setUp(() {
+    PurchaseServiceLocator.reset();
+    SharedPreferences.setMockInitialValues(
+        const {'voxguard.onboarding_version': 1});
+    AppPreferencesLocator.instance =
+        AppPreferences.inMemory(setupCompleted: true);
+  });
   tearDown(() => PurchaseServiceLocator.reset());
 
   Future<void> shot(WidgetTester tester, Widget child, String name,
-      [int frames = 8]) async {
+      {int frames = 8,
+      String dir = 'screenshots',
+      Brightness brightness = Brightness.dark,
+      Locale? locale}) async {
     tester.view.physicalSize = _shotSize;
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.reset);
-    await tester.pumpWidget(_shell(child));
+    await tester.pumpWidget(
+        _shell(child, brightness: brightness, locale: locale));
     await _settle(tester, frames);
     await expectLater(
       find.byWidget(child),
-      matchesGoldenFile('../submission/screenshots/$name.png'),
+      matchesGoldenFile('../submission/$dir/$name.png'),
     );
   }
 
@@ -287,5 +313,35 @@ void main() {
     for (var i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
+  });
+
+  // NON-SUBMISSION review captures — visual review aids for the new
+  // personalization surfaces. These live under submission/review/ and
+  // never replace the official seven above.
+  testWidgets('capture review surfaces', (tester) async {
+    PurchaseServiceLocator.instance = MockSandboxPurchaseService(
+        networkDelay: Duration.zero, checkoutDelay: Duration.zero);
+
+    // Home — Light mode.
+    await shot(tester, const HomeScreen(), 'home_light',
+        dir: 'review', brightness: Brightness.light);
+
+    // Settings — the personalization Control Center (a tab body,
+    // so it needs a Scaffold to provide Material).
+    await shot(
+        tester,
+        const Scaffold(body: SafeArea(child: SettingsScreen())),
+        'settings_dark',
+        dir: 'review');
+
+    // Home — Arabic RTL.
+    await shot(tester, const HomeScreen(), 'home_ar_rtl',
+        dir: 'review', locale: const Locale('ar'));
+
+    // Welcome Setup — first-run language + optional name.
+    AppPreferencesLocator.instance =
+        AppPreferences.inMemory(); // setup not completed
+    await shot(tester, WelcomeSetupScreen(onDone: () {}),
+        'welcome_setup', dir: 'review');
   });
 }

@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/constants/app_strings.dart';
+import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/push/onesignal_push_identity_service.dart';
 import '../../../../core/services/push/push_identity_service.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../protection/presentation/safecall_launcher.dart';
 
@@ -109,6 +109,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -140,14 +141,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   ),
                   widget.reviewMode
                       ? IconButton(
-                          tooltip: 'Close',
+                          tooltip: l10n.actionClose,
                           icon: const Icon(Icons.close),
                           onPressed: () =>
                               Navigator.of(context).maybePop(),
                         )
                       : TextButton(
                           onPressed: _finish,
-                          child: const Text('Skip for now'),
+                          child: Text(l10n.actionSkip),
                         ),
                 ],
               ),
@@ -179,7 +180,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   width: double.infinity,
                   child: FilledButton(
                     onPressed: _next,
-                    child: const Text('Continue'),
+                    child: Text(l10n.actionContinue),
                   ),
                 ),
               ),
@@ -196,13 +197,14 @@ class _Dot extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return AnimatedContainer(
       duration: const Duration(milliseconds: 180),
       margin: const EdgeInsets.symmetric(horizontal: 3),
       width: active ? 18 : 7,
       height: 7,
       decoration: BoxDecoration(
-        color: active ? AppColors.accent : AppColors.borderSubtle,
+        color: active ? p.accent : p.borderSubtle,
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -254,8 +256,8 @@ class _Bullet extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.check_circle_outline,
-              size: 16, color: AppColors.accent),
+          Icon(Icons.check_circle_outline,
+              size: 16, color: context.palette.accent),
           const SizedBox(width: 10),
           Expanded(child: Text(text, style: AppTypography.bodyMedium)),
         ],
@@ -272,21 +274,17 @@ class _VoicePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _Page(
+    final l10n = context.l10n;
+    final p = context.palette;
+    return _Page(
       icon: Icons.record_voice_over_outlined,
-      iconColor: AppColors.statusWarning,
-      title: 'A familiar voice can still be misleading.',
+      iconColor: p.statusWarning,
+      title: l10n.onboardingVoiceTitle,
       children: [
-        Text(
-          'Scammers clone voices, spoof numbers, and pressure the '
-          'people you love. Hearing a familiar voice is not proof '
-          'of who is speaking.',
-          style: AppTypography.bodyMedium,
-        ),
-        SizedBox(height: 14),
-        _Bullet('Urgency, secrecy, and payment pressure are the '
-            'real tells — not the voice itself.'),
-        _Bullet('Caller ID and sound alone can never prove identity.'),
+        Text(l10n.onboardingVoiceBody1, style: AppTypography.bodyMedium),
+        const SizedBox(height: 14),
+        _Bullet(l10n.onboardingVoiceBody2),
+        _Bullet(l10n.onboardingVoiceBody3),
       ],
     );
   }
@@ -301,23 +299,19 @@ class _SignalsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _Page(
+    final l10n = context.l10n;
+    final p = context.palette;
+    return _Page(
       icon: Icons.blur_on,
-      iconColor: AppColors.accent,
-      title: 'Two signals. One human decision.',
+      iconColor: p.accent,
+      title: l10n.onboardingSignalsTitle,
       children: [
-        Text(
-          AppStrings.onboardingSignalsBody,
-          style: AppTypography.bodyMedium,
-        ),
-        SizedBox(height: 14),
-        _Bullet('Conversation signal — urgency, payment demands, '
-            'secrecy pressure in what is being said.'),
-        _Bullet('Voice-acoustic signal — anomaly indicators; an '
-            'assistive heuristic, not a forensic verdict.'),
-        _Bullet('The Risk Signal score is a signal, not the '
-            'probability that a call is fake.'),
-        _Bullet(AppStrings.onboardingNoInterception),
+        Text(l10n.onboardingSignalsBody, style: AppTypography.bodyMedium),
+        const SizedBox(height: 14),
+        _Bullet(l10n.onboardingSignalSemantic),
+        _Bullet(l10n.onboardingSignalAcoustic),
+        _Bullet(l10n.onboardingSignalScore),
+        _Bullet(l10n.onboardingNoInterception),
       ],
     );
   }
@@ -332,23 +326,18 @@ class _VerifyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _Page(
+    final l10n = context.l10n;
+    final p = context.palette;
+    return _Page(
       icon: Icons.verified_user_outlined,
-      iconColor: AppColors.accent,
-      title: 'When something feels wrong, verify independently.',
+      iconColor: p.accent,
+      title: l10n.onboardingVerifyTitle,
       children: [
-        Text(
-          'A risk signal is a reason to pause — not a verdict. The '
-          'strongest move is always yours:',
-          style: AppTypography.bodyMedium,
-        ),
-        SizedBox(height: 14),
-        _Bullet('Pause — never send money, codes, or details under '
-            'pressure.'),
-        _Bullet('Call the person back on a number you already '
-            'trust — never one the caller gave you.'),
-        _Bullet('Agree on a family safe phrase offline — ask for it '
-            'when a call feels wrong.'),
+        Text(l10n.onboardingVerifyBody, style: AppTypography.bodyMedium),
+        const SizedBox(height: 14),
+        _Bullet(l10n.onboardingVerifyStep1),
+        _Bullet(l10n.onboardingVerifyStep2),
+        _Bullet(l10n.onboardingVerifyStep3),
       ],
     );
   }
@@ -372,29 +361,25 @@ class _FamilyShieldPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final p = context.palette;
     return _Page(
       icon: Icons.group_outlined,
-      iconColor: AppColors.statusSafe,
-      title: 'Family Shield: a second set of eyes.',
+      iconColor: p.statusSafe,
+      title: l10n.onboardingFamilyTitle,
       children: [
-        const Text(
-          AppStrings.onboardingFamilyBody,
-          style: AppTypography.bodyMedium,
-        ),
+        Text(l10n.onboardingFamilyBody, style: AppTypography.bodyMedium),
         const SizedBox(height: 14),
-        const _Bullet('Names and trusted phone numbers stay on the '
-            'device that saved them.'),
-        const _Bullet('Setting up your Trusted Circle is optional — '
-            'you can do it later in Settings.'),
+        _Bullet(l10n.onboardingFamilyBody1),
+        _Bullet(l10n.onboardingFamilyBody2),
         const SizedBox(height: 14),
         FutureBuilder<String>(
           future: PushIdentityLocator.instance.voxGuardIdentity(),
           builder: (context, snap) {
             final id = snap.data;
             if (id == null) {
-              return const Text(
-                'Your Family Shield ID appears here once the app '
-                'finishes setting up.',
+              return Text(
+                l10n.onboardingFamilyIdPending,
                 style: AppTypography.bodyMedium,
               );
             }
@@ -402,7 +387,7 @@ class _FamilyShieldPage extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Your ID: ${_shortId(id)}',
+                    l10n.onboardingYourId(_shortId(id)),
                     style: AppTypography.titleMedium,
                   ),
                 ),
@@ -410,13 +395,12 @@ class _FamilyShieldPage extends StatelessWidget {
                   onPressed: () {
                     Clipboard.setData(ClipboardData(text: id));
                     ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                          content:
-                              Text('Family Shield ID copied.')),
+                      SnackBar(
+                          content: Text(l10n.familyShieldIdCopied)),
                     );
                   },
                   icon: const Icon(Icons.copy, size: 16),
-                  label: const Text('Copy ID'),
+                  label: Text(l10n.actionCopyId),
                 ),
               ],
             );
@@ -436,17 +420,15 @@ class _FamilyShieldPage extends StatelessWidget {
               _ => false,
             };
             final label = switch (reg.status) {
-              PushRegistrationStatus.registered =>
-                'Family Alerts enabled',
+              PushRegistrationStatus.registered => l10n.familyAlertsEnabled,
               PushRegistrationStatus.permissionDenied =>
-                'Notifications are off — you can enable them later '
-                    'from your device\'s Settings app',
+                l10n.onboardingNotifOff,
               PushRegistrationStatus.unsupported =>
-                'Push alerts aren\'t supported on this platform',
+                l10n.onboardingPushUnsupported,
               PushRegistrationStatus.notConfigured =>
-                'Push alerts aren\'t configured in this build',
+                l10n.onboardingPushNotConfigured,
               PushRegistrationStatus.registering =>
-                'Enabling notifications…',
+                l10n.onboardingEnablingNotif,
               _ => null,
             };
             return Column(
@@ -457,7 +439,7 @@ class _FamilyShieldPage extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: canRequest ? onEnableAlerts : null,
                     icon: const Icon(Icons.notifications_outlined),
-                    label: const Text('Enable Family Alerts'),
+                    label: Text(l10n.onboardingEnableAlerts),
                   ),
                 ),
                 if (label != null) ...[
@@ -489,34 +471,27 @@ class _ReadyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final p = context.palette;
     return _Page(
       icon: Icons.lock_outline,
-      iconColor: AppColors.statusSafe,
-      title: 'Your voice stays in your control.',
+      iconColor: p.statusSafe,
+      title: l10n.onboardingPrivacyTitle,
       children: [
-        const _Bullet(AppStrings.onboardingPrivacyMic),
-        const _Bullet('When cloud transcription is configured, live '
-            'audio streams to the configured transcription provider '
-            'to produce transcript text for analysis.'),
-        const _Bullet(AppStrings.onboardingPrivacyAlerts),
+        _Bullet(l10n.onboardingPrivacyMic),
+        _Bullet(l10n.onboardingPrivacyBody),
+        _Bullet(l10n.onboardingPrivacyAlerts),
         const SizedBox(height: 6),
-        const Text(
-          'Evidence → Pause → Verify → People you trust',
-          style: AppTypography.titleMedium,
-        ),
+        Text(l10n.onboardingPrivacyLoop, style: AppTypography.titleMedium),
         const SizedBox(height: 10),
-        const Text(
-          'Start a SafeCall session when you want protection — you '
-          'always choose Live Mic or Demo Mode yourself.',
-          style: AppTypography.bodyMedium,
-        ),
+        Text(l10n.onboardingPrivacyChoice, style: AppTypography.bodyMedium),
         const SizedBox(height: 22),
         if (reviewMode)
           SizedBox(
             width: double.infinity,
             child: FilledButton(
               onPressed: () => Navigator.of(context).maybePop(),
-              child: const Text('Done'),
+              child: Text(l10n.actionDone),
             ),
           )
         else ...[
@@ -525,7 +500,7 @@ class _ReadyPage extends StatelessWidget {
             child: FilledButton.icon(
               onPressed: onStartSafeCall,
               icon: const Icon(Icons.phone_in_talk_outlined),
-              label: const Text('Start SafeCall'),
+              label: Text(l10n.startSafeCall),
             ),
           ),
           const SizedBox(height: 10),
@@ -533,7 +508,7 @@ class _ReadyPage extends StatelessWidget {
             width: double.infinity,
             child: OutlinedButton(
               onPressed: onExplore,
-              child: const Text(AppStrings.exploreApp),
+              child: Text(l10n.exploreApp),
             ),
           ),
         ],

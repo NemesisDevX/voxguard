@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../features/protection/domain/services/semantic_threat_service.dart';
-import '../theme/app_colors.dart';
+import '../theme/app_palette.dart';
 
 /// Splits [text] into [TextSpan]s, painting impersonation and
 /// money-demand phrases crimson, and urgency/secrecy phrases amber.
@@ -12,6 +12,7 @@ List<TextSpan> buildThreatSpans(
   String text,
   List<String> phrases, {
   required TextStyle baseStyle,
+  required AppPalette palette,
 }) {
   final ranges = <_PhraseRange>[];
   for (final phrase in phrases) {
@@ -36,7 +37,7 @@ List<TextSpan> buildThreatSpans(
     if (r.start > cursor) {
       spans.add(TextSpan(text: text.substring(cursor, r.start)));
     }
-    final color = threatPhraseColor(r.phrase);
+    final color = threatPhraseColor(r.phrase, palette);
     spans.add(
       TextSpan(
         text: text.substring(r.start, r.end),
@@ -57,12 +58,12 @@ List<TextSpan> buildThreatSpans(
 
 /// Crimson for impersonation + money demands, amber for
 /// urgency + secrecy.
-Color threatPhraseColor(String phrase) {
+Color threatPhraseColor(String phrase, AppPalette palette) {
   if (SemanticThreatService.impersonationLexicon.contains(phrase) ||
       SemanticThreatService.financialLexicon.contains(phrase)) {
-    return AppColors.statusDanger;
+    return palette.statusDanger;
   }
-  return AppColors.statusWarning;
+  return palette.statusWarning;
 }
 
 /// True when the first *strong-directional* character in [text] is

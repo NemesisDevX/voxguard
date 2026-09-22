@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../../../../core/services/alerts/family_contact_repository.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/app_palette.dart';
+import '../../../../core/l10n/l10n.dart';
+import '../../../../core/l10n/localized_text.dart';
 
 /// Trusted Circle — the up-to-5 real people Family Shield alerts
 /// target. Contacts persist locally (SharedPreferences); only their
@@ -18,11 +20,12 @@ class TrustedCircleCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.bgElevated,
+        color: p.bgElevated,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       padding: const EdgeInsets.all(16),
       child: ValueListenableBuilder<List<FamilyContact>>(
@@ -34,11 +37,11 @@ class TrustedCircleCard extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Icon(Icons.group_outlined,
-                      color: AppColors.accent, size: 20),
+                  Icon(Icons.group_outlined,
+                      color: p.accent, size: 20),
                   const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text('Trusted Circle',
+                  Expanded(
+                    child: Text(l10n.trustedCircleTitle,
                         style: AppTypography.titleMedium),
                   ),
                   Text(
@@ -48,10 +51,8 @@ class TrustedCircleCard extends StatelessWidget {
                 ],
               ),
               const SizedBox(height: 6),
-              const Text(
-                'The people you can ask for a second set of eyes. '
-                'Alerts reach them by Family Shield ID — phone '
-                'numbers stay on this device.',
+              Text(
+                l10n.trustedCircleDesc,
                 style: AppTypography.bodyMedium,
               ),
               const SizedBox(height: 12),
@@ -62,7 +63,7 @@ class TrustedCircleCard extends StatelessWidget {
                   child: OutlinedButton.icon(
                     onPressed: () => _editSheet(context),
                     icon: const Icon(Icons.person_add_alt_1, size: 18),
-                    label: const Text('Add person'),
+                    label: Text(l10n.actionAddPerson),
                   ),
                 ),
             ],
@@ -73,12 +74,13 @@ class TrustedCircleCard extends StatelessWidget {
   }
 
   Widget _contactTile(BuildContext context, FamilyContact c) {
+  final p = context.palette;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
         children: [
-          const Icon(Icons.verified_user_outlined,
-              size: 18, color: AppColors.statusSafe),
+          Icon(Icons.verified_user_outlined,
+              size: 18, color: p.statusSafe),
           const SizedBox(width: 10),
           Expanded(
             child: Column(
@@ -96,15 +98,15 @@ class TrustedCircleCard extends StatelessWidget {
             ),
           ),
           IconButton(
-            tooltip: 'Edit',
-            icon: const Icon(Icons.edit_outlined,
-                size: 18, color: AppColors.textMuted),
+            tooltip: l10n.actionEdit,
+            icon: Icon(Icons.edit_outlined,
+                size: 18, color: p.textMuted),
             onPressed: () => _editSheet(context, existing: c),
           ),
           IconButton(
-            tooltip: 'Remove',
-            icon: const Icon(Icons.delete_outline,
-                size: 18, color: AppColors.statusWarning),
+            tooltip: l10n.actionRemove,
+            icon: Icon(Icons.delete_outline,
+                size: 18, color: p.statusWarning),
             onPressed: () => _repo.remove(c.id),
           ),
         ],
@@ -127,25 +129,24 @@ class TrustedCircleCard extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(existing == null ? 'Add trusted person' : 'Edit person',
+            Text(existing == null ? l10n.trustedAddTitle : l10n.trustedEditTitle,
                 style: AppTypography.titleLarge),
             const SizedBox(height: 8),
-            const Text(
-              'They can find their Family Shield ID in their own app '
-              'under Settings → Family Shield Receiver.',
+            Text(
+              l10n.trustedFindIdHint,
               style: AppTypography.bodyMedium,
             ),
             const SizedBox(height: 14),
             TextField(
               controller: nameCtrl,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(labelText: l10n.trustedNameField),
               textCapitalization: TextCapitalization.words,
             ),
             const SizedBox(height: 10),
             TextField(
               controller: idCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Family Shield ID',
+              decoration: InputDecoration(
+                labelText: l10n.familyShieldIdLabel,
                 hintText: 'vg_…',
               ),
               autocorrect: false,
@@ -153,8 +154,8 @@ class TrustedCircleCard extends StatelessWidget {
             const SizedBox(height: 10),
             TextField(
               controller: phoneCtrl,
-              decoration: const InputDecoration(
-                labelText: 'Trusted phone number (optional)',
+              decoration: InputDecoration(
+                labelText: l10n.trustedPhoneField,
               ),
               keyboardType: TextInputType.phone,
             ),
@@ -163,7 +164,7 @@ class TrustedCircleCard extends StatelessWidget {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () => Navigator.of(ctx).pop(true),
-                child: const Text('Save'),
+                child: Text(l10n.actionSave),
               ),
             ),
           ],
@@ -190,7 +191,7 @@ class TrustedCircleCard extends StatelessWidget {
     } on FamilyContactException catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context)
-            .showSnackBar(SnackBar(content: Text(e.message)));
+            .showSnackBar(SnackBar(content: Text(context.serviceMessage(e.message))));
       }
     }
   }

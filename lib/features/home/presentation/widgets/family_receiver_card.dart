@@ -6,8 +6,10 @@ import 'package:permission_handler/permission_handler.dart';
 import '../../../../core/services/alerts/family_contact_repository.dart';
 import '../../../../core/services/push/onesignal_push_identity_service.dart';
 import '../../../../core/services/push/push_identity_service.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/theme/app_palette.dart';
+import '../../../../core/l10n/l10n.dart';
+import '../../../../core/l10n/localized_text.dart';
 
 /// Family Shield receiver setup — lets this device become reachable by
 /// another VoxGuard installation's alerts via its opaque `vg_…`
@@ -32,46 +34,45 @@ class _FamilyReceiverCardState extends State<FamilyReceiverCard> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return ValueListenableBuilder<FamilyPushRegistration>(
       valueListenable: _push.registration,
       builder: (context, reg, _) {
         return Container(
           padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: AppColors.surfaceCard,
+            color: p.surfaceCard,
             borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: AppColors.borderSubtle),
+            border: Border.all(color: p.borderSubtle),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  const Icon(Icons.family_restroom,
-                      color: AppColors.accent, size: 20),
+                  Icon(Icons.family_restroom,
+                      color: p.accent, size: 20),
                   const SizedBox(width: 8),
                   Flexible(
-                    child: Text('Family Shield Receiver',
+                    child: Text(l10n.familyReceiverTitle,
                         style: AppTypography.titleMedium),
                   ),
                 ],
               ),
               const SizedBox(height: 6),
               Text(
-                'Get an alert when someone in your trusted circle '
-                'encounters a high-risk call.',
+                l10n.familyReceiverDesc,
                 style: AppTypography.bodyMedium,
               ),
               const SizedBox(height: 14),
-              _statusRow(reg),
+              _statusRow(reg, p),
               if (reg.voxguardExternalId != null) ...[
                 const SizedBox(height: 10),
-                _idRow(reg.voxguardExternalId!),
+                _idRow(reg.voxguardExternalId!, p),
               ],
               const SizedBox(height: 14),
               Text(
-                'Share this ID only with someone you want to receive '
-                'Family Shield alerts from.',
+                l10n.familyReceiverShareNote,
                 style: AppTypography.labelSmall,
               ),
               if (reg.status ==
@@ -85,28 +86,27 @@ class _FamilyReceiverCardState extends State<FamilyReceiverCard> {
                     onPressed: _push.enableAlerts,
                     icon: const Icon(Icons.notifications_active_outlined,
                         size: 18),
-                    label: const Text('Enable Family Alerts'),
+                    label: Text(l10n.familyReceiverEnable),
                   ),
                 ),
                 if (reg.status == PushRegistrationStatus.permissionDenied)
                   TextButton(
                     onPressed: openAppSettings,
-                    child: const Text('Open system settings'),
+                    child: Text(l10n.familyReceiverOpenSettings),
                   ),
               ],
               if (reg.status == PushRegistrationStatus.notConfigured)
                 Padding(
                   padding: const EdgeInsets.only(top: 8),
                   child: Text(
-                    'Push setup unavailable — ONESIGNAL_APP_ID not '
-                    'configured in this build.',
+                    l10n.familyReceiverNotConfigured,
                     style: AppTypography.labelSmall
-                        .copyWith(color: AppColors.statusWarning),
+                        .copyWith(color: p.statusWarning),
                   ),
                 ),
               if (kDebugMode) ...[
-                const Divider(height: 28, color: AppColors.borderSubtle),
-                Text('DEV · Test alert recipient',
+                Divider(height: 28, color: p.borderSubtle),
+                Text(l10n.familyReceiverDevRecipient,
                     style: AppTypography.labelSmall),
                 const SizedBox(height: 6),
                 Row(
@@ -115,8 +115,8 @@ class _FamilyReceiverCardState extends State<FamilyReceiverCard> {
                       child: TextField(
                         controller: _testRecipientCtrl,
                         style: AppTypography.bodyMedium,
-                        decoration: const InputDecoration(
-                          hintText: 'vg_… external id of test device',
+                        decoration: InputDecoration(
+                          hintText: l10n.familyReceiverTestDeviceHint,
                           isDense: true,
                         ),
                         onSubmitted: (v) =>
@@ -125,7 +125,7 @@ class _FamilyReceiverCardState extends State<FamilyReceiverCard> {
                       ),
                     ),
                     IconButton(
-                      tooltip: 'Set test recipient',
+                      tooltip: l10n.familyReceiverSetTest,
                       icon: const Icon(Icons.check, size: 18),
                       onPressed: () =>
                           PersistedFamilyContactRepository
@@ -142,35 +142,35 @@ class _FamilyReceiverCardState extends State<FamilyReceiverCard> {
     );
   }
 
-  Widget _statusRow(FamilyPushRegistration reg) {
+  Widget _statusRow(FamilyPushRegistration reg, AppPalette p) {
     final (label, color) = switch (reg.status) {
       PushRegistrationStatus.registered => (
-          'Ready to receive alerts',
-          AppColors.statusSafe
+          l10n.familyReceiverReady,
+          p.statusSafe
         ),
       PushRegistrationStatus.registering => (
-          'Registering…',
-          AppColors.statusWarning
+          l10n.familyStateRegistering,
+          p.statusWarning
         ),
       PushRegistrationStatus.permissionRequired => (
-          'Notification permission needed',
-          AppColors.statusWarning
+          l10n.familyStateNeedPermission,
+          p.statusWarning
         ),
       PushRegistrationStatus.permissionDenied => (
-          'Notifications blocked — enable in system settings',
-          AppColors.statusDanger
+          l10n.familyStateBlocked,
+          p.statusDanger
         ),
       PushRegistrationStatus.notConfigured => (
-          'Push not configured',
-          AppColors.textMuted
+          l10n.familyStateNotConfigured,
+          p.textMuted
         ),
       PushRegistrationStatus.unsupported => (
-          'Not supported on this platform',
-          AppColors.textMuted
+          l10n.familyStateUnsupported,
+          p.textMuted
         ),
       PushRegistrationStatus.error => (
-          'Registration error${reg.errorDetail != null ? ': ${reg.errorDetail}' : ''}',
-          AppColors.statusDanger
+          context.serviceMessage(reg.errorDetail ?? ''),
+          p.statusDanger
         ),
     };
     return Row(
@@ -185,7 +185,7 @@ class _FamilyReceiverCardState extends State<FamilyReceiverCard> {
     );
   }
 
-  Widget _idRow(String id) {
+  Widget _idRow(String id, AppPalette p) {
     final shown =
         id.length > 14 ? '${id.substring(0, 10)}…${id.substring(id.length - 4)}' : id;
     return Row(
@@ -194,7 +194,7 @@ class _FamilyReceiverCardState extends State<FamilyReceiverCard> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text('Family Shield ID', style: AppTypography.labelSmall),
+              Text(l10n.familyShieldIdLabel, style: AppTypography.labelSmall),
               const SizedBox(height: 2),
               Text(shown,
                   style: AppTypography.bodyMedium
@@ -203,14 +203,14 @@ class _FamilyReceiverCardState extends State<FamilyReceiverCard> {
           ),
         ),
         IconButton(
-          tooltip: 'Copy Family Shield ID',
-          icon: const Icon(Icons.copy_outlined,
-              size: 18, color: AppColors.textMuted),
+          tooltip: l10n.familyShieldIdCopyTooltip,
+          icon: Icon(Icons.copy_outlined,
+              size: 18, color: p.textMuted),
           onPressed: () async {
             final messenger = ScaffoldMessenger.of(context);
             await Clipboard.setData(ClipboardData(text: id));
             messenger.showSnackBar(
-              const SnackBar(content: Text('Family Shield ID copied')),
+              SnackBar(content: Text(l10n.familyShieldIdCopied)),
             );
           },
         ),

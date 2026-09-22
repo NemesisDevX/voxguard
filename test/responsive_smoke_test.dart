@@ -72,6 +72,13 @@ void main() {
     for (var i = 0; i < 6; i++) {
       await tester.pump(const Duration(milliseconds: 100));
     }
+    // The Control Center is a ListView — Subscription sits below the
+    // fold on narrow screens, so scroll it into view.
+    await tester.dragUntilVisible(
+      find.text('Subscription'),
+      find.byType(ListView).first,
+      const Offset(0, -300),
+    );
     expect(find.text('Subscription'), findsOneWidget);
   });
 

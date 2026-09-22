@@ -1,15 +1,16 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/constants/app_strings.dart';
 import '../../../../core/services/alerts/family_contact_repository.dart';
 import '../../../../core/services/alerts/family_shield_alert_service.dart';
 import '../../../../core/services/family/received_family_alert_repository.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/l10n/l10n.dart';
+import '../../../../core/l10n/localized_text.dart';
+import '../../../../core/theme/app_palette.dart';
+import '../../../../core/services/haptics/app_haptics.dart';
 
 /// Thin seam over `url_launcher` so tests can observe the `tel:` URI
 /// without touching platform channels.
@@ -63,7 +64,7 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
   /// alert is a warning, never a confirmed scam.
   String get _headline {
     if (!_knownSender) {
-      return AppStrings.familyAlertUnknownSender;
+      return l10n.familyAlertUnknownSender;
     }
     if (_partial) {
       return '$_senderName asked you to verify an elevated acoustic '
@@ -72,7 +73,7 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
     return widget.alert.riskLevel == 'highRisk'
         ? '$_senderName may be dealing with a high-risk call.'
         : '$_senderName received a suspicious-call warning '
-            'from ${AppStrings.appName}.';
+            'from ${l10n.appName}.';
   }
 
   Future<void> _resolve(AlertResolution resolution) async {
@@ -86,7 +87,7 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
         .setResolution(widget.alert.key, resolution);
     if (mounted) setState(() => _resolution = resolution);
     // A human response landed — one restrained confirmation pulse.
-    unawaited(HapticFeedback.mediumImpact());
+    AppHaptics.confirm();
 
     final result = await FamilyAlertLocator.instance
         .sendFamilyShieldResponse(
@@ -97,32 +98,33 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
     if (!mounted) return;
     setState(() => _busy = false);
     final localCopy = resolution == AlertResolution.safe
-        ? 'Marked safe after independent verification.'
-        : 'Still suspicious — keep verification going.';
+        ? l10n.familyMarkedSafeNote
+        : l10n.familyStillSuspiciousNote;
     _note = result.attempted
         ? localCopy
-        : '$localCopy Family update could not be sent '
-            '(${result.detail})';
+        : '${l10n.familyUpdateFailed(localCopy)} '
+            '(${context.serviceMessage(result.detail)})';
     if (mounted) setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final riskColor = switch (widget.alert.riskLevel) {
-      'highRisk' => AppColors.statusDanger,
-      'suspicious' => AppColors.statusWarning,
-      _ => AppColors.statusSafe,
+      'highRisk' => p.statusDanger,
+      'suspicious' => p.statusWarning,
+      _ => p.statusSafe,
     };
     final phone = widget.sender?.trustedPhone;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Family Shield Alert')),
+      appBar: AppBar(title: Text(l10n.familyAlertTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.all(20),
           children: [
-            const Text(
-              AppStrings.familyAlertFraming,
+            Text(
+              l10n.familyAlertFraming,
               style: AppTypography.bodyMedium,
             ),
             const SizedBox(height: 8),
@@ -139,11 +141,11 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
               ),
               child: Text(
                 _partial
-                    ? 'PARTIAL ANALYSIS'
+                    ? l10n.bandPartial
                     : switch (widget.alert.riskLevel) {
-                        'highRisk' => 'HIGH RISK',
-                        'suspicious' => 'SUSPICIOUS',
-                        _ => 'ALERT',
+                        'highRisk' => l10n.bandHigh,
+                        'suspicious' => l10n.bandSuspicious,
+                        _ => l10n.familyBandAlert,
                       },
                 style: AppTypography.titleMedium.copyWith(
                     color: riskColor, letterSpacing: 1.2),
@@ -152,23 +154,19 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
             if (_partial) ...[
               const SizedBox(height: 8),
               Text(
-                'Conversation-risk signals were not analyzed.',
+                l10n.conversationNotAnalyzed,
                 style: AppTypography.bodyMedium
-                    .copyWith(color: AppColors.textMuted),
+                    .copyWith(color: p.textMuted),
               ),
             ],
             const SizedBox(height: 24),
 
-            Text('Verify directly', style: AppTypography.titleMedium),
+            Text(l10n.familyVerifyDirectly, style: AppTypography.titleMedium),
             const SizedBox(height: 6),
             Text(
               _knownSender
-                  ? 'Call $_senderName using the trusted number you '
-                      'saved — not a number provided by the '
-                      'suspicious caller.'
-                  : 'Verify through a channel you already trust. '
-                      'Do not act on instructions from the alert '
-                      'alone.',
+                  ? l10n.familyVerifyKnownSender(_senderName)
+                  : l10n.familyVerifyUnknownSender,
               style: AppTypography.bodyMedium,
             ),
             const SizedBox(height: 16),
@@ -186,18 +184,17 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
               )
             else
               Text(
-                'No trusted number saved. Contact them through a '
-                'number you already trust.',
+                l10n.familyNoTrustedNumber,
                 style: AppTypography.bodyMedium
-                    .copyWith(color: AppColors.textMuted),
+                    .copyWith(color: p.textMuted),
               ),
 
             const SizedBox(height: 24),
-            const Text(AppStrings.yourJudgment,
+            Text(l10n.yourJudgment,
                 style: AppTypography.titleMedium),
             const SizedBox(height: 6),
-            const Text(
-              AppStrings.humanResponseNote,
+            Text(
+              l10n.humanResponseNote,
               style: AppTypography.bodyMedium,
             ),
             const SizedBox(height: 10),
@@ -209,7 +206,7 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
                         ? null
                         : () => _resolve(AlertResolution.safe),
                     icon: const Icon(Icons.check_circle_outline),
-                    label: const Text('Mark Safe'),
+                    label: Text(l10n.familyMarkSafe),
                   ),
                 ),
                 const SizedBox(width: 10),
@@ -221,7 +218,7 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
                             : () =>
                                 _resolve(AlertResolution.stillSuspicious),
                     icon: const Icon(Icons.warning_amber_outlined),
-                    label: const Text('Still Suspicious'),
+                    label: Text(l10n.familyStillSuspicious),
                   ),
                 ),
               ],
@@ -235,45 +232,42 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
-                  color: AppColors.statusWarning
+                  color: p.statusWarning
                       .withValues(alpha: 0.08),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color: AppColors.statusWarning
+                      color: p.statusWarning
                           .withValues(alpha: 0.4)),
                 ),
-                child: const Column(
+                child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _Guidance('Do not send money or gift codes.'),
-                    _Guidance(
-                        'Do not share OTP, PIN, or banking details.'),
-                    _Guidance(
-                        'Verify through another independent channel.'),
-                    _Guidance(
-                        'Contact their bank, carrier, or local '
-                        'authorities if needed.'),
+                    _Guidance(l10n.familyTipNoMoney),
+                    _Guidance(l10n.familyTipNoCodes),
+                    _Guidance(l10n.familyTipChannel),
+                    _Guidance(l10n.familyTipAuthorities),
                   ],
                 ),
               ),
             ],
 
             const SizedBox(height: 28),
-            Text('Details', style: AppTypography.labelSmall),
+            Text(l10n.familyDetailsTitle, style: AppTypography.labelSmall),
             const SizedBox(height: 6),
             Text(
-              'Incident ${widget.alert.incidentId}\n'
-              'Received ${_formatTime(widget.alert.receivedAt)}\n'
-              'Resolution: ${switch (_resolution) {
-                AlertResolution.safe => 'Safe after verification',
-                AlertResolution.stillSuspicious => 'Still suspicious',
-                AlertResolution.unresolved => 'Unresolved',
-              }}\n\n'
-              'Privacy: only an opaque device identity and risk level '
-              'were shared. No audio, transcript, names, or phone '
-              'numbers are included in Family Shield alerts.',
+              '${l10n.familyDetailsBody(
+                widget.alert.incidentId,
+                _formatTime(widget.alert.receivedAt),
+                l10n.familyResolutionLabel(switch (_resolution) {
+                  AlertResolution.safe => l10n.familyResolutionSafe,
+                  AlertResolution.stillSuspicious =>
+                      l10n.familyResolutionStillSuspicious,
+                  AlertResolution.unresolved =>
+                      l10n.familyResolutionUnresolved,
+                }),
+              )}\n\n${l10n.familyPrivacyNote}',
               style: AppTypography.bodyMedium
-                  .copyWith(color: AppColors.textMuted),
+                  .copyWith(color: p.textMuted),
             ),
           ],
         ),
@@ -293,13 +287,14 @@ class _Guidance extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.shield_outlined,
-              size: 14, color: AppColors.statusWarning),
+          Icon(Icons.shield_outlined,
+              size: 14, color: p.statusWarning),
           const SizedBox(width: 8),
           Expanded(
               child: Text(text, style: AppTypography.bodyMedium)),

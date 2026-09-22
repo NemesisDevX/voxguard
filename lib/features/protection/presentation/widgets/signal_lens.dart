@@ -2,8 +2,8 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_strings.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/l10n/l10n.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/audio_forensic_metrics.dart';
 
@@ -69,21 +69,28 @@ class SignalLens extends StatefulWidget {
   /// Whether the two-layer legend renders beneath the lens.
   final bool showLegend;
 
-  /// Display state for a score — the single source of truth for the
+  /// Display band for a score — the single source of truth for the
   /// label used across the product. "Safe" is a score band, never a
   /// guarantee — the score is a composite risk signal, not a verdict.
-  static String stateLabel(double score) => switch (score) {
-        < 0.40 => 'SAFE',
-        < 0.75 => 'CAUTION',
-        _ => 'HIGH RISK',
+  ///
+  /// Pass the ambient [AppLocalizations] for localized output; the
+  /// default keeps the English technical band (tests, diagnostics).
+  static String stateLabel(double score, [AppLocalizations? l10n]) =>
+      switch (score) {
+        < 0.40 => l10n?.lensBandSafe ?? 'SAFE',
+        < 0.75 => l10n?.lensBandCaution ?? 'CAUTION',
+        _ => l10n?.lensBandHigh ?? 'HIGH RISK',
       };
 
   /// Short human interpretation for the current band — the message a
   /// person should read first, before any number.
-  static String interpretation(double score) => switch (score) {
-        < 0.40 => 'Signals look normal — keep listening.',
-        < 0.75 => 'Something feels off — watch the signals.',
-        _ => 'Pause before acting.',
+  static String interpretation(double score, [AppLocalizations? l10n]) =>
+      switch (score) {
+        < 0.40 =>
+          l10n?.lensInterpSafe ?? 'Signals look normal — keep listening.',
+        < 0.75 => l10n?.lensInterpCaution ??
+            'Something feels off — watch the signals.',
+        _ => l10n?.lensInterpHigh ?? 'Pause before acting.',
       };
 
   @override
@@ -100,7 +107,7 @@ class _SignalLensState extends State<SignalLens>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    // Respect the platform reduced-motion setting: the ambient
+    // Respect the platform + app reduced-motion setting: the ambient
     // breathing loop stops entirely; state still renders instantly
     // (no tween) so evidence stays truthful.
     final reduce = MediaQuery.maybeDisableAnimationsOf(context) ?? false;
@@ -119,12 +126,13 @@ class _SignalLensState extends State<SignalLens>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final p = context.palette;
     // Partial scope: the conversation layer never ran. The lens must
     // not mint a SAFE/CAUTION/HIGH RISK band or a fused /100 verdict
     // from a composite that structurally ignores the missing layer.
     final partial = !widget.conversationAnalyzed;
-    final semantic =
-        partial ? null : (widget.semanticScore ?? 0.0);
+    final semantic = partial ? null : (widget.semanticScore ?? 0.0);
     final acoustic100 =
         (widget.acousticScore * 100).round().clamp(0, 100);
     // Acoustic elevation reuses the domain threshold — the lens does
@@ -132,27 +140,23 @@ class _SignalLensState extends State<SignalLens>
     final acousticElevated =
         widget.acousticScore >= AudioForensicMetrics.elevatedThreshold;
     final color = partial
-        ? (acousticElevated
-            ? AppColors.statusWarning
-            : AppColors.textMuted)
-        : AppColors.forThreat(widget.score);
+        ? (acousticElevated ? p.statusWarning : p.textMuted)
+        : p.forThreat(widget.score);
     final score100 = (widget.score * 100).round().clamp(0, 100);
     final reduceMotion =
         MediaQuery.maybeDisableAnimationsOf(context) ?? false;
     final stateText = partial
-        ? AppStrings.signalPartialState
-        : SignalLens.stateLabel(widget.score);
+        ? l10n.signalPartialState
+        : SignalLens.stateLabel(widget.score, l10n);
     final centerNumber = partial ? acoustic100 : score100;
     final centerCaption =
-        partial ? AppStrings.acousticAnomalyLabel : 'RISK SIGNAL';
+        partial ? l10n.acousticAnomalyLabel : l10n.lensRiskSignal;
     // The instability driver is the evidence on display — in partial
     // mode that is the acoustic score, not the capped composite.
     final motionScore = partial ? widget.acousticScore : widget.score;
     final semanticsLabel = partial
-        ? 'Partial signal — acoustic anomaly $acoustic100 of 100. '
-            'Conversation analysis not run.'
-        : 'Risk signal $stateText, $score100 of 100. '
-            'Acoustic analysis $acoustic100 of 100.';
+        ? l10n.lensA11yPartial(acoustic100)
+        : l10n.lensA11yFull(stateText, score100, acoustic100);
 
     Widget lens(double animatedScore, double phase, double amp) =>
         SizedBox(
@@ -168,6 +172,13 @@ class _SignalLensState extends State<SignalLens>
                 color: color,
                 phase: phase,
                 amplitude: amp,
+                trackColor: p.borderSubtle,
+                absentColor: p.signalAbsent,
+                semanticLayerColor: p.signalSemantic,
+                acousticLayerColor: p.signalAcoustic,
+                statusSafe: p.statusSafe,
+                statusWarning: p.statusWarning,
+                statusDanger: p.statusDanger,
               ),
               child: Center(
                 child: Column(
@@ -207,7 +218,7 @@ class _SignalLensState extends State<SignalLens>
                           TextSpan(
                             text: '$centerNumber',
                             style: AppTypography.statLarge.copyWith(
-                              color: AppColors.textPrimary,
+                              color: p.textPrimary,
                               fontSize: widget.size * 0.13,
                             ),
                           ),
@@ -269,14 +280,14 @@ class _SignalLensState extends State<SignalLens>
             padding:
                 const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
             decoration: BoxDecoration(
-              color: AppColors.bgElevated,
+              color: p.bgElevated,
               borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: AppColors.borderSubtle),
+              border: Border.all(color: p.borderSubtle),
             ),
             child: Text(
-              'DEMO AUDIO',
+              l10n.lensDemoAudio,
               style: AppTypography.labelSmall.copyWith(
-                color: AppColors.textMuted,
+                color: p.textMuted,
                 fontSize: 8,
               ),
             ),
@@ -299,6 +310,8 @@ class _Legend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final p = context.palette;
     // Wrap — at narrow widths / large text the two layer readouts
     // stack rather than overflow.
     return Wrap(
@@ -307,16 +320,18 @@ class _Legend extends StatelessWidget {
       runSpacing: 6,
       children: [
         _LegendRow(
-          color: AppColors.signalSemantic,
-          label: 'Conversation',
+          color: p.signalSemantic,
+          label: l10n.lensLayerConversation,
           value: semanticScore == null
-              ? 'not analyzed'
+              ? l10n.lensNotAnalyzed
               : '${(semanticScore! * 100).round()}',
+          absent: semanticScore == null,
         ),
         _LegendRow(
-          color: AppColors.signalAcoustic,
-          label: 'Voice acoustics',
+          color: p.signalAcoustic,
+          label: l10n.lensLayerVoice,
           value: '${(acousticScore * 100).round()}',
+          absent: false,
         ),
       ],
     );
@@ -328,15 +343,17 @@ class _LegendRow extends StatelessWidget {
     required this.color,
     required this.label,
     required this.value,
+    required this.absent,
   });
 
   final Color color;
   final String label;
   final String value;
+  final bool absent;
 
   @override
   Widget build(BuildContext context) {
-    final absent = value == 'not analyzed';
+    final p = context.palette;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -351,7 +368,7 @@ class _LegendRow extends StatelessWidget {
                   height: 3,
                   margin: const EdgeInsets.only(right: 1.6),
                   decoration: BoxDecoration(
-                    color: AppColors.signalAbsent,
+                    color: p.signalAbsent,
                     borderRadius: BorderRadius.circular(1),
                   ),
                 ),
@@ -374,7 +391,7 @@ class _LegendRow extends StatelessWidget {
             style: AppTypography.labelSmall.copyWith(
               fontSize: 9.5,
               letterSpacing: 0.7,
-              color: AppColors.textMuted,
+              color: p.textMuted,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -384,8 +401,8 @@ class _LegendRow extends StatelessWidget {
           child: Container(
             width: 3,
             height: 3,
-            decoration: const BoxDecoration(
-              color: AppColors.borderSubtle,
+            decoration: BoxDecoration(
+              color: p.borderSubtle,
               shape: BoxShape.circle,
             ),
           ),
@@ -397,8 +414,7 @@ class _LegendRow extends StatelessWidget {
             style: AppTypography.labelSmall.copyWith(
               fontSize: 9.5,
               letterSpacing: 0.7,
-              color:
-                  absent ? AppColors.signalAbsent : AppColors.textPrimary,
+              color: absent ? p.signalAbsent : p.textPrimary,
             ),
           ),
         ),
@@ -415,12 +431,32 @@ class _SignalLensPainter extends CustomPainter {
     required this.color,
     required this.phase,
     required this.amplitude,
+    required this.trackColor,
+    required this.absentColor,
+    required this.semanticLayerColor,
+    required this.acousticLayerColor,
+    required this.statusSafe,
+    required this.statusWarning,
+    required this.statusDanger,
   });
 
   final double score;
   final double? semanticScore;
   final double acousticScore;
   final Color color;
+
+  /// Palette-sourced colors — layer hues keep their evidence meaning;
+  /// only the theme-aware track/absent tones shift with brightness.
+  final Color trackColor;
+  final Color absentColor;
+  final Color semanticLayerColor;
+  final Color acousticLayerColor;
+
+  /// Safety semantics — identical thresholds to AppPalette.forThreat;
+  /// passed in so the painter stays palette-agnostic.
+  final Color statusSafe;
+  final Color statusWarning;
+  final Color statusDanger;
 
   /// Breathing phase 0–1 from the ambient controller.
   final double phase;
@@ -441,7 +477,7 @@ class _SignalLensPainter extends CustomPainter {
         Paint()
           ..style = PaintingStyle.stroke
           ..strokeWidth = 8
-          ..color = AppColors.borderSubtle.withValues(alpha: 0.55),
+          ..color = trackColor.withValues(alpha: 0.55),
       );
       return;
     }
@@ -451,7 +487,7 @@ class _SignalLensPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 8
       ..strokeCap = StrokeCap.round
-      ..color = AppColors.signalAbsent.withValues(alpha: 0.7);
+      ..color = absentColor.withValues(alpha: 0.7);
     const dash = _maxSweep / 18;
     for (var i = 0; i < 18; i += 2) {
       canvas.drawArc(
@@ -499,6 +535,18 @@ class _SignalLensPainter extends CustomPainter {
     canvas.drawCircle(node, 4.6, Paint()..color = paintColor);
   }
 
+  /// A layer's own hue tinted toward its risk band as evidence earns
+  /// it — low evidence keeps the layer hue, high converges on status.
+  /// Mirrors AppPalette.forSignalLayer / forThreat thresholds.
+  Color _layerColor(Color layer, double value) {
+    final band = value >= 0.7
+        ? statusDanger
+        : value >= 0.4
+            ? statusWarning
+            : statusSafe;
+    return Color.lerp(layer, band, value.clamp(0.0, 1.0))!;
+  }
+
   @override
   void paint(Canvas canvas, Size size) {
     final center = size.center(Offset.zero);
@@ -532,7 +580,7 @@ class _SignalLensPainter extends CustomPainter {
         center,
         outerR,
         semantic,
-        AppColors.forSignalLayer(AppColors.signalSemantic, semantic),
+        _layerColor(semanticLayerColor, semantic),
         wobble,
       );
     }
@@ -545,7 +593,7 @@ class _SignalLensPainter extends CustomPainter {
       center,
       innerR,
       acousticScore,
-      AppColors.forSignalLayer(AppColors.signalAcoustic, acousticScore),
+      _layerColor(acousticLayerColor, acousticScore),
       -wobble, // the two paths shear apart under pressure
     );
   }
@@ -557,5 +605,12 @@ class _SignalLensPainter extends CustomPainter {
       old.acousticScore != acousticScore ||
       old.color != color ||
       old.phase != phase ||
-      old.amplitude != amplitude;
+      old.amplitude != amplitude ||
+      old.trackColor != trackColor ||
+      old.absentColor != absentColor ||
+      old.semanticLayerColor != semanticLayerColor ||
+      old.acousticLayerColor != acousticLayerColor ||
+      old.statusSafe != statusSafe ||
+      old.statusWarning != statusWarning ||
+      old.statusDanger != statusDanger;
 }

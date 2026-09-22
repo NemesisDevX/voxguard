@@ -1,6 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../../core/constants/app_strings.dart';
+
 import '../../domain/models/billing_cycle.dart';
 import '../../domain/models/entitlement_state.dart';
 import '../../domain/models/subscription_tier.dart';
@@ -8,6 +8,7 @@ import '../../domain/services/i_purchase_service.dart';
 import '../../domain/services/purchase_service_locator.dart';
 import 'paywall_event.dart';
 import 'paywall_state.dart';
+import '../../../../core/l10n/l10n.dart';
 
 /// Drives the paywall: initialize the backend, map the *current*
 /// offering to purchasable options, run checkout and restores
@@ -46,20 +47,20 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
       emit(PaywallError(e.message));
       return;
     } on Exception {
-      emit(const PaywallError(AppStrings.plansLoadError));
+      emit(PaywallError(l10n.plansLoadError));
       return;
     }
 
     // No store backend configured — free plan only, no checkout.
     if (backend == PurchaseBackendMode.unavailable) {
       emit(
-        const PaywallLoaded(
+        PaywallLoaded(
           backend: PurchaseBackendMode.unavailable,
           tiers: [SubscriptionTiers.free],
           packages: {},
           selectedTier: SubscriptionTiers.free,
           cycle: BillingCycle.monthly,
-          notice: AppStrings.storeUnavailableNotice,
+          notice: l10n.storeUnavailableNotice,
         ),
       );
       return;
@@ -72,7 +73,7 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
       emit(PaywallError(e.message));
       return;
     } on Exception {
-      emit(const PaywallError(AppStrings.plansLoadError));
+      emit(PaywallError(l10n.plansLoadError));
       return;
     }
 
@@ -109,7 +110,7 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
         selectedTier: selected,
         cycle: cycle,
         notice: tiers.length == 1
-            ? 'No paid plans are available in this store yet.'
+            ? l10n.msgNoPaidPlans
             : null,
       ),
     );
@@ -154,7 +155,7 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
 
     final package = s.selectedPackage;
     if (package == null) {
-      emit(s.copyWith(notice: AppStrings.planNotAvailable));
+      emit(s.copyWith(notice: l10n.planNotAvailable));
       return;
     }
 
@@ -177,9 +178,7 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
         emit(
           s.copyWith(
             isPurchasing: false,
-            notice:
-                'The purchase did not activate a plan yet — it may '
-                'take a moment. Use Restore Purchases to check again.',
+            notice: l10n.msgPurchasePendingActivation,
           ),
         );
       }
@@ -189,7 +188,7 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
       emit(
         s.copyWith(
           isPurchasing: false,
-          notice: 'The purchase could not be completed.',
+          notice: l10n.msgPurchaseFailed,
         ),
       );
     }
@@ -217,7 +216,7 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
         emit(
           s.copyWith(
             isPurchasing: false,
-            notice: AppStrings.noPurchasesRestored,
+            notice: l10n.noPurchasesRestored,
           ),
         );
       }
@@ -227,7 +226,7 @@ final class PaywallBloc extends Bloc<PaywallEvent, PaywallState> {
       emit(
         s.copyWith(
           isPurchasing: false,
-          notice: 'Purchases could not be restored right now.',
+          notice: l10n.msgRestoreFailed,
         ),
       );
     }

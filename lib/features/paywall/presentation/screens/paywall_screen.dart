@@ -2,9 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../../../../core/constants/app_strings.dart';
 import '../../../../core/constants/legal_links.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/billing_cycle.dart';
 import '../../domain/models/entitlement_state.dart';
@@ -12,6 +10,8 @@ import '../../domain/models/subscription_tier.dart';
 import '../bloc/paywall_bloc.dart';
 import '../bloc/paywall_event.dart';
 import '../bloc/paywall_state.dart';
+import '../../../../core/l10n/l10n.dart';
+import '../../../../core/theme/app_palette.dart';
 
 /// Subscription paywall.
 ///
@@ -51,6 +51,7 @@ class _PaywallView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return BlocConsumer<PaywallBloc, PaywallState>(
       listenWhen: (_, s) => s is PaywallPurchaseSuccess,
       listener: (context, state) {
@@ -60,7 +61,7 @@ class _PaywallView extends StatelessWidget {
           SnackBar(
             content: Text(
               success.demo
-                  ? AppStrings.demoPlanActivated
+                  ? l10n.demoPlanActivated
                   : '$name activated — shield upgraded',
             ),
           ),
@@ -69,12 +70,12 @@ class _PaywallView extends StatelessWidget {
       },
       builder: (context, state) {
         return Scaffold(
-          backgroundColor: AppColors.bgBase,
+          backgroundColor: p.bgBase,
           body: SafeArea(
             child: switch (state) {
-              PaywallLoading() => const Center(
+              PaywallLoading() => Center(
                   child: CircularProgressIndicator(
-                    color: AppColors.accent,
+                    color: p.accent,
                   ),
                 ),
               PaywallError() => _ErrorView(message: state.errorMessage),
@@ -96,6 +97,7 @@ class _PaywallContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final loaded = state is PaywallLoaded ? state as PaywallLoaded : null;
     if (loaded == null) return const SizedBox.shrink();
     final bloc = context.read<PaywallBloc>();
@@ -112,7 +114,7 @@ class _PaywallContent extends StatelessWidget {
             children: [
               IconButton(
                 icon:
-                    const Icon(Icons.close, color: AppColors.textMuted),
+                    Icon(Icons.close, color: p.textMuted),
                 onPressed: () => Navigator.of(context).maybePop(),
               ),
               const Spacer(),
@@ -121,19 +123,19 @@ class _PaywallContent extends StatelessWidget {
               else if (!isUnavailable) ...[
                 // No billing happens on the unavailable backend —
                 // so the badge stays honest by staying absent.
-                const Icon(
+                Icon(
                   Icons.lock_outline,
                   size: 13,
-                  color: AppColors.statusSafe,
+                  color: p.statusSafe,
                 ),
                 const SizedBox(width: 6),
-                const Flexible(
+                Flexible(
                   child: Text(
-                    AppStrings.securityBadge,
+                    l10n.securityBadge,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 11,
-                      color: AppColors.textMuted,
+                      color: p.textMuted,
                       letterSpacing: 0.2,
                     ),
                   ),
@@ -146,13 +148,13 @@ class _PaywallContent extends StatelessWidget {
           child: ListView(
             padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
             children: [
-              const Text(
-                AppStrings.paywallTitle,
+              Text(
+                l10n.paywallTitle,
                 style: AppTypography.displaySmall,
               ),
               const SizedBox(height: 8),
-              const Text(
-                AppStrings.paywallSubtitle,
+              Text(
+                l10n.paywallSubtitle,
                 style: AppTypography.bodyMedium,
               ),
               const SizedBox(height: 16),
@@ -211,22 +213,23 @@ class _DemoBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.statusWarning.withValues(alpha: 0.14),
+        color: p.statusWarning.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(6),
         border: Border.all(
-          color: AppColors.statusWarning.withValues(alpha: 0.5),
+          color: p.statusWarning.withValues(alpha: 0.5),
         ),
       ),
-      child: const Text(
-        AppStrings.demoStoreBadge,
+      child: Text(
+        l10n.demoStoreBadge,
         style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.8,
-          color: AppColors.statusWarning,
+          color: p.statusWarning,
         ),
       ),
     );
@@ -238,11 +241,12 @@ class _DemoNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return _NoticeShell(
       icon: Icons.science_outlined,
-      color: AppColors.statusWarning,
-      child: const Text(
-        AppStrings.demoStoreNotice,
+      color: p.statusWarning,
+      child: Text(
+        l10n.demoStoreNotice,
         style: AppTypography.bodyMedium,
       ),
     );
@@ -254,11 +258,12 @@ class _UnavailableNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const _NoticeShell(
+    final p = context.palette;
+    return _NoticeShell(
       icon: Icons.info_outline,
-      color: AppColors.textMuted,
+      color: p.textMuted,
       child: Text(
-        AppStrings.storeUnavailableNotice,
+        l10n.storeUnavailableNotice,
         style: AppTypography.bodyMedium,
       ),
     );
@@ -272,9 +277,10 @@ class _InlineNotice extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return _NoticeShell(
       icon: Icons.info_outline,
-      color: AppColors.accent,
+      color: p.accent,
       child: Text(message, style: AppTypography.bodyMedium),
     );
   }
@@ -327,23 +333,24 @@ class _BillingToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
-        color: AppColors.bgSurface,
+        color: p.bgSurface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       child: Row(
         children: [
           for (final c in BillingCycle.values)
-            _pill(c, c.label, enabled: availableCycles.contains(c)),
+            _pill(c, c.label, enabled: availableCycles.contains(c), p: p),
         ],
       ),
     );
   }
 
-  Widget _pill(BillingCycle c, String label, {required bool enabled}) {
+  Widget _pill(BillingCycle c, String label, {required bool enabled, required AppPalette p}) {
     final active = cycle == c;
     return Expanded(
       child: GestureDetector(
@@ -352,20 +359,20 @@ class _BillingToggle extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: active ? AppColors.bgElevated : Colors.transparent,
+            color: active ? p.bgElevated : Colors.transparent,
             borderRadius: BorderRadius.circular(9),
             border:
-                active ? Border.all(color: AppColors.borderSubtle) : null,
+                active ? Border.all(color: p.borderSubtle) : null,
           ),
           child: Center(
             child: Text(
               label,
               style: AppTypography.labelLarge.copyWith(
                 color: !enabled
-                    ? AppColors.textMuted.withValues(alpha: 0.4)
+                    ? p.textMuted.withValues(alpha: 0.4)
                     : active
-                        ? AppColors.textPrimary
-                        : AppColors.textMuted,
+                        ? p.textPrimary
+                        : p.textMuted,
               ),
             ),
           ),
@@ -398,14 +405,54 @@ class _TierCard extends StatelessWidget {
   final bool selected;
   final VoidCallback? onTap;
 
+  /// Catalog copy is localized at the presentation layer — the
+  /// domain `SubscriptionTier` strings stay frozen English; an
+  /// unrecognized tier falls back to its domain text.
+  String _tierName(AppLocalizations l10n) => switch (tier.tierId) {
+        TierId.free => l10n.tierQuickCheck,
+        TierId.sentinel => l10n.tierSentinel,
+        TierId.familyVault => l10n.tierFamily,
+      };
+
+  String _tierSubtitle(AppLocalizations l10n) => switch (tier.tierId) {
+        TierId.free => l10n.tierQuickCheckTag,
+        TierId.sentinel => l10n.tierSentinelTag,
+        TierId.familyVault => l10n.tierFamilyTag,
+      };
+
+  List<String> _tierFeatures(AppLocalizations l10n) =>
+      switch (tier.tierId) {
+        TierId.free => [
+            l10n.tierQuickCheckF1,
+            l10n.tierQuickCheckF2,
+            l10n.tierQuickCheckF3,
+            l10n.tierQuickCheckF4,
+            l10n.tierQuickCheckF5,
+          ],
+        TierId.sentinel => [
+            l10n.tierSentinelF1,
+            l10n.tierSentinelF2,
+            l10n.tierSentinelF3,
+            l10n.tierSentinelF4,
+          ],
+        TierId.familyVault => [
+            l10n.tierFamilyF1,
+            l10n.tierFamilyF2,
+            l10n.tierFamilyF3,
+            l10n.tierFamilyF4,
+          ],
+      };
+
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
+    final l10n = context.l10n;
     final highlight = selected || tier.isPopular;
     final borderColor = selected
-        ? AppColors.accent
+        ? p.accent
         : tier.isPopular
-            ? AppColors.accentMuted
-            : AppColors.borderSubtle;
+            ? p.accentMuted
+            : p.borderSubtle;
 
     return InkWell(
       onTap: onTap,
@@ -414,7 +461,7 @@ class _TierCard extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: highlight ? AppColors.bgElevated : AppColors.surfaceCard,
+          color: highlight ? p.bgElevated : p.surfaceCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: borderColor,
@@ -434,7 +481,7 @@ class _TierCard extends StatelessWidget {
                         children: [
                           Flexible(
                             child: Text(
-                              tier.name,
+                              _tierName(l10n),
                               style: AppTypography.titleMedium,
                             ),
                           ),
@@ -445,7 +492,8 @@ class _TierCard extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 2),
-                      Text(tier.subtitle, style: AppTypography.bodyMedium),
+                      Text(_tierSubtitle(l10n),
+                          style: AppTypography.bodyMedium),
                     ],
                   ),
                 ),
@@ -458,31 +506,31 @@ class _TierCard extends StatelessWidget {
                     style: AppTypography.statLarge.copyWith(
                       fontSize: 18,
                       color: selected
-                          ? AppColors.accent
-                          : AppColors.textPrimary,
+                          ? p.accent
+                          : p.textPrimary,
                     ),
                   ),
                 ),
               ],
             ),
             const SizedBox(height: 12),
-            for (final f in tier.features)
+            for (final f in _tierFeatures(l10n))
               Padding(
                 padding: const EdgeInsets.symmetric(vertical: 3),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(
+                    Icon(
                       Icons.check_circle,
                       size: 15,
-                      color: AppColors.statusSafe,
+                      color: p.statusSafe,
                     ),
                     const SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         f,
                         style: AppTypography.bodyMedium.copyWith(
-                          color: AppColors.textPrimary,
+                          color: p.textPrimary,
                         ),
                       ),
                     ),
@@ -501,20 +549,21 @@ class _PopularChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: 0.18),
+        color: p.accent.withValues(alpha: 0.18),
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: AppColors.accent.withValues(alpha: 0.5)),
+        border: Border.all(color: p.accent.withValues(alpha: 0.5)),
       ),
-      child: const Text(
-        AppStrings.mostPopular,
+      child: Text(
+        l10n.mostPopular,
         style: TextStyle(
           fontSize: 9,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.8,
-          color: AppColors.accent,
+          color: p.accent,
         ),
       ),
     );
@@ -530,6 +579,7 @@ class _CtaBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final bloc = context.read<PaywallBloc>();
     final tier = loaded.selectedTier;
     final isDemo = loaded.backend == PurchaseBackendMode.demoStore;
@@ -538,11 +588,11 @@ class _CtaBar extends StatelessWidget {
 
     final String ctaLabel;
     if (tier.isFree || isUnavailable) {
-      ctaLabel = AppStrings.continueFree;
+      ctaLabel = l10n.continueFree;
     } else if (isDemo) {
-      ctaLabel = AppStrings.activateDemoPlan;
+      ctaLabel = l10n.activateDemoPlan;
     } else {
-      ctaLabel = AppStrings.subscribeNow;
+      ctaLabel = l10n.subscribeNow;
     }
 
     // "Continue Free" just closes — it is never a store transaction.
@@ -554,9 +604,9 @@ class _CtaBar extends StatelessWidget {
 
     return Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
-      decoration: const BoxDecoration(
-        color: AppColors.bgSurface,
-        border: Border(top: BorderSide(color: AppColors.borderSubtle)),
+      decoration: BoxDecoration(
+        color: p.bgSurface,
+        border: Border(top: BorderSide(color: p.borderSubtle)),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -567,9 +617,9 @@ class _CtaBar extends StatelessWidget {
             child: ElevatedButton(
               onPressed: onCta,
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.accent,
+                backgroundColor: p.accent,
                 disabledBackgroundColor:
-                    AppColors.accent.withValues(alpha: 0.45),
+                    p.accent.withValues(alpha: 0.45),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(14),
@@ -608,6 +658,7 @@ class _FooterRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final bloc = context.read<PaywallBloc>();
     final terms = LegalLinks.terms;
     final privacy = LegalLinks.privacyPolicy;
@@ -618,8 +669,8 @@ class _FooterRow extends StatelessWidget {
       children: [
         // Legal links render ONLY when a valid https URL resolves —
         // never dead buttons.
-        if (terms != null) _footerLink(AppStrings.terms, terms),
-        if (privacy != null) _footerLink(AppStrings.privacy, privacy),
+        if (terms != null) _footerLink(l10n.terms, terms, p),
+        if (privacy != null) _footerLink(l10n.privacy, privacy, p),
         // Restore only where a store exists to restore from.
         if (loaded.backend != PurchaseBackendMode.unavailable)
           TextButton(
@@ -627,13 +678,13 @@ class _FooterRow extends StatelessWidget {
                 ? null
                 : () => bloc.add(const RestorePurchasesEvent()),
             style: TextButton.styleFrom(
-              foregroundColor: AppColors.textMuted,
+              foregroundColor: p.textMuted,
               padding: EdgeInsets.zero,
               minimumSize: const Size(0, 32),
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Text(
-              AppStrings.restore,
+            child: Text(
+              l10n.restore,
               style: TextStyle(fontSize: 12),
             ),
           ),
@@ -641,12 +692,12 @@ class _FooterRow extends StatelessWidget {
     );
   }
 
-  Widget _footerLink(String label, Uri url) {
+  Widget _footerLink(String label, Uri url, AppPalette p) {
     return TextButton(
       onPressed: () =>
           launchUrl(url, mode: LaunchMode.externalApplication),
       style: TextButton.styleFrom(
-        foregroundColor: AppColors.textMuted,
+        foregroundColor: p.textMuted,
         padding: EdgeInsets.zero,
         minimumSize: const Size(0, 32),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -665,16 +716,17 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Icon(
+            Icon(
               Icons.error_outline,
               size: 48,
-              color: AppColors.statusDanger,
+              color: p.statusDanger,
             ),
             const SizedBox(height: 16),
             Text(message,
@@ -685,7 +737,7 @@ class _ErrorView extends StatelessWidget {
               onPressed: () => context
                   .read<PaywallBloc>()
                   .add(const LoadOfferingsEvent()),
-              child: const Text(AppStrings.retry),
+              child: Text(l10n.actionRetry),
             ),
           ],
         ),

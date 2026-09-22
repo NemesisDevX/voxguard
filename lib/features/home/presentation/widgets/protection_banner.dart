@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_strings.dart';
-import '../../../../core/theme/app_colors.dart';
+import '../../../../core/l10n/l10n.dart';
+import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/signal_mark.dart';
 import '../../../paywall/domain/models/entitlement_state.dart';
@@ -16,36 +16,38 @@ class ProtectionBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final p = context.palette;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: p.surfaceCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          _ReadyMark(),
-          SizedBox(width: 16),
+          const _ReadyMark(),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  AppStrings.shieldStatusReady,
+                  l10n.shieldStatusReady,
                   style: AppTypography.titleMedium,
                 ),
-                SizedBox(height: 4),
+                const SizedBox(height: 4),
                 Text(
-                  AppStrings.shieldSubtitle,
+                  l10n.shieldSubtitle,
                   style: AppTypography.bodyMedium,
                 ),
               ],
             ),
           ),
-          SizedBox(width: 12),
-          _PlanBadge(),
+          const SizedBox(width: 12),
+          const Flexible(child: _PlanBadge()),
         ],
       ),
     );
@@ -59,17 +61,18 @@ class _PlanBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = context.l10n;
+    final p = context.palette;
     return ValueListenableBuilder<EntitlementState>(
       valueListenable: PurchaseServiceLocator.instance.entitlement,
       builder: (context, entitlement, _) {
         final premium = entitlement.tier != TierId.free;
         final label = switch (entitlement.tier) {
-          TierId.sentinel => AppStrings.planSentinel,
-          TierId.familyVault => AppStrings.planFamily,
-          _ => AppStrings.planFree,
+          TierId.sentinel => l10n.planSentinelBadge,
+          TierId.familyVault => l10n.planFamilyBadge,
+          _ => l10n.planFreeBadge,
         };
-        final color =
-            premium ? AppColors.statusSafe : AppColors.textMuted;
+        final color = premium ? p.statusSafe : p.textMuted;
         return Container(
           padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
           decoration: BoxDecoration(
@@ -79,6 +82,8 @@ class _PlanBadge extends StatelessWidget {
           ),
           child: Text(
             label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w800,
@@ -93,7 +98,8 @@ class _PlanBadge extends StatelessWidget {
 }
 
 /// Static mark with a single soft breathing scale — quiet readiness,
-/// not a scanner.
+/// not a scanner. Breathing stops when either the OS or the app
+/// requests reduced motion (the root MediaQuery override ORs both).
 class _ReadyMark extends StatefulWidget {
   const _ReadyMark();
 
@@ -135,6 +141,7 @@ class _ReadyMarkState extends State<_ReadyMark>
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return SizedBox(
       width: 56,
       height: 56,
@@ -149,12 +156,16 @@ class _ReadyMarkState extends State<_ReadyMark>
           height: 52,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: AppColors.accent.withValues(alpha: 0.10),
+            color: p.accent.withValues(alpha: 0.10),
             border: Border.all(
-              color: AppColors.accent.withValues(alpha: 0.45),
+              color: p.accent.withValues(alpha: 0.45),
             ),
           ),
-          child: const Center(child: SignalMark(size: 26)),
+          child: Center(
+            child: SignalMark(
+                size: 26, color: p.accent,
+                secondaryColor: p.signalAcoustic),
+          ),
         ),
       ),
     );

@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_strings.dart';
 import '../../../../core/services/family/family_shield_response.dart';
 import '../../../../core/services/family/received_family_alert_repository.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/l10n/l10n.dart';
+import '../../../../core/theme/app_palette.dart';
 
 /// Fallback shown when a `family_shield_response` notification is
 /// tapped but no matching local incident exists — the remote
@@ -24,14 +24,15 @@ class FamilyShieldUpdateScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final isSafe = response.resolution == AlertResolution.safe;
     final color =
-        isSafe ? AppColors.statusSafe : AppColors.statusWarning;
+        isSafe ? p.statusSafe : p.statusWarning;
     // An opaque vg_… id is not proof of trust — never label an
     // unrecognized identity as a "trusted person".
-    final who = responderName ?? AppStrings.unrecognizedIdentity;
+    final who = responderName ?? l10n.unrecognizedIdentity;
     return Scaffold(
-      appBar: AppBar(title: const Text('Family Shield Update')),
+      appBar: AppBar(title: Text(l10n.familyUpdateTitle)),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(20),
@@ -48,16 +49,15 @@ class FamilyShieldUpdateScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Text(
                 isSafe
-                    ? '$who marked this situation safe'
-                    : '$who is still concerned',
+                    ? l10n.familyUpdateMarkedSafe(who)
+                    : l10n.familyUpdateConcerned(who),
                 style: AppTypography.titleLarge,
               ),
               const SizedBox(height: 10),
               Text(
-                'This is a human verification update — it does not '
-                'change the AI risk assessment.\n\n'
-                'Incident ${response.incidentId}'
-                '${response.receivedAt != null ? '\nReceived ${_fmt(response.receivedAt!)}' : ''}',
+                '${l10n.familyUpdateHumanNote}\n\n'
+                '${l10n.familyUpdateIncidentId(response.incidentId)}'
+                '${response.receivedAt != null ? '\n${l10n.familyUpdateReceivedAt(_fmt(response.receivedAt!))}' : ''}',
                 style: AppTypography.bodyMedium,
               ),
             ],

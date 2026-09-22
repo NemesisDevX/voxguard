@@ -150,6 +150,22 @@ After picking a file, the user makes an explicit choice — nothing is uploaded 
 
 ---
 
+## Personalization & Localization
+
+- **Welcome Setup** (first run, before safety onboarding): interface language picker — English / العربية / Español / Français, no flags, applies instantly — plus an *optional* local-only display name (≤32 chars, trimmed, skippable, never synced, never in Family Shield payloads).
+- **Full localization** via `flutter_localizations` + `gen_l10n`: 532 keys with enforced parity across all four ARB locales; Arabic renders true RTL. Interface language is independent of analysis coverage — **conversation-risk analysis supports English and Egyptian Arabic**; the app says so in Settings → About.
+- **Themes**: System / Light / Dark with a real token layer (`AppPalette` ThemeExtension) — deep ink dark, warm off-white light.
+- **Accents**: Periwinkle / Soft Blue / Soft Violet — tint interactive surfaces only; safety colors (safe/warning/danger) are provably accent-proof.
+- **Text size**: System / Large / Extra Large as a floor — never smaller than the OS accessibility scale.
+- **Guided Mode**: larger actions, clearer guidance, de-emphasized technical detail — same risk behavior, no parallel screens.
+- **Motion**: Follow system / Reduced — either OS or app preference stops ambient animation (Signal Lens breathing, launch converge, theme transitions).
+- **Haptics**: On / Off — every haptic routes through the preference-aware `AppHaptics` wrapper.
+- **Settings Control Center**: Profile, Appearance, Safety & Family, Notifications (real push-permission state + device settings shortcut), Subscription, About & Privacy.
+
+Details: `docs/PERSONALIZATION_AND_LOCALIZATION.md` · `docs/DESIGN_SYSTEM.md`
+
+---
+
 ## Monetization Architecture *(HAMM Award)*
 
 The enforced product model — the same matrix `ProductAccess` and the paywall apply in code:

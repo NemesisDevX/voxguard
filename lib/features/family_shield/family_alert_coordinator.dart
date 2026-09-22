@@ -11,6 +11,7 @@ import '../forensics/domain/services/incident_repository.dart';
 import '../forensics/presentation/screens/incident_detail_screen.dart';
 import 'presentation/screens/family_alert_screen.dart';
 import 'presentation/screens/family_shield_update_screen.dart';
+import '../../core/l10n/l10n.dart';
 
 /// Routes Family Shield notification events into the app:
 ///
@@ -84,9 +85,9 @@ final class FamilyAlertCoordinator {
     // and let the user choose.
     _messengerKey?.currentState?.showSnackBar(
       SnackBar(
-        content: const Text('Family Shield alert received'),
+        content: Text(l10n.familyAlertReceived),
         action: SnackBarAction(
-          label: 'View',
+          label: l10n.actionView,
           onPressed: () => unawaited(_navigateToAlert(event)),
         ),
       ),

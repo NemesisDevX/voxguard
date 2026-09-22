@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_strings.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/threat_phrase_highlighter.dart';
 import '../../../forensics/presentation/screens/incident_detail_screen.dart';
@@ -14,6 +12,9 @@ import '../../../protection/domain/models/composite_threat_report.dart';
 import '../../domain/models/recording_models.dart';
 import '../../domain/services/recording_analyzer.dart';
 import '../../domain/services/recording_file_picker.dart';
+import '../../../../core/l10n/l10n.dart';
+import '../../../../core/l10n/localized_text.dart';
+import '../../../../core/theme/app_palette.dart';
 
 /// Analyze Recording — pick a local audio file, choose a privacy
 /// mode, and run the same VoxGuard threat engines SafeCall uses.
@@ -166,14 +167,15 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
 
   @override
   Widget build(BuildContext context) {
+  final p = context.palette;
     return Scaffold(
-      appBar: AppBar(title: const Text('Analyze Recording')),
+      appBar: AppBar(title: Text(l10n.analyzeRecordingTitle)),
       body: SafeArea(
         child: ListView(
           padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
           children: [
             if (_result != null) ..._buildResult(_result!)
-            else if (_picked == null) ..._buildEmpty()
+            else if (_picked == null) ..._buildEmpty(p)
             else ..._buildSelected(),
             if (_error != null) ...[
               const SizedBox(height: 16),
@@ -185,28 +187,27 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
     );
   }
 
-  List<Widget> _buildEmpty() => [
+  List<Widget> _buildEmpty(AppPalette p) => [
         const SizedBox(height: 8),
-        const _StepLabel(AppStrings.stepPickRecording),
+        _StepLabel(l10n.stepPickRecording),
         const SizedBox(height: 16),
-        const Icon(Icons.audio_file_outlined,
-            size: 56, color: AppColors.accent),
+        Icon(Icons.audio_file_outlined,
+            size: 56, color: p.accent),
         const SizedBox(height: 16),
-        const Text(
-          'Analyze a call recording or voice note',
+        Text(
+          l10n.recordingStepTitle,
           textAlign: TextAlign.center,
           style: AppTypography.titleLarge,
         ),
         const SizedBox(height: 10),
-        const Text(
-          AppStrings.recordingAnalyzerIntro,
+        Text(
+          l10n.recordingAnalyzerIntro,
           textAlign: TextAlign.center,
           style: AppTypography.bodyMedium,
         ),
         const SizedBox(height: 8),
-        const Text(
-          'WAV · MP3 · M4A/AAC · OGG/OPUS · FLAC — up to 25 MB or '
-          '15 minutes.',
+        Text(
+          l10n.recordingFormatsHint,
           textAlign: TextAlign.center,
           style: AppTypography.labelSmall,
         ),
@@ -214,7 +215,7 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
         FilledButton.icon(
           onPressed: _busy ? null : _chooseAudio,
           icon: const Icon(Icons.upload_file_outlined),
-          label: const Text('Choose audio'),
+          label: Text(l10n.recordingChooseAudio),
         ),
       ];
 
@@ -224,18 +225,17 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
     final transcriptionReady = _analyzer.transcriptionConfigured;
     final analyzing = _busy && _stage != null;
     return [
-      const _StepLabel(AppStrings.stepPrivacyDepth),
+      _StepLabel(l10n.stepPrivacyDepth),
       const SizedBox(height: 10),
       _FileSummaryCard(file: file, info: info),
       const SizedBox(height: 20),
-      const Text('PRIVACY', style: AppTypography.labelSmall),
+      Text(l10n.recordingPrivacyLabel, style: AppTypography.labelSmall),
       const SizedBox(height: 8),
       _PrivacyModeCard(
         selected: _mode == RecordingPrivacyMode.onDevice,
         enabled: !analyzing,
-        title: 'Keep audio on this device',
-        subtitle:
-            'Acoustic analysis runs locally. Nothing is uploaded.',
+        title: l10n.recordingKeepLocal,
+        subtitle: l10n.recordingKeepLocalDesc,
         onTap: () =>
             setState(() => _mode = RecordingPrivacyMode.onDevice),
       ),
@@ -253,14 +253,12 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
                 _mode == RecordingPrivacyMode.enhancedTranscription,
             enabled: unlocked && !analyzing,
             locked: !entitled,
-            title: 'Include conversation analysis',
+            title: l10n.recordingIncludeConversation,
             subtitle: !entitled
-                ? AppStrings.enhancedModeLockedDesc
+                ? l10n.enhancedModeLockedDesc
                 : transcriptionReady
-                    ? AppStrings.enhancedModeReadyDesc
-                    : 'Cloud transcription isn\u2019t configured in '
-                        'this build. Acoustic analysis is still '
-                        'available on-device.',
+                    ? l10n.enhancedModeReadyDesc
+                    : l10n.recordingCloudNotConfigured,
             onTap: () => setState(
                 () => _mode = RecordingPrivacyMode.enhancedTranscription),
             onLockedTap: () =>
@@ -286,13 +284,13 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
         TextButton.icon(
           onPressed: _cancelAnalysis,
           icon: const Icon(Icons.close),
-          label: const Text('Cancel analysis'),
+          label: Text(l10n.recordingCancelAnalysis),
         ),
       ] else ...[
         FilledButton.icon(
           onPressed: _busy ? null : _runAnalysis,
           icon: const Icon(Icons.shield_outlined),
-          label: const Text('Analyze recording'),
+          label: Text(l10n.recordingAnalyzeAction),
         ),
         const SizedBox(height: 8),
         TextButton(
@@ -303,7 +301,7 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
                     _info = null;
                     _error = null;
                   }),
-          child: const Text('Choose a different file'),
+          child: Text(l10n.recordingChooseDifferent),
         ),
       ],
     ];
@@ -312,7 +310,7 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
   List<Widget> _buildResult(RecordingAnalysisResult r) {
     final report = r.report;
     return [
-      const _StepLabel(AppStrings.stepResult),
+      _StepLabel(l10n.stepResult),
       const SizedBox(height: 10),
       if (report != null) ...[
         _FullResultHeader(report: report),
@@ -327,7 +325,7 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
           r.transcriptText!.trim().isNotEmpty) ...[
         const SizedBox(height: 16),
         _TranscriptCard(
-          label: r.transcriptSourceLabel,
+          label: localizeSourceLabel(l10n, r.transcriptSourceLabel),
           text: r.transcriptText!,
         ),
       ],
@@ -343,7 +341,7 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
             ),
           ),
           icon: const Icon(Icons.receipt_long_outlined),
-          label: const Text('View Incident Report'),
+          label: Text(l10n.recordingViewIncident),
         ),
       ],
       const SizedBox(height: 12),
@@ -353,7 +351,7 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
           _error = null;
         }),
         icon: const Icon(Icons.refresh),
-        label: const Text('Analyze another recording'),
+        label: Text(l10n.recordingAnalyzeAnother),
       ),
     ];
   }
@@ -369,6 +367,7 @@ class _FileSummaryCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     String size() {
       final mb = file.sizeBytes / (1024 * 1024);
       return mb >= 1
@@ -387,17 +386,17 @@ class _FileSummaryCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: p.surfaceCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const Icon(Icons.audio_file,
-                  color: AppColors.accent, size: 20),
+              Icon(Icons.audio_file,
+                  color: p.accent, size: 20),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
@@ -463,10 +462,11 @@ class _PrivacyModeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Opacity(
       opacity: enabled || locked ? 1 : 0.55,
       child: Material(
-        color: AppColors.surfaceCard,
+        color: p.surfaceCard,
         borderRadius: BorderRadius.circular(14),
         child: InkWell(
           onTap: locked ? onLockedTap : (enabled ? onTap : null),
@@ -477,8 +477,8 @@ class _PrivacyModeCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
                 color: selected
-                    ? AppColors.accent
-                    : AppColors.borderSubtle,
+                    ? p.accent
+                    : p.borderSubtle,
               ),
             ),
             child: Row(
@@ -491,8 +491,8 @@ class _PrivacyModeCard extends StatelessWidget {
                           ? Icons.radio_button_checked
                           : Icons.radio_button_off,
                   color: selected && !locked
-                      ? AppColors.accent
-                      : AppColors.textMuted,
+                      ? p.accent
+                      : p.textMuted,
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -536,22 +536,23 @@ class _SentinelChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: 0.14),
+        color: p.accent.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(5),
         border: Border.all(
-          color: AppColors.accent.withValues(alpha: 0.45),
+          color: p.accent.withValues(alpha: 0.45),
         ),
       ),
-      child: const Text(
+      child: Text(
         'SENTINEL',
         style: TextStyle(
           fontSize: 8,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.6,
-          color: AppColors.accent,
+          color: p.accent,
         ),
       ),
     );
@@ -571,6 +572,7 @@ class _ManualTranscriptSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -580,21 +582,21 @@ class _ManualTranscriptSection extends StatelessWidget {
             expanded ? Icons.expand_less : Icons.expand_more,
             size: 18,
           ),
-          label: const Text('Add transcript text instead'),
+          label: Text(l10n.recordingManualTranscript),
         ),
         if (expanded) ...[
           Container(
             padding: const EdgeInsets.all(12),
             decoration: BoxDecoration(
-              color: AppColors.surfaceCard,
+              color: p.surfaceCard,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.borderSubtle),
+              border: Border.all(color: p.borderSubtle),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'USER-PROVIDED TRANSCRIPT',
+                Text(
+                  l10n.recordingManualTranscriptLabel,
                   style: AppTypography.labelSmall,
                 ),
                 const SizedBox(height: 6),
@@ -603,10 +605,8 @@ class _ManualTranscriptSection extends StatelessWidget {
                   maxLines: 5,
                   minLines: 3,
                   style: AppTypography.bodyMedium,
-                  decoration: const InputDecoration(
-                    hintText:
-                        'Paste transcript text you already have — '
-                        'it stays on this device.',
+                  decoration: InputDecoration(
+                    hintText: l10n.recordingManualTranscriptHint,
                     border: InputBorder.none,
                   ),
                 ),
@@ -627,18 +627,19 @@ class _StageProgress extends StatelessWidget {
   final List<RecordingStage> stagesRun;
   final RecordingStage stage;
 
-  static const _labels = {
-    RecordingStage.preparing: 'Preparing audio',
-    RecordingStage.analyzingAcoustic: 'Analyzing acoustic signals',
-    RecordingStage.uploading: 'Uploading for transcription',
-    RecordingStage.transcribing: 'Transcribing conversation',
-    RecordingStage.evaluatingConversation:
-        'Evaluating conversation risk',
-    RecordingStage.buildingResult: 'Building result',
-  };
+  static Map<RecordingStage, String> _labels(AppLocalizations l10n) => {
+        RecordingStage.preparing: l10n.recordingStagePreparing,
+        RecordingStage.analyzingAcoustic: l10n.recordingStageAcoustic,
+        RecordingStage.uploading: l10n.recordingStageUploading,
+        RecordingStage.transcribing: l10n.recordingStageTranscribing,
+        RecordingStage.evaluatingConversation:
+            l10n.recordingStageEvaluating,
+        RecordingStage.buildingResult: l10n.recordingStageBuilding,
+      };
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final stages =
         stagesRun.isEmpty ? const [RecordingStage.preparing] : stagesRun;
     final current = stages.indexOf(stage);
@@ -650,8 +651,8 @@ class _StageProgress extends StatelessWidget {
             child: Row(
               children: [
                 if (i < current)
-                  const Icon(Icons.check_circle,
-                      size: 16, color: AppColors.statusSafe)
+                  Icon(Icons.check_circle,
+                      size: 16, color: p.statusSafe)
                 else if (i == current)
                   const SizedBox(
                     width: 16,
@@ -659,15 +660,15 @@ class _StageProgress extends StatelessWidget {
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
                 else
-                  const Icon(Icons.circle_outlined,
-                      size: 16, color: AppColors.textMuted),
+                  Icon(Icons.circle_outlined,
+                      size: 16, color: p.textMuted),
                 const SizedBox(width: 10),
                 Text(
-                  _labels[stages[i]]!,
+                  _labels(l10n)[stages[i]]!,
                   style: AppTypography.bodyMedium.copyWith(
                     color: i <= current
-                        ? AppColors.textPrimary
-                        : AppColors.textMuted,
+                        ? p.textPrimary
+                        : p.textMuted,
                   ),
                 ),
               ],
@@ -684,17 +685,18 @@ class _FullResultHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final score = (report.compositeRiskScore * 100).round();
-    final color = AppColors.forThreat(report.compositeRiskScore);
+    final color = p.forThreat(report.compositeRiskScore);
     final label = switch (report.riskLevel) {
-      ThreatRiskLevel.highRisk => 'HIGH RISK',
-      ThreatRiskLevel.suspicious => 'SUSPICIOUS',
-      ThreatRiskLevel.safe => 'SAFE',
+      ThreatRiskLevel.highRisk => l10n.bandHigh,
+      ThreatRiskLevel.suspicious => l10n.bandSuspicious,
+      ThreatRiskLevel.safe => l10n.bandSafe,
     };
     return Column(
       children: [
         const SizedBox(height: 8),
-        Text('Threat Score',
+        Text(l10n.recordingThreatScore,
             style: AppTypography.labelSmall),
         const SizedBox(height: 4),
         Text(
@@ -734,34 +736,35 @@ class _PartialResultHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     // Deliberately incomplete visual treatment — a dashed outline
     // signals "one signal missing", never a safe-looking verdict.
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.statusWarning.withValues(alpha: 0.05),
+        color: p.statusWarning.withValues(alpha: 0.05),
         borderRadius: BorderRadius.circular(16),
       ),
       foregroundDecoration: ShapeDecoration(
         shape: _DashedBorder(
-          color: AppColors.statusWarning.withValues(alpha: 0.6),
+          color: p.statusWarning.withValues(alpha: 0.6),
           borderRadius: 16,
         ),
       ),
       child: Column(
         children: [
-          const Icon(Icons.blur_off,
-              size: 36, color: AppColors.statusWarning),
+          Icon(Icons.blur_off,
+              size: 36, color: p.statusWarning),
           const SizedBox(height: 8),
           Text(
-            'PARTIAL ANALYSIS',
+            l10n.bandPartial,
             style: AppTypography.labelSmall
-                .copyWith(color: AppColors.statusWarning),
+                .copyWith(color: p.statusWarning),
           ),
           const SizedBox(height: 8),
-          const Text(
-            AppStrings.partialRecordingNote,
+          Text(
+            l10n.partialRecordingNote,
             textAlign: TextAlign.center,
             style: AppTypography.bodyMedium,
           ),
@@ -785,6 +788,7 @@ class _AbsentLayerLegend extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -794,18 +798,18 @@ class _AbsentLayerLegend extends StatelessWidget {
             height: 3,
             margin: const EdgeInsets.only(right: 1.6),
             decoration: BoxDecoration(
-              color: AppColors.signalAbsent,
+              color: p.signalAbsent,
               borderRadius: BorderRadius.circular(1),
             ),
           ),
         const SizedBox(width: 7),
-        const Text(
-          'CONVERSATION SIGNAL · NOT ANALYZED',
+        Text(
+          l10n.recordingConversationAbsent,
           style: TextStyle(
             fontSize: 9.5,
             fontWeight: FontWeight.w700,
             letterSpacing: 0.7,
-            color: AppColors.signalAbsent,
+            color: p.signalAbsent,
           ),
         ),
       ],
@@ -869,13 +873,14 @@ class _StepLabel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Row(
       children: [
         Container(
           width: 22,
           height: 3,
           decoration: BoxDecoration(
-            color: AppColors.accent,
+            color: p.accent,
             borderRadius: BorderRadius.circular(2),
           ),
         ),
@@ -894,8 +899,9 @@ class _ReasonsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return _Card(
-      title: AppStrings.whyFlaggedItTitle,
+      title: l10n.whyFlaggedItTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -905,11 +911,12 @@ class _ReasonsCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.flag_outlined,
-                      size: 14, color: AppColors.statusWarning),
+                  Icon(Icons.flag_outlined,
+                      size: 14, color: p.statusWarning),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: Text(r, style: AppTypography.bodyMedium),
+                    child: Text(context.threatReason(r),
+                        style: AppTypography.bodyMedium),
                   ),
                 ],
               ),
@@ -927,9 +934,10 @@ class _AcousticCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final pct = (metrics.syntheticVoiceScore * 100).round();
     return _Card(
-      title: 'ACOUSTIC ANOMALY SIGNALS',
+      title: l10n.recordingAcousticSignals,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -937,29 +945,29 @@ class _AcousticCard extends StatelessWidget {
             children: [
               Text(
                 partial
-                    ? 'Acoustic anomaly score'
-                    : AppStrings.signalSynthetic,
+                    ? l10n.recordingAcousticScoreLabel
+                    : l10n.signalSynthetic,
                 style: AppTypography.bodyMedium,
               ),
               const Spacer(),
               Text(
                 '$pct%',
                 style: AppTypography.titleMedium.copyWith(
-                  color: AppColors.forThreat(
+                  color: p.forThreat(
                       metrics.syntheticVoiceScore),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          _Bar('Spectral flux', metrics.spectralFlux),
-          _Bar('Spectral rolloff', metrics.spectralRolloffRatio),
-          _Bar('Zero-crossing rate', metrics.zeroCrossingRate),
+          _Bar(l10n.metricSpectralFlux, metrics.spectralFlux),
+          _Bar(l10n.metricSpectralRolloff, metrics.spectralRolloffRatio),
+          _Bar(l10n.metricZeroCrossing, metrics.zeroCrossingRate),
           if (metrics.isSyntheticElevated)
-            const Padding(
+            Padding(
               padding: EdgeInsets.only(top: 8),
               child: Text(
-                AppStrings.acousticAnomalyElevatedNote,
+                l10n.acousticAnomalyElevatedNote,
                 style: AppTypography.bodyMedium,
               ),
             ),
@@ -976,6 +984,7 @@ class _Bar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -990,9 +999,9 @@ class _Bar extends StatelessWidget {
               child: LinearProgressIndicator(
                 value: value.clamp(0.0, 1.0),
                 minHeight: 6,
-                backgroundColor: AppColors.borderSubtle,
+                backgroundColor: p.borderSubtle,
                 valueColor: AlwaysStoppedAnimation(
-                    AppColors.forThreat(value)),
+                    p.forThreat(value)),
               ),
             ),
           ),
@@ -1009,8 +1018,9 @@ class _TranscriptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return _Card(
-      title: 'RECORDING TRANSCRIPT',
+      title: l10n.recordingTranscriptLabel,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -1020,7 +1030,7 @@ class _TranscriptCard extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: AppColors.bgSurface,
+              color: p.bgSurface,
               borderRadius: BorderRadius.circular(10),
             ),
             child: Text(
@@ -1045,18 +1055,11 @@ class _VerificationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Card(
-      title: 'VERIFY BEFORE YOU ACT',
+      title: l10n.recordingVerifyTitle,
       child: Text(
         partial
-            ? 'This is an acoustic-only check — the conversation '
-                'itself was not analyzed. Never rely on a partial '
-                'result to decide a recording is safe: verify the '
-                'speaker through a number or channel you already '
-                'trust before acting on anything it asks for.'
-            : 'A score is a risk signal, not proof. Verify the '
-                'speaker through a number you already trust — never '
-                'one provided in the recording — before acting on '
-                'any request.',
+            ? l10n.recordingVerifyBody
+            : l10n.recordingVerifyNormalBody,
         style: AppTypography.bodyMedium,
       ),
     );
@@ -1069,21 +1072,23 @@ class _ErrorCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.statusDanger.withValues(alpha: 0.10),
+        color: p.statusDanger.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-            color: AppColors.statusDanger.withValues(alpha: 0.4)),
+            color: p.statusDanger.withValues(alpha: 0.4)),
       ),
       child: Row(
         children: [
-          const Icon(Icons.error_outline,
-              color: AppColors.statusDanger, size: 18),
+          Icon(Icons.error_outline,
+              color: p.statusDanger, size: 18),
           const SizedBox(width: 10),
           Expanded(
-            child: Text(message, style: AppTypography.bodyMedium),
+            child: Text(context.serviceMessage(message),
+                style: AppTypography.bodyMedium),
           ),
         ],
       ),
@@ -1098,13 +1103,14 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: p.surfaceCard,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,

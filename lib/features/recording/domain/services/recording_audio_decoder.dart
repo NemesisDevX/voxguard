@@ -2,8 +2,8 @@ import 'dart:typed_data';
 
 import 'package:audio_decoder/audio_decoder.dart';
 
-import '../../../../core/constants/app_strings.dart';
 import '../models/recording_models.dart';
+import '../../../../core/l10n/l10n.dart';
 
 /// VoxGuard seam over the platform audio decoder. All analysis runs on
 /// ONE normalized format — 16 kHz / mono / PCM16 little-endian — the
@@ -43,7 +43,7 @@ final class PluginRecordingAudioDecoder implements IRecordingAudioDecoder {
       );
     } catch (_) {
       throw RecordingAnalysisException(
-        AppStrings.recordingUnreadable,
+        l10n.recordingUnreadable,
         code: 'unsupported',
       );
     }
@@ -62,7 +62,7 @@ final class PluginRecordingAudioDecoder implements IRecordingAudioDecoder {
       );
     } catch (_) {
       throw RecordingAnalysisException(
-        AppStrings.recordingUndecodable,
+        l10n.recordingUndecodable,
         code: 'decodeFailed',
       );
     }

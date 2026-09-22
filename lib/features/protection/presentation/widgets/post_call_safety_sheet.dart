@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
-import '../../../../core/constants/app_strings.dart';
 import '../../../../core/services/alerts/family_contact_repository.dart';
 import '../../../../core/services/alerts/family_shield_alert_service.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../forensics/domain/models/incident_report.dart';
 import '../../../forensics/presentation/screens/incident_detail_screen.dart';
@@ -14,6 +12,10 @@ import '../../../paywall/presentation/screens/paywall_screen.dart';
 import '../../domain/models/composite_threat_report.dart';
 import '../../domain/models/semantic_threat_signals.dart';
 import '../bloc/safecall_state.dart';
+import '../../../../core/l10n/l10n.dart';
+import '../../../../core/l10n/localized_text.dart';
+import '../../../../core/theme/app_palette.dart';
+import '../../../../core/services/preferences/app_preferences.dart';
 
 /// Post-call safety flow shown when a protection session ends.
 ///
@@ -44,15 +46,16 @@ class PostCallSafetySheet extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final incident = result.incident;
     return Container(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.86,
       ),
-      decoration: const BoxDecoration(
-        color: AppColors.bgSurface,
+      decoration: BoxDecoration(
+        color: p.bgSurface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: AppColors.borderSubtle)),
+        border: Border(top: BorderSide(color: p.borderSubtle)),
       ),
       child: SafeArea(
         top: false,
@@ -65,7 +68,7 @@ class PostCallSafetySheet extends StatelessWidget {
                 width: 40,
                 height: 4,
                 decoration: BoxDecoration(
-                  color: AppColors.borderSubtle,
+                  color: p.borderSubtle,
                   borderRadius: BorderRadius.circular(2),
                 ),
               ),
@@ -94,14 +97,14 @@ class PostCallSafetySheet extends StatelessWidget {
                     );
                   },
                   icon: const Icon(Icons.description_outlined, size: 20),
-                  label: const Text(
-                    AppStrings.viewIncidentReport,
+                  label: Text(
+                    l10n.viewIncidentReport,
                     style:
                         TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.textPrimary,
-                    side: const BorderSide(color: AppColors.borderSubtle),
+                    foregroundColor: p.textPrimary,
+                    side: BorderSide(color: p.borderSubtle),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),
                     ),
@@ -129,9 +132,9 @@ class PostCallSafetySheet extends StatelessWidget {
             Center(
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text(
+                child: Text(
                   'Done',
-                  style: TextStyle(color: AppColors.textMuted),
+                  style: TextStyle(color: p.textMuted),
                 ),
               ),
             ),
@@ -153,9 +156,10 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final highRisk = result.peakRiskLevel == ThreatRiskLevel.highRisk;
     final color =
-        highRisk ? AppColors.statusDanger : AppColors.statusSafe;
+        highRisk ? p.statusDanger : p.statusSafe;
     final score = result.incident == null
         ? null
         : (result.incident!.peakRiskScore * 100).round();
@@ -179,16 +183,16 @@ class _Header extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          highRisk ? AppStrings.postCallPause : AppStrings.postCallEnded,
+          highRisk ? l10n.postCallPause : l10n.postCallEnded,
           style: AppTypography.displayLarge.copyWith(color: color),
           textAlign: TextAlign.center,
         ),
         const SizedBox(height: 6),
         Text(
           highRisk
-              ? '${AppStrings.verifyBeforeYouAct} '
-                  '${AppStrings.threatScoreLabel}: $score/100.'
-              : AppStrings.postCallReview,
+              ? '${l10n.verifyBeforeYouAct} '
+                  '${l10n.threatScoreLabel}: $score/100.'
+              : l10n.postCallReview,
           style: AppTypography.bodyLarge,
           textAlign: TextAlign.center,
         ),
@@ -206,8 +210,9 @@ class _WhyFlaggedSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return _Section(
-      title: AppStrings.whyFlaggedTitle.toUpperCase(),
+      title: l10n.whyFlaggedTitle.toUpperCase(),
       icon: Icons.help_outline,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -218,10 +223,10 @@ class _WhyFlaggedSection extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.flag_outlined,
-                      size: 14, color: AppColors.statusDanger),
+                  Icon(Icons.flag_outlined,
+                      size: 14, color: p.statusDanger),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(r, style: AppTypography.bodyLarge)),
+                  Expanded(child: Text(context.threatReason(r), style: AppTypography.bodyLarge)),
                 ],
               ),
             ),
@@ -233,7 +238,7 @@ class _WhyFlaggedSection extends StatelessWidget {
               children: [
                 for (final e
                     in incident.semanticSignals.evidenceCategories)
-                  _chip(e),
+                  _chip(e, p),
               ],
             ),
           ],
@@ -242,12 +247,12 @@ class _WhyFlaggedSection extends StatelessWidget {
     );
   }
 
-  Widget _chip(EvidenceCategory e) {
+  Widget _chip(EvidenceCategory e, AppPalette p) {
     final color = switch (e) {
       EvidenceCategory.impersonation ||
       EvidenceCategory.moneyRequest =>
-        AppColors.statusDanger,
-      _ => AppColors.statusWarning,
+        p.statusDanger,
+      _ => p.statusWarning,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
@@ -257,7 +262,7 @@ class _WhyFlaggedSection extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.55)),
       ),
       child: Text(
-        e.label,
+        localizeEvidenceLabel(l10n, e.label),
         style:
             AppTypography.labelSmall.copyWith(color: color, fontSize: 10),
       ),
@@ -272,49 +277,50 @@ class _VerifyCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.accent.withValues(alpha: 0.08),
+        color: p.accent.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-            color: AppColors.accent.withValues(alpha: 0.5), width: 1.2),
+            color: p.accent.withValues(alpha: 0.5), width: 1.2),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
               Icon(Icons.verified_user_outlined,
-                  size: 16, color: AppColors.accent),
+                  size: 16, color: p.accent),
               SizedBox(width: 8),
               Expanded(
                 child: Text(
-                  AppStrings.verifyBeforeYouAct,
+                  l10n.verifyBeforeYouAct,
                   style: AppTypography.labelSmall,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          const Text(
-            AppStrings.verifyIdentityBody,
+          Text(
+            l10n.verifyIdentityBody,
             style: AppTypography.bodyLarge,
           ),
           const SizedBox(height: 12),
-          const _Step(number: '1', text: 'Hang up — do not send money.'),
-          const _Step(
+          _Step(number: '1', text: l10n.verifyStepHangup),
+          _Step(
             number: '2',
-            text: 'Call the person on a saved, trusted number.',
+            text: l10n.verifyStepCall,
           ),
-          const _Step(
+          _Step(
             number: '3',
-            text: 'Ask for your family safe phrase if unsure.',
+            text: l10n.verifyStepPhrase,
           ),
           const SizedBox(height: 8),
-          const Text(
-            AppStrings.familySafePhrase,
+          Text(
+            l10n.familySafePhrase,
             style: AppTypography.bodyMedium,
           ),
         ],
@@ -331,6 +337,7 @@ class _Step extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: Row(
@@ -342,14 +349,14 @@ class _Step extends StatelessWidget {
             alignment: Alignment.center,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: AppColors.accent.withValues(alpha: 0.15),
+              color: p.accent.withValues(alpha: 0.15),
             ),
             child: Text(
               number,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
-                color: AppColors.accent,
+                color: p.accent,
               ),
             ),
           ),
@@ -402,6 +409,7 @@ class _FamilyShieldCardState extends State<_FamilyShieldCard> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final demo = FamilyAlertLocator.instance.isDemoMode;
     return ValueListenableBuilder<EntitlementState>(
       valueListenable: ProductAccessLocator.instance.entitlement,
@@ -412,25 +420,23 @@ class _FamilyShieldCardState extends State<_FamilyShieldCard> {
             !demo && !ProductAccessLocator
                 .instance.capabilities.familyShieldOutbound;
         return _Section(
-          title: 'FAMILY SHIELD',
+          title: l10n.postCallFamilyShield,
           icon: Icons.group_outlined,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 demo
-                    ? 'Demo Mode — sends a simulated alert to demo '
-                        'contacts; no real notification is delivered.'
+                    ? l10n.postCallDemoAlertDesc
                     : locked
-                        ? AppStrings.familyVaultUnlocksAlerts
-                        : 'Ask a person you trust for a second set of '
-                            'eyes — send them a Family Shield alert.',
+                        ? l10n.familyVaultUnlocksAlerts
+                        : l10n.postCallAskTrustDesc,
                 style: AppTypography.bodyMedium,
               ),
               const SizedBox(height: 12),
               SizedBox(
                 width: double.infinity,
-                height: 44,
+                height: context.isGuided ? 56 : 44,
                 child: OutlinedButton.icon(
                   onPressed: _sending
                       ? null
@@ -453,15 +459,15 @@ class _FamilyShieldCardState extends State<_FamilyShieldCard> {
                         ),
                   label: Text(
                     demo
-                        ? AppStrings.sendDemoFamilyAlert
+                        ? l10n.sendDemoFamilyAlert
                         : 'Send Family Alert',
                     style:
                         const TextStyle(fontWeight: FontWeight.w700),
                   ),
                   style: OutlinedButton.styleFrom(
-                    foregroundColor: AppColors.statusDanger,
+                    foregroundColor: p.statusDanger,
                     side: BorderSide(
-                        color: AppColors.statusDanger
+                        color: p.statusDanger
                             .withValues(alpha: 0.6)),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(12),
@@ -472,9 +478,9 @@ class _FamilyShieldCardState extends State<_FamilyShieldCard> {
               if (_result != null) ...[
                 const SizedBox(height: 8),
                 Text(
-                  _result!,
+                  context.serviceMessage(_result!),
                   style: AppTypography.bodyMedium
-                      .copyWith(color: AppColors.statusSafe),
+                      .copyWith(color: p.statusSafe),
                 ),
               ],
             ],
@@ -494,6 +500,7 @@ class _UpgradeRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return InkWell(
       onTap: () {
         Navigator.of(context).pop();
@@ -503,23 +510,22 @@ class _UpgradeRow extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: AppColors.surfaceCard,
+          color: p.surfaceCard,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: AppColors.borderSubtle),
+          border: Border.all(color: p.borderSubtle),
         ),
-        child: const Row(
+        child: Row(
           children: [
             Icon(Icons.workspace_premium_outlined,
-                size: 20, color: AppColors.statusWarning),
+                size: 20, color: p.statusWarning),
             SizedBox(width: 10),
             Expanded(
               child: Text(
-                'Send a Family Shield alert to people in your '
-                'Trusted Circle',
+                l10n.postCallSendFamilyAlertDesc,
                 style: AppTypography.bodyLarge,
               ),
             ),
-            Icon(Icons.chevron_right, color: AppColors.textMuted),
+            Icon(Icons.chevron_right, color: p.textMuted),
           ],
         ),
       ),
@@ -535,10 +541,10 @@ class _SessionEndedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Section(
-      title: 'SESSION SUMMARY',
+      title: l10n.postCallSessionSummary,
       icon: Icons.check_circle_outline,
-      child: const Text(
-        'No high-risk patterns were flagged during this call.',
+      child: Text(
+        l10n.postCallNoFlags,
         style: AppTypography.bodyLarge,
       ),
     );
@@ -560,20 +566,21 @@ class _Section extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: p.surfaceCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 15, color: AppColors.textMuted),
+              Icon(icon, size: 15, color: p.textMuted),
               const SizedBox(width: 8),
               Expanded(child: Text(title, style: AppTypography.labelSmall)),
             ],

@@ -441,7 +441,7 @@ void main() {
       expect(find.text('ACOUSTIC ONLY'), findsOneWidget);
       expect(
         find.textContaining(
-            'Conversation-risk signals have not been analyzed'),
+            'Conversation-risk signals were not analyzed'),
         findsOneWidget,
       );
       for (final band in ['SAFE', 'CAUTION', 'HIGH RISK']) {

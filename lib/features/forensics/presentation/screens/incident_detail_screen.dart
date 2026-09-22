@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../../../core/constants/app_strings.dart';
 import '../../../../core/services/alerts/family_contact_repository.dart';
 import '../../../../core/services/alerts/family_shield_alert_service.dart';
 import '../../../../core/services/family/family_shield_response.dart';
 import '../../../../core/services/family/received_family_alert_repository.dart';
-import '../../../../core/theme/app_colors.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/utils/threat_phrase_highlighter.dart';
 import '../../../paywall/domain/models/subscription_tier.dart';
@@ -17,6 +15,9 @@ import '../../../protection/domain/models/semantic_threat_signals.dart';
 import '../../../protection/domain/models/transcript_snippet.dart';
 import '../../domain/models/incident_report.dart';
 import '../../domain/services/incident_repository.dart';
+import '../../../../core/l10n/l10n.dart';
+import '../../../../core/l10n/localized_text.dart';
+import '../../../../core/theme/app_palette.dart';
 
 /// Forensic viewer for a single flagged incident — consumer-first
 /// evidence hierarchy with technical telemetry collapsed by default.
@@ -27,20 +28,20 @@ class IncidentDetailScreen extends StatelessWidget {
 
   /// A partial record is an acoustic warning, not a call verdict —
   /// it renders in warning color with its own label.
-  Color get _riskColor => incident.analysisIsPartial
-      ? AppColors.statusWarning
+  Color _riskColor(AppPalette p) => incident.analysisIsPartial
+      ? p.statusWarning
       : switch (incident.riskLevel) {
-          ThreatRiskLevel.highRisk => AppColors.statusDanger,
-          ThreatRiskLevel.suspicious => AppColors.statusWarning,
-          ThreatRiskLevel.safe => AppColors.statusSafe,
+          ThreatRiskLevel.highRisk => p.statusDanger,
+          ThreatRiskLevel.suspicious => p.statusWarning,
+          ThreatRiskLevel.safe => p.statusSafe,
         };
 
   String get _riskLabel => incident.analysisIsPartial
-      ? 'PARTIAL ANALYSIS'
+      ? l10n.bandPartial
       : switch (incident.riskLevel) {
-          ThreatRiskLevel.highRisk => 'CRITICAL / HIGH RISK',
-          ThreatRiskLevel.suspicious => 'SUSPICIOUS',
-          ThreatRiskLevel.safe => 'SAFE',
+          ThreatRiskLevel.highRisk => l10n.bandCritical,
+          ThreatRiskLevel.suspicious => l10n.bandSuspicious,
+          ThreatRiskLevel.safe => l10n.bandSafe,
         };
 
   Future<void> _broadcast(BuildContext context) async {
@@ -51,8 +52,8 @@ class IncidentDetailScreen extends StatelessWidget {
         !ProductAccessLocator
             .instance.capabilities.familyShieldOutbound) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(AppStrings.familyVaultUnlocksAlerts),
+        SnackBar(
+          content: Text(l10n.familyVaultUnlocksAlerts),
         ),
       );
       PaywallScreen.show(context, preselect: TierId.familyVault);
@@ -72,7 +73,7 @@ class IncidentDetailScreen extends StatelessWidget {
     );
     if (context.mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.detail)),
+        SnackBar(content: Text(context.serviceMessage(result.detail))),
       );
     }
   }
@@ -80,30 +81,28 @@ class IncidentDetailScreen extends StatelessWidget {
   void _share(BuildContext context) {
     Clipboard.setData(ClipboardData(text: incident.toShareText()));
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Incident report copied to clipboard.')),
+      SnackBar(content: Text(l10n.incidentCopied)),
     );
   }
 
   Future<void> _confirmDelete(BuildContext context) async {
+  final p = context.palette;
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Delete this incident?'),
-        content: Text(
-          '${incident.id} will be permanently removed from this device. '
-          'This cannot be undone.',
-        ),
+        title: Text(l10n.incidentDeleteTitle),
+        content: Text(l10n.incidentDeleteBody(incident.id)),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
+            child: Text(l10n.actionCancel),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text(
+            child: Text(
               'Delete',
               style: TextStyle(
-                color: AppColors.statusDanger,
+                color: p.statusDanger,
                 fontWeight: FontWeight.w700,
               ),
             ),
@@ -131,14 +130,15 @@ class IncidentDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Scaffold(
       appBar: AppBar(
         title: Text(incident.id),
         actions: [
           IconButton(
             icon: const Icon(Icons.delete_outline),
-            tooltip: 'Delete incident',
-            color: AppColors.statusDanger,
+            tooltip: l10n.incidentDeleteTooltip,
+            color: p.statusDanger,
             onPressed: () => _confirmDelete(context),
           ),
         ],
@@ -146,7 +146,8 @@ class IncidentDetailScreen extends StatelessWidget {
       body: ListView(
         padding: const EdgeInsets.fromLTRB(20, 4, 20, 28),
         children: [
-          _HeaderCard(incident: incident, color: _riskColor, label: _riskLabel),
+          _HeaderCard(
+              incident: incident, color: _riskColor(p), label: _riskLabel),
           const SizedBox(height: 16),
           _FamilyResponsesCard(incidentId: incident.id),
           _WhyFlaggedCard(incident: incident),
@@ -196,7 +197,7 @@ class _FamilyResponsesCard extends StatelessWidget {
         return Padding(
           padding: const EdgeInsets.only(bottom: 16),
           child: _Card(
-            title: 'FAMILY SHIELD RESPONSES',
+            title: l10n.incidentFamilyResponses,
             icon: Icons.group_outlined,
             child: Column(
               children: [
@@ -217,11 +218,12 @@ class _ResponseRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final isSafe = response.resolution == AlertResolution.safe;
     return FutureBuilder<String>(
       future: _responderName(),
       builder: (context, snap) {
-        final name = snap.data ?? AppStrings.unrecognizedIdentity;
+        final name = snap.data ?? l10n.unrecognizedIdentity;
         return Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child: Row(
@@ -232,8 +234,8 @@ class _ResponseRow extends StatelessWidget {
                     : Icons.warning_amber_outlined,
                 size: 18,
                 color: isSafe
-                    ? AppColors.statusSafe
-                    : AppColors.statusWarning,
+                    ? p.statusSafe
+                    : p.statusWarning,
               ),
               const SizedBox(width: 10),
               Expanded(
@@ -258,7 +260,7 @@ class _ResponseRow extends StatelessWidget {
       if (c.externalId == response.responderExternalId) return c.name;
     }
     // Unknown id — opaque, not evidence of trust.
-    return AppStrings.unrecognizedIdentity;
+    return l10n.unrecognizedIdentity;
   }
 }
 
@@ -273,20 +275,21 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: p.surfaceCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Icon(icon, size: 16, color: AppColors.accent),
+              Icon(icon, size: 16, color: p.accent),
               const SizedBox(width: 8),
               Text(title, style: AppTypography.labelSmall),
             ],
@@ -314,11 +317,12 @@ class _HeaderCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(18),
       decoration: BoxDecoration(
-        color: AppColors.bgElevated,
+        color: p.bgElevated,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: color.withValues(alpha: 0.55)),
       ),
@@ -352,7 +356,7 @@ class _HeaderCard extends StatelessWidget {
           ),
           const SizedBox(height: 10),
           Text(
-            '${incident.timestampLabel}  ·  ${incident.callerLabel}  ·  ${incident.durationLabel}',
+            '${incident.timestampLabel}  ·  ${context.sourceLabel(incident.callerLabel)}  ·  ${incident.durationLabel}',
             style: AppTypography.bodyMedium,
           ),
           const SizedBox(height: 10),
@@ -362,7 +366,7 @@ class _HeaderCard extends StatelessWidget {
                 Text(
                   'Acoustic anomaly ',
                   style: AppTypography.labelLarge
-                      .copyWith(color: AppColors.textMuted),
+                      .copyWith(color: p.textMuted),
                 ),
                 Text(
                   '${(incident.acousticMetrics.syntheticVoiceScore * 100).round()}/100',
@@ -379,9 +383,9 @@ class _HeaderCard extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  '${AppStrings.threatScoreLabel} ',
+                  '${l10n.threatScoreLabel} ',
                   style: AppTypography.labelLarge
-                      .copyWith(color: AppColors.textMuted),
+                      .copyWith(color: p.textMuted),
                 ),
                 Text(
                   '${(incident.peakRiskScore * 100).round()}/100',
@@ -407,14 +411,15 @@ class _WhyFlaggedCard extends StatelessWidget {
   String get _title {
     if (incident.audioSourceLabel == 'Uploaded Recording') {
       return incident.analysisIsPartial
-          ? AppStrings.whyElevatedAcousticTitle
-          : AppStrings.whyFlaggedRecordingTitle;
+          ? l10n.whyElevatedAcousticTitle
+          : l10n.whyFlaggedRecordingTitle;
     }
-    return AppStrings.whyFlaggedCallTitle;
+    return l10n.whyFlaggedCallTitle;
   }
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final s = incident.semanticSignals;
     return _Card(
       title: _title,
@@ -429,10 +434,10 @@ class _WhyFlaggedCard extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Icon(Icons.flag_outlined,
-                      size: 14, color: AppColors.statusDanger),
+                  Icon(Icons.flag_outlined,
+                      size: 14, color: p.statusDanger),
                   const SizedBox(width: 8),
-                  Expanded(child: Text(r, style: AppTypography.bodyLarge)),
+                  Expanded(child: Text(context.threatReason(r), style: AppTypography.bodyLarge)),
                 ],
               ),
             ),
@@ -443,18 +448,18 @@ class _WhyFlaggedCard extends StatelessWidget {
               runSpacing: 6,
               children: [
                 for (final e in s.evidenceCategories)
-                  _evidenceChip(e),
+                  _evidenceChip(e, p),
               ],
             ),
           ],
           if (incident.recommendedActions.isNotEmpty) ...[
             const SizedBox(height: 14),
-            const Divider(height: 1, color: AppColors.borderSubtle),
+            Divider(height: 1, color: p.borderSubtle),
             const SizedBox(height: 12),
             Text(
-              'RECOMMENDED NEXT STEPS',
+              l10n.incidentRecommended,
               style: AppTypography.labelSmall
-                  .copyWith(color: AppColors.textMuted),
+                  .copyWith(color: p.textMuted),
             ),
             const SizedBox(height: 8),
             for (final a in incident.recommendedActions.take(3))
@@ -463,11 +468,11 @@ class _WhyFlaggedCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.check_circle_outline,
-                        size: 14, color: AppColors.statusSafe),
+                    Icon(Icons.check_circle_outline,
+                        size: 14, color: p.statusSafe),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(a, style: AppTypography.bodyMedium),
+                      child: Text(context.threatReason(a), style: AppTypography.bodyMedium),
                     ),
                   ],
                 ),
@@ -477,20 +482,20 @@ class _WhyFlaggedCard extends StatelessWidget {
               width: double.infinity,
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: AppColors.accent.withValues(alpha: 0.08),
+                color: p.accent.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(10),
                 border: Border.all(
-                    color: AppColors.accent.withValues(alpha: 0.35)),
+                    color: p.accent.withValues(alpha: 0.35)),
               ),
-              child: const Row(
+              child: Row(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Icon(Icons.verified_user_outlined,
-                      size: 16, color: AppColors.accent),
+                      size: 16, color: p.accent),
                   SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      AppStrings.verifyIdentityBody,
+                      l10n.verifyIdentityBody,
                       style: AppTypography.bodyMedium,
                     ),
                   ),
@@ -503,12 +508,12 @@ class _WhyFlaggedCard extends StatelessWidget {
     );
   }
 
-  Widget _evidenceChip(EvidenceCategory e) {
+  Widget _evidenceChip(EvidenceCategory e, AppPalette p) {
     final color = switch (e) {
       EvidenceCategory.impersonation ||
       EvidenceCategory.moneyRequest =>
-        AppColors.statusDanger,
-      _ => AppColors.statusWarning,
+        p.statusDanger,
+      _ => p.statusWarning,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
@@ -518,7 +523,7 @@ class _WhyFlaggedCard extends StatelessWidget {
         border: Border.all(color: color.withValues(alpha: 0.55)),
       ),
       child: Text(
-        e.label,
+        localizeEvidenceLabel(l10n, e.label),
         style: AppTypography.labelSmall.copyWith(color: color, fontSize: 10),
       ),
     );
@@ -542,11 +547,12 @@ class _TechnicalEvidenceSectionState extends State<_TechnicalEvidenceSection> {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return Container(
       decoration: BoxDecoration(
-        color: AppColors.surfaceCard,
+        color: p.surfaceCard,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: AppColors.borderSubtle),
+        border: Border.all(color: p.borderSubtle),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -561,18 +567,18 @@ class _TechnicalEvidenceSectionState extends State<_TechnicalEvidenceSection> {
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
                 children: [
-                  const Icon(Icons.biotech_outlined,
-                      size: 16, color: AppColors.textMuted),
+                  Icon(Icons.biotech_outlined,
+                      size: 16, color: p.textMuted),
                   const SizedBox(width: 8),
-                  const Expanded(
+                  Expanded(
                     child: Text(
-                      'TECHNICAL EVIDENCE',
+                      l10n.incidentTechnicalEvidence,
                       style: AppTypography.labelSmall,
                     ),
                   ),
                   Icon(
                     _expanded ? Icons.expand_less : Icons.expand_more,
-                    color: AppColors.textMuted,
+                    color: p.textMuted,
                     size: 20,
                   ),
                 ],
@@ -613,8 +619,9 @@ class _IntegrityCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return _Card(
-      title: 'AUDIO SHA-256',
+      title: l10n.incidentAudioSha,
       icon: Icons.fingerprint,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -630,13 +637,13 @@ class _IntegrityCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              const Icon(Icons.graphic_eq,
-                  size: 14, color: AppColors.textMuted),
+              Icon(Icons.graphic_eq,
+                  size: 14, color: p.textMuted),
               const SizedBox(width: 6),
               Expanded(
                 child: Text(
-                  '${incident.audioSourceLabel} · '
-                  '${incident.transcriptionSourceLabel}',
+                  '${context.sourceLabel(incident.audioSourceLabel)} · '
+                  '${context.sourceLabel(incident.transcriptionSourceLabel)}',
                   style: AppTypography.bodyMedium,
                 ),
               ),
@@ -657,18 +664,19 @@ class _AcousticCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+  final p = context.palette;
     final m = incident.acousticMetrics;
     return _Card(
-      title: 'ACOUSTIC ANOMALY SIGNALS',
+      title: l10n.incidentAcousticSignals,
       icon: Icons.graphic_eq,
       child: Column(
         children: [
-          _metricRow('Spectral Flux', m.spectralFlux, invertRisk: true),
-          _metricRow('Spectral Rolloff', m.spectralRolloffRatio,
-              invertRisk: true),
-          _metricRow('Zero-Crossing Rate', m.zeroCrossingRate,
-              invertRisk: true),
-          _metricRow('Acoustic Anomaly Score', m.syntheticVoiceScore),
+          _metricRow(l10n.metricSpectralFlux, m.spectralFlux, invertRisk: true, p: p),
+          _metricRow(l10n.metricSpectralRolloff, m.spectralRolloffRatio,
+              invertRisk: true, p: p),
+          _metricRow(l10n.metricZeroCrossing, m.zeroCrossingRate,
+              invertRisk: true, p: p),
+          _metricRow(l10n.metricAcousticAnomaly, m.syntheticVoiceScore, p: p),
         ],
       ),
     );
@@ -676,9 +684,9 @@ class _AcousticCard extends StatelessWidget {
 
   /// [invertRisk] — for flux/rolloff/ZCR, LOW values are the anomaly
   /// (a static spectrum signals synthesis), so the bar inverts.
-  Widget _metricRow(String label, double value, {bool invertRisk = false}) {
+  Widget _metricRow(String label, double value, {bool invertRisk = false, required AppPalette p}) {
     final riskValue = invertRisk ? 1 - value : value;
-    final color = AppColors.forThreat(riskValue);
+    final color = p.forThreat(riskValue);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5),
       child: Row(
@@ -694,7 +702,7 @@ class _AcousticCard extends StatelessWidget {
                 value: value.clamp(0.0, 1.0),
                 minHeight: 5,
                 backgroundColor:
-                    AppColors.borderSubtle.withValues(alpha: 0.6),
+                    p.borderSubtle.withValues(alpha: 0.6),
                 valueColor: AlwaysStoppedAnimation<Color>(color),
               ),
             ),
@@ -723,9 +731,10 @@ class _SemanticCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final s = incident.semanticSignals;
     return _Card(
-      title: 'SEMANTIC THREAT SIGNALS',
+      title: l10n.incidentSemanticSignals,
       icon: Icons.psychology_outlined,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -734,9 +743,9 @@ class _SemanticCard extends StatelessWidget {
             spacing: 8,
             runSpacing: 8,
             children: [
-              _scoreBadge('URGENCY', s.urgencyScore),
-              _scoreBadge('FINANCIAL', s.financialDemandScore),
-              _scoreBadge('SECRECY', s.secrecyScore),
+              _scoreBadge(l10n.scoreUrgency, s.urgencyScore, p),
+              _scoreBadge(l10n.scoreFinancial, s.financialDemandScore, p),
+              _scoreBadge(l10n.scoreSecrecy, s.secrecyScore, p),
             ],
           ),
           if (s.detectedKeywords.isNotEmpty) ...[
@@ -746,9 +755,9 @@ class _SemanticCard extends StatelessWidget {
               runSpacing: 6,
               children: [
                 for (final k in s.detectedKeywords)
-                  _keywordChip(k, AppColors.statusWarning),
+                  _keywordChip(k, p.statusWarning, p),
                 for (final c in s.impersonationClaims)
-                  _keywordChip(c, AppColors.statusDanger),
+                  _keywordChip(c, p.statusDanger, p),
               ],
             ),
           ],
@@ -757,8 +766,8 @@ class _SemanticCard extends StatelessWidget {
     );
   }
 
-  Widget _scoreBadge(String label, double score) {
-    final color = AppColors.forThreat(score);
+  Widget _scoreBadge(String label, double score, AppPalette p) {
+    final color = p.forThreat(score);
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
@@ -777,18 +786,18 @@ class _SemanticCard extends StatelessWidget {
     );
   }
 
-  Widget _keywordChip(String text, Color color) {
+  Widget _keywordChip(String text, Color color, AppPalette p) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: AppColors.bgSurface,
+        color: p.bgSurface,
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: color.withValues(alpha: 0.45)),
       ),
       child: Text(
         text,
         style: AppTypography.bodyMedium.copyWith(
-          color: AppColors.textPrimary,
+          color: p.textPrimary,
           fontSize: 12,
         ),
       ),
@@ -805,23 +814,24 @@ class _TranscriptCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+  final p = context.palette;
     return _Card(
-      title: 'TRANSCRIPT TIMELINE',
+      title: l10n.incidentTranscriptTimeline,
       icon: Icons.forum_outlined,
       child: incident.transcriptSnippets.isEmpty
-          ? const Text('No transcript captured.',
+          ? Text(l10n.incidentNoTranscript,
               style: AppTypography.bodyMedium)
           : Column(
               children: [
                 for (final s in incident.transcriptSnippets)
-                  _bubble(s),
+                  _bubble(s, p),
               ],
             ),
     );
   }
 
-  Widget _bubble(TranscriptSnippet s) {
-    final isCaller = s.speaker != AppStrings.speakerYou;
+  Widget _bubble(TranscriptSnippet s, AppPalette p) {
+    final isCaller = s.speaker != l10n.speakerYou;
     return Align(
       alignment: isCaller ? Alignment.centerLeft : Alignment.centerRight,
       child: Container(
@@ -829,12 +839,12 @@ class _TranscriptCard extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
         constraints: const BoxConstraints(maxWidth: 280),
         decoration: BoxDecoration(
-          color: isCaller ? AppColors.bgElevated : AppColors.accentMuted,
+          color: isCaller ? p.bgElevated : p.accentMuted,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(
             color: isCaller
-                ? AppColors.borderSubtle
-                : AppColors.accent.withValues(alpha: 0.4),
+                ? p.borderSubtle
+                : p.accent.withValues(alpha: 0.4),
           ),
         ),
         child: Column(
@@ -845,8 +855,8 @@ class _TranscriptCard extends StatelessWidget {
               style: AppTypography.labelSmall.copyWith(
                 fontSize: 9,
                 color: isCaller
-                    ? AppColors.statusWarning
-                    : AppColors.statusSafe,
+                    ? p.statusWarning
+                    : p.statusSafe,
               ),
             ),
             const SizedBox(height: 3),
@@ -863,6 +873,7 @@ class _TranscriptCard extends StatelessWidget {
                   incident.flaggedPhrases,
                   baseStyle:
                       AppTypography.bodyLarge.copyWith(fontSize: 13.5),
+                  palette: p,
                 ),
               ),
             ),
@@ -888,6 +899,7 @@ class _ActionsCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     final isDemo = FamilyAlertLocator.instance.isDemoMode;
     return Column(
       children: [
@@ -899,13 +911,13 @@ class _ActionsCard extends StatelessWidget {
             icon: const Icon(Icons.broadcast_on_personal, size: 20),
             label: Text(
               isDemo
-                  ? AppStrings.sendDemoFamilyAlert
-                  : 'Broadcast to Family Shield',
+                  ? l10n.sendDemoFamilyAlert
+                  : l10n.incidentBroadcast,
               style:
                   const TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.statusDanger,
+              backgroundColor: p.statusDanger,
               foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
@@ -933,8 +945,8 @@ class _ActionsCard extends StatelessWidget {
               style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.textPrimary,
-              side: const BorderSide(color: AppColors.borderSubtle),
+              foregroundColor: p.textPrimary,
+              side: BorderSide(color: p.borderSubtle),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),

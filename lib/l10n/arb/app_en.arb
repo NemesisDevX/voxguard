@@ -1,0 +1,967 @@
+{
+  "@@locale": "en",
+  "appName": "VoxGuard",
+  "actionCancel": "Cancel",
+  "actionContinue": "Continue",
+  "actionDone": "Done",
+  "actionSave": "Save",
+  "actionDelete": "Delete",
+  "actionClose": "Close",
+  "actionSkip": "Skip for now",
+  "actionSkipSetup": "Skip",
+  "actionRetry": "Try Again",
+  "actionBack": "Back",
+  "actionEdit": "Edit",
+  "actionRemove": "Remove",
+  "actionCopy": "Copy",
+  "actionView": "View",
+  "actionOpenSystemSettings": "Open System Settings",
+  "actionCopyId": "Copy ID",
+  "actionAddPerson": "Add person",
+  "howItWorksTitle": "How VoxGuard Works",
+  "exploreApp": "Explore VoxGuard",
+  "unrecognizedIdentity": "An unrecognized VoxGuard identity",
+  "safecallIntro": "VoxGuard listens through your microphone for suspicious voice and conversation patterns.",
+  "familyAlertUnknownSender": "Family Shield alert from an unrecognized VoxGuard identity.",
+  "pushAlertTitle": "🚨 VoxGuard Family Shield Alert",
+  "incidentReportTitle": "VoxGuard Incident Report",
+  "recordingUnreadable": "VoxGuard could not read this recording — it may be corrupted or an unsupported format.",
+  "recordingUndecodable": "VoxGuard could not decode this recording — the format may not be supported on this device.",
+  "recordingAnalyzerIntro": "VoxGuard examines acoustic anomalies and, when you choose transcription, conversation-risk signals.",
+  "partialRecordingNote": "Conversation-risk signals were not analyzed, so VoxGuard cannot produce a complete Threat Score.",
+  "enhancedModeLockedDesc": "Sentinel Shield adds enhanced transcription — the recording is sent through VoxGuard’s transcription relay only after you opt in. On-device analysis stays free.",
+  "enhancedModeReadyDesc": "To create a transcript, this recording will be sent through VoxGuard’s transcription relay to the configured speech-to-text provider. VoxGuard does not permanently store the recording.",
+  "onboardingSignalsBody": "During a SafeCall session you start yourself, VoxGuard listens for risk signals — never identity certainty — and explains what it heard in plain language.",
+  "onboardingNoInterception": "VoxGuard does not intercept your phone's cellular calls — a protection session is always your choice.",
+  "onboardingFamilyBody": "When a call feels wrong, people you trust can help you decide. Each VoxGuard installation receives an opaque Family Shield ID — trusted people save it in their own Trusted Circle to receive your private safety alerts and respond.",
+  "onboardingPrivacyMic": "Microphone audio is processed in memory while a session runs — VoxGuard never stores an audio recording. Live Mic asks for microphone access only when you choose it; Demo Mode works without it.",
+  "onboardingPrivacyAlerts": "Family Shield alerts carry only an opaque VoxGuard ID, an incident reference, and a risk band — never audio, transcripts, names, or phone numbers.",
+  "whyFlaggedTitle": "Why VoxGuard Flagged This Call",
+  "whyElevatedAcousticTitle": "WHY VOXGUARD FOUND ELEVATED ACOUSTIC SIGNALS",
+  "whyFlaggedRecordingTitle": "WHY VOXGUARD FLAGGED THIS RECORDING",
+  "whyFlaggedCallTitle": "WHY VOXGUARD FLAGGED THIS CALL",
+  "whyFlaggedItTitle": "WHY VOXGUARD FLAGGED IT",
+  "welcomeTitle": "A calmer way to answer.",
+  "welcomeSubtitle": "VoxGuard helps you pause, verify, and stay in control when a call feels wrong.",
+  "welcomeLanguageLabel": "CHOOSE YOUR LANGUAGE",
+  "welcomeLanguageSystem": "Follow device language",
+  "welcomeNamePrompt": "What should we call you?",
+  "welcomeNameHint": "First name or nickname",
+  "welcomeNameNote": "Optional — stored only on this device.",
+  "welcomeContinue": "Continue",
+  "onboardingVoiceTitle": "A familiar voice can still be misleading.",
+  "onboardingVoiceBody1": "Scammers clone voices, spoof numbers, and pressure the people you love. Hearing a familiar voice is not proof of who is speaking.",
+  "onboardingVoiceBody2": "Urgency, secrecy, and payment pressure are the real tells — not the voice itself.",
+  "onboardingVoiceBody3": "Caller ID and sound alone can never prove identity.",
+  "onboardingSignalsTitle": "Two signals. One human decision.",
+  "onboardingSignalSemantic": "Conversation signal — urgency, payment demands, secrecy pressure in what is being said.",
+  "onboardingSignalAcoustic": "Voice-acoustic signal — anomaly indicators; an assistive heuristic, not a forensic verdict.",
+  "onboardingSignalScore": "The Risk Signal score is a signal, not the probability that a call is fake.",
+  "onboardingVerifyTitle": "When something feels wrong, verify independently.",
+  "onboardingVerifyBody": "A risk signal is a reason to pause — not a verdict. The strongest move is always yours:",
+  "onboardingVerifyStep1": "Pause — never send money, codes, or details under pressure.",
+  "onboardingVerifyStep2": "Call the person back on a number you already trust — never one the caller gave you.",
+  "onboardingVerifyStep3": "Agree on a family safe phrase offline — ask for it when a call feels wrong.",
+  "onboardingFamilyTitle": "Family Shield: a second set of eyes.",
+  "onboardingFamilyBody1": "Names and trusted phone numbers stay on the device that saved them.",
+  "onboardingFamilyBody2": "Setting up your Trusted Circle is optional — you can do it later in Settings.",
+  "onboardingFamilyIdPending": "Your Family Shield ID appears here once the app finishes setting up.",
+  "onboardingYourId": "Your ID: {id}",
+  "@onboardingYourId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "familyShieldIdCopied": "Family Shield ID copied",
+  "familyAlertsEnabled": "Family alerts enabled",
+  "onboardingNotifOff": "Notifications are off — you can enable them later from your device's Settings app.",
+  "onboardingPushUnsupported": "Push alerts aren't supported on this platform.",
+  "onboardingPushNotConfigured": "Push alerts aren't configured in this build.",
+  "onboardingEnablingNotif": "Enabling notifications…",
+  "onboardingEnableAlerts": "Enable Family Alerts",
+  "onboardingPrivacyTitle": "Your voice stays in your control.",
+  "onboardingPrivacyBody": "When cloud transcription is configured, live audio streams to the configured transcription provider to produce transcript text for analysis.",
+  "onboardingPrivacyLoop": "Evidence → Pause → Verify → People you trust",
+  "onboardingPrivacyChoice": "Start a SafeCall session when you want protection — you always choose Live Mic or Demo Mode yourself.",
+  "startupStoreError": "Couldn't save your progress — onboarding will show again next launch.",
+  "shieldStatusReady": "VoxGuard Ready",
+  "shieldSubtitle": "Real-time voice defense standing by",
+  "homeGreetingNamed": "Good to see you, {name}.",
+  "@homeGreetingNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quickActions": "PROTECTION",
+  "startSafeCall": "Start SafeCall",
+  "startSafeCallDesc": "In-app protected call with live threat telemetry.",
+  "protectionCheckTitle": "Start a protection check",
+  "protectionCheckDesc": "Use speakerphone or play suspicious audio nearby — VoxGuard listens for risk signals.",
+  "protectionCheckCta": "Start SafeCall",
+  "analyzeRecording": "Analyze Recording",
+  "analyzeRecordingDesc": "Check a saved call recording or voice note.",
+  "incidentLogTooltip": "Incident log",
+  "familyShieldTitle": "Family Shield",
+  "familyReadyWithCircle": "Trusted Circle ready",
+  "familyNeedsSetup": "Needs setup",
+  "familyStatusHint": "A second set of eyes when a call feels wrong.",
+  "navShield": "Protect",
+  "navIncidents": "Incidents",
+  "navSettings": "Settings",
+  "safeCallTitle": "SafeCall",
+  "safeCallActive": "PROTECTION SESSION ACTIVE",
+  "unknownCaller": "Unknown Caller",
+  "maskedNumber": "+1 (•••) ••• ••42",
+  "endCall": "End",
+  "endCallAndVerify": "End call & verify",
+  "liveBadge": "LIVE",
+  "signalSynthetic": "Acoustic Anomaly Indicators",
+  "signalUrgency": "Urgent Pressure",
+  "signalFinancial": "Financial Transfer Demand",
+  "signalSecrecy": "Secrecy & Isolation Request",
+  "statusNormal": "NORMAL",
+  "statusElevated": "ELEVATED",
+  "bannerProtected": "PROTECTED",
+  "bannerProtectedDetail": "All signals nominal — no threat indicators",
+  "bannerElevated": "ELEVATED RISK",
+  "bannerElevatedDetail": "Suspicious pattern — monitoring closely",
+  "bannerThreat": "High-Risk Call Detected",
+  "bannerThreatDetail": "Impersonation and financial demand patterns flagged",
+  "threatScoreLabel": "Threat Score",
+  "simulateScam": "Simulate Scam",
+  "stopSimulation": "Stop Demo",
+  "pauseHeadline": "Pause before acting.",
+  "verifyBeforeYouAct": "Verify before you act.",
+  "technicalDetails": "TECHNICAL DETAILS",
+  "liveTranscript": "LIVE TRANSCRIPT",
+  "transcriptEmpty": "Transcript appears here during a protected call.",
+  "transcriptDemoPending": "Demo transcript will appear here.",
+  "transcriptListening": "Listening for speech…",
+  "transcriptNoLive": "Voice analysis active — live transcription unavailable.",
+  "speakerCaller": "Caller",
+  "speakerYou": "You",
+  "safeCallPickerTitle": "Start a Protection Session",
+  "modeLiveMic": "Live Mic",
+  "modeLiveMicDesc": "Analyze real microphone audio — speakerphone calls or a voice played nearby.",
+  "modeLiveMicBadge": "REAL SESSION",
+  "modeDemo": "Demo Attack",
+  "modeDemoDesc": "Run the scripted judging scenario — generated audio and demo transcript. Nothing is real audio.",
+  "modeDemoBadge": "DEMONSTRATION",
+  "modeLiveBadgeShort": "LIVE MIC",
+  "modeDemoBadgeShort": "DEMO",
+  "modeDemoModeLabel": "DEMO MODE",
+  "durationMinSec": "{m}:{ss}",
+  "@durationMinSec": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      },
+      "ss": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHourMinSec": "{h}:{mm}:{ss}",
+  "@durationHourMinSec": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "mm": {
+        "type": "int"
+      },
+      "ss": {
+        "type": "int"
+      }
+    }
+  },
+  "lensBandSafe": "SAFE",
+  "lensBandCaution": "CAUTION",
+  "lensBandHigh": "HIGH RISK",
+  "lensInterpSafe": "Signals look normal — keep listening.",
+  "lensInterpCaution": "Something feels off — watch the signals.",
+  "lensInterpHigh": "Pause before acting.",
+  "lensRiskSignal": "RISK SIGNAL",
+  "lensA11yPartial": "Partial signal — acoustic anomaly {acoustic} of 100. Conversation analysis not run.",
+  "@lensA11yPartial": {
+    "placeholders": {
+      "acoustic": {
+        "type": "int"
+      }
+    }
+  },
+  "lensA11yFull": "Risk signal {band}, {score} of 100. Acoustic analysis {acoustic} of 100.",
+  "@lensA11yFull": {
+    "placeholders": {
+      "band": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      },
+      "acoustic": {
+        "type": "int"
+      }
+    }
+  },
+  "lensDemoAudio": "DEMO AUDIO",
+  "lensLayerConversation": "Conversation",
+  "lensLayerVoice": "Voice acoustics",
+  "lensNotAnalyzed": "not analyzed",
+  "signalPartialState": "ACOUSTIC ONLY",
+  "acousticAnomalyLabel": "ACOUSTIC ANOMALY",
+  "conversationNotAnalyzed": "Conversation-risk signals were not analyzed.",
+  "acousticOnlyMonitoring": "Acoustic monitoring is active. Conversation analysis requires transcription.",
+  "bannerAcousticOnly": "Acoustic monitoring only — conversation signals not analyzed",
+  "bannerAcousticElevated": "Acoustic anomaly elevated — conversation signals not analyzed",
+  "acousticAnomalyElevatedNote": "Elevated acoustic anomaly indicators observed.",
+  "postCallEnded": "Protection session ended",
+  "postCallReview": "Review the evidence before taking further action.",
+  "postCallPause": "Pause.",
+  "postCallVerifyCta": "Verify independently",
+  "callSavedNumberHint": "Call the person back using a number you already trust.",
+  "verifyIdentityTitle": "Verify Identity",
+  "verifyIdentityBody": "Call the person back using a number you already trust — never the number that just called you.",
+  "callTrustedContact": "Call Trusted Contact",
+  "sendDemoFamilyAlert": "Send Demo Family Alert",
+  "familyAlertSent": "Demo alert broadcast to family",
+  "familySafePhrase": "Tip: agree on a family safe phrase offline — ask the caller for it.",
+  "viewIncidentReport": "View Incident Report",
+  "incidentLogged": "High-risk call logged",
+  "postCallNoFlags": "No high-risk patterns were flagged during this call.",
+  "postCallSessionSummary": "SESSION SUMMARY",
+  "postCallFamilyShield": "FAMILY SHIELD",
+  "postCallFamilyDemoNote": "Demo Mode — sends a simulated alert to demo contacts; no real notification is delivered.",
+  "postCallFamilyPrompt": "Ask a person you trust for a second set of eyes — send them a Family Shield alert.",
+  "postCallSendFamilyAlert": "Send Family Alert",
+  "postCallSendFamilyAlertDesc": "Send a Family Shield alert to people in your Trusted Circle",
+  "verifyStepCall": "Call the person on a saved, trusted number.",
+  "verifyStepPhrase": "Ask for your family safe phrase if unsure.",
+  "sheetScoreSummary": "{headline} Threat Score: {score}/100.",
+  "@sheetScoreSummary": {
+    "placeholders": {
+      "headline": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "incidentsTitle": "Incidents",
+  "incidentEmptyTitle": "No incidents recorded",
+  "incidentEmptyBody": "Flagged sessions and analyzed recordings will appear here as a safety log.",
+  "bandPartial": "PARTIAL ANALYSIS",
+  "bandHigh": "HIGH RISK",
+  "bandCritical": "CRITICAL / HIGH RISK",
+  "bandSuspicious": "SUSPICIOUS",
+  "bandSafe": "SAFE",
+  "incidentPartialSummary": "Acoustic anomaly {score}/100 — conversation-risk not analyzed",
+  "@incidentPartialSummary": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "incidentNoThreats": "No significant threats detected",
+  "incidentReasonsDetected": "{count} detected",
+  "@incidentReasonsDetected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "incidentDeleteTitle": "Delete this incident?",
+  "incidentDeleteBody": "{id} will be permanently removed from this device. This cannot be undone.",
+  "@incidentDeleteBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentDeleteTooltip": "Delete incident",
+  "incidentCopied": "Incident report copied to clipboard.",
+  "incidentFamilyResponses": "FAMILY SHIELD RESPONSES",
+  "familyMarkedSafe": "{name} marked this situation safe",
+  "@familyMarkedSafe": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyStillConcerned": "{name} is still concerned",
+  "@familyStillConcerned": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentRecommended": "RECOMMENDED NEXT STEPS",
+  "incidentTechnicalEvidence": "TECHNICAL EVIDENCE",
+  "incidentAudioSha": "AUDIO SHA-256",
+  "incidentAcousticSignals": "ACOUSTIC ANOMALY SIGNALS",
+  "metricSpectralFlux": "Spectral Flux",
+  "metricSpectralRolloff": "Spectral Rolloff",
+  "metricZeroCrossing": "Zero-Crossing Rate",
+  "metricAcousticScore": "Acoustic Anomaly Score",
+  "incidentSemanticSignals": "SEMANTIC THREAT SIGNALS",
+  "semUrgency": "URGENCY",
+  "semFinancial": "FINANCIAL",
+  "semSecrecy": "SECRECY",
+  "incidentTranscriptTimeline": "TRANSCRIPT TIMELINE",
+  "incidentNoTranscript": "No transcript captured.",
+  "incidentBroadcast": "Broadcast to Family Shield",
+  "incidentBroadcastDemoNote": "Demo Mode — no real notification is sent",
+  "incidentShare": "Share Incident Report",
+  "incidentScoreLine": "{score}/100",
+  "@incidentScoreLine": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "acousticAnomalyPrefix": "Acoustic anomaly ",
+  "analyzeRecordingTitle": "Analyze Recording",
+  "recordingStepTitle": "Analyze a call recording or voice note",
+  "recordingFormats": "WAV · MP3 · M4A/AAC · OGG/OPUS · FLAC — up to 25 MB or 15 minutes.",
+  "recordingChooseAudio": "Choose audio",
+  "recordingPrivacyLabel": "PRIVACY",
+  "recordingKeepLocal": "Keep audio on this device",
+  "recordingKeepLocalDesc": "Acoustic analysis runs locally. Nothing is uploaded.",
+  "recordingIncludeConversation": "Include conversation analysis",
+  "recordingCloudNotConfigured": "Cloud transcription isn’t configured in this build. Acoustic analysis is still available on-device.",
+  "recordingCancelAnalysis": "Cancel analysis",
+  "recordingAnalyzeAction": "Analyze recording",
+  "recordingChooseDifferent": "Choose a different file",
+  "recordingViewIncident": "View Incident Report",
+  "recordingAnalyzeAnother": "Analyze another recording",
+  "recordingMetaFormat": "Format",
+  "recordingMetaSize": "Size",
+  "recordingMetaDuration": "Duration",
+  "recordingSentinelBadge": "SENTINEL",
+  "recordingManualTranscript": "Add transcript text instead",
+  "recordingManualTranscriptLabel": "USER-PROVIDED TRANSCRIPT",
+  "recordingManualTranscriptHint": "Paste transcript text you already have — it stays on this device.",
+  "recordingStagePreparing": "Preparing audio",
+  "recordingStageAcoustic": "Analyzing acoustic signals",
+  "recordingStageUploading": "Uploading for transcription",
+  "recordingStageTranscribing": "Transcribing conversation",
+  "recordingStageEvaluating": "Evaluating conversation risk",
+  "recordingStageBuilding": "Building result",
+  "recordingThreatScore": "Threat Score",
+  "recordingConvNotAnalyzed": "CONVERSATION SIGNAL · NOT ANALYZED",
+  "recordingAcousticSignals": "ACOUSTIC ANOMALY SIGNALS",
+  "recordingAcousticScore": "Acoustic anomaly score",
+  "recordingMetricFlux": "Spectral flux",
+  "recordingMetricRolloff": "Spectral rolloff",
+  "recordingMetricZcr": "Zero-crossing rate",
+  "recordingTranscriptLabel": "RECORDING TRANSCRIPT",
+  "recordingVerifyTitle": "VERIFY BEFORE YOU ACT",
+  "recordingVerifyBody": "This is an acoustic-only check — the conversation itself was not analyzed. Never rely on a partial result to decide a recording is safe: verify the speaker through a channel you already trust.",
+  "stepPickRecording": "PICK A RECORDING",
+  "stepPrivacyDepth": "CHOOSE PRIVACY DEPTH",
+  "stepAnalyze": "ANALYZE",
+  "stepResult": "UNDERSTAND THE RESULT",
+  "familyAlertTitle": "Family Shield Alert",
+  "familyAlertAcoustic": "{name} asked you to verify an elevated acoustic warning from a recording.",
+  "@familyAlertAcoustic": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyAlertHighRisk": "{name} may be dealing with a high-risk call.",
+  "@familyAlertHighRisk": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyAlertSuspicious": "{name} received a suspicious-call warning from VoxGuard.",
+  "@familyAlertSuspicious": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyMarkedSafeNote": "Marked safe after independent verification.",
+  "familyStillSuspiciousNote": "Still suspicious — keep verification going.",
+  "familyUpdateFailed": "{localCopy} Family update could not be sent — check your connection.",
+  "@familyUpdateFailed": {
+    "placeholders": {
+      "localCopy": {
+        "type": "String"
+      }
+    }
+  },
+  "familyBandAlert": "ALERT",
+  "familyVerifyDirectly": "Verify directly",
+  "familyVerifyCall": "Call {name} using the trusted number you saved — not a number provided by the suspicious caller.",
+  "@familyVerifyCall": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyVerifyChannel": "Verify through a channel you already trust. Do not act on instructions from the alert alone.",
+  "familyCallAction": "Call {name}",
+  "@familyCallAction": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyCallActionUnknown": "Call {name}",
+  "@familyCallActionUnknown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyNoTrustedNumber": "No trusted number saved. Contact them through a number you already trust.",
+  "familyMarkSafe": "Mark Safe",
+  "familyStillSuspicious": "Still Suspicious",
+  "familyTipNoMoney": "Do not send money or gift codes.",
+  "familyTipNoCodes": "Do not share OTP, PIN, or banking details.",
+  "familyTipChannel": "Verify through another independent channel.",
+  "familyTipAuthorities": "Contact their bank, carrier, or local authorities if needed.",
+  "familyDetailsTitle": "Details",
+  "familyDetailsBody": "Incident {incident}\nReceived {time}\n{status}",
+  "@familyDetailsBody": {
+    "placeholders": {
+      "incident": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "familyStatusSafe": "Safe after verification",
+  "familyStatusSuspicious": "Still suspicious",
+  "familyStatusUnresolved": "Unresolved",
+  "familyPrivacyNote": "Privacy: only an opaque device identity and risk level were shared. No audio, transcript, names, or phone numbers are included in Family Shield alerts.",
+  "familyUpdateTitle": "Family Shield Update",
+  "familyUpdateMarkedSafe": "{who} marked this situation safe",
+  "@familyUpdateMarkedSafe": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "familyUpdateConcerned": "{who} is still concerned",
+  "@familyUpdateConcerned": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "familyUpdateHumanNote": "This is a human verification update — it does not change the AI risk assessment.\n\nIncident {incident}",
+  "@familyUpdateHumanNote": {
+    "placeholders": {
+      "incident": {
+        "type": "String"
+      }
+    }
+  },
+  "familyAlertReceived": "Family Shield alert received",
+  "familyAlertFraming": "Someone you know is asking for a second set of eyes.",
+  "yourJudgment": "YOUR JUDGMENT",
+  "humanResponseNote": "Your call is the verification — not the app. Marking safe or suspicious is a human response; it does not change the risk analysis.",
+  "familyReceiverTitle": "Family Shield Receiver",
+  "familyReceiverDesc": "Get an alert when someone in your trusted circle encounters a high-risk call.",
+  "familyReceiverShareHint": "Share this ID only with someone you want to receive Family Shield alerts from.",
+  "familyReceiverEnable": "Enable Family Alerts",
+  "familyReceiverOpenSettings": "Open system settings",
+  "familyReceiverNotConfigured": "Push setup unavailable — ONESIGNAL_APP_ID not configured in this build.",
+  "familyReceiverDevRecipient": "DEV · Test alert recipient",
+  "familyReceiverSetTest": "Set test recipient",
+  "familyStateReady": "Ready to receive alerts",
+  "familyStateRegistering": "Registering…",
+  "familyStateNeedPermission": "Notification permission needed",
+  "familyStateBlocked": "Notifications blocked — enable in system settings",
+  "familyStateNotConfigured": "Push not configured",
+  "familyStateUnsupported": "Not supported on this platform",
+  "familyStateError": "Registration error{detail}",
+  "@familyStateError": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "familyShieldIdLabel": "Family Shield ID",
+  "familyShieldIdCopy": "Copy Family Shield ID",
+  "familyShieldIdCopiedShort": "Family Shield ID copied",
+  "trustedCircleTitle": "Trusted Circle",
+  "trustedCircleCount": "{count} of {max}",
+  "@trustedCircleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "trustedCircleDesc": "The people you can ask for a second set of eyes. Alerts reach them by Family Shield ID — phone numbers stay on this device.",
+  "trustedNoPhone": " · no phone",
+  "trustedPhoneStored": " · phone stored",
+  "trustedAddTitle": "Add trusted person",
+  "trustedEditTitle": "Edit person",
+  "trustedFindIdHint": "They can find their Family Shield ID in their own app under Settings → Family Shield Receiver.",
+  "trustedNameField": "Name",
+  "trustedShieldIdField": "Family Shield ID",
+  "trustedPhoneField": "Trusted phone number (optional)",
+  "paywallTitle": "Two signals.\nOne human decision.",
+  "paywallSubtitle": "VoxGuard flags risk — you verify. Paid plans extend what the two signals can see.",
+  "securityBadge": "Billing handled by your app store",
+  "demoStoreBadge": "DEMO STORE",
+  "demoStoreNotice": "Simulated checkout — no real charge will occur.",
+  "storeUnavailableNotice": "Subscriptions aren't configured in this build.",
+  "monthly": "Monthly",
+  "annual": "Annual",
+  "mostPopular": "MOST POPULAR",
+  "upgradeNow": "Upgrade Now",
+  "continueFree": "Continue with Free",
+  "subscribeNow": "Subscribe",
+  "activateDemoPlan": "Activate Demo Plan",
+  "demoPlanActivated": "Demo plan activated — no real charge",
+  "noPurchasesRestored": "No active purchases found.",
+  "terms": "Terms of Service",
+  "privacy": "Privacy Policy",
+  "restore": "Restore Purchases",
+  "upgradeTooltip": "View plans",
+  "plansLoadError": "Could not load plans.",
+  "planNotAvailable": "That plan is not available in this store.",
+  "planActivated": "{name} activated — shield upgraded",
+  "@planActivated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "planFreeLabel": "Free",
+  "planNotAvailableShort": "Not available",
+  "planFreeBadge": "FREE TIER",
+  "planSentinelBadge": "SENTINEL ACTIVE",
+  "planFamilyBadge": "FAMILY VAULT ACTIVE",
+  "tierQuickCheck": "Quick Check",
+  "tierQuickCheckTag": "Local safety tools",
+  "tierQuickCheckF1": "Live Mic acoustic anomaly monitoring",
+  "tierQuickCheckF2": "On-device recording analysis",
+  "tierQuickCheckF3": "Manual transcript check — analyzed locally",
+  "tierQuickCheckF4": "Local incident history",
+  "tierQuickCheckF5": "Receive & respond to Family Shield alerts",
+  "tierSentinel": "Sentinel Shield",
+  "tierSentinelTag": "Conversation-aware protection",
+  "tierSentinelF1": "Everything in Quick Check",
+  "tierSentinelF2": "Automatic Live Mic transcription & enhanced recording transcription — when infrastructure is configured",
+  "tierSentinelF3": "Transcript-backed conversation-risk analysis",
+  "tierSentinelF4": "Fused multi-signal threat scoring",
+  "tierFamily": "Family Vault",
+  "tierFamilyTag": "The human verification loop",
+  "tierFamilyF1": "Everything in Sentinel Shield",
+  "tierFamilyF2": "Send Family Shield alerts to your Trusted Circle",
+  "tierFamilyF3": "Up to 5 locally-saved Trusted Circle contacts",
+  "tierFamilyF4": "Safety responses loop back privately",
+  "familyVaultUnlocksAlerts": "Family Vault lets you send safety alerts to your Trusted Circle.",
+  "acousticProtectionActive": "Acoustic protection active. Transcript-backed conversation analysis unlocks with Sentinel Shield.",
+  "currentPlan": "Current plan: {tier}",
+  "@currentPlan": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "currentPlanDemo": " (demo)",
+  "viewPlans": "View plans",
+  "manageSubscription": "Manage subscription",
+  "purchasesRestored": "Purchases restored.",
+  "purchasesRestoreFailed": "Purchases could not be restored right now.",
+  "subscriptionSection": "Subscription",
+  "demoStoreSection": "DEMO STORE",
+  "billingMonthly": "Monthly",
+  "billingAnnual": "Annual",
+  "settingsTitle": "Settings",
+  "settingsSectionProfile": "PROFILE",
+  "settingsSectionAppearance": "APPEARANCE",
+  "settingsSectionSafety": "SAFETY & FAMILY",
+  "settingsSectionNotifications": "NOTIFICATIONS",
+  "settingsSectionSubscription": "SUBSCRIPTION",
+  "settingsSectionAbout": "ABOUT & PRIVACY",
+  "settingsDisplayName": "Display name",
+  "settingsDisplayNameNone": "Not set",
+  "settingsDisplayNameHint": "What should we call you?",
+  "settingsDisplayNameNote": "Stored only on this device — never shared.",
+  "settingsLanguage": "Language",
+  "languageSystem": "System default",
+  "languageEn": "English",
+  "languageAr": "العربية",
+  "languageEs": "Español",
+  "languageFr": "Français",
+  "settingsTheme": "Theme",
+  "themeSystem": "System",
+  "themeLight": "Light",
+  "themeDark": "Dark",
+  "settingsAccent": "Accent",
+  "accentPeriwinkle": "Periwinkle",
+  "accentSoftBlue": "Soft Blue",
+  "accentSoftViolet": "Soft Violet",
+  "settingsTextSize": "Text size",
+  "textSizeSystem": "System",
+  "textSizeLarge": "Large",
+  "textSizeExtraLarge": "Extra Large",
+  "textSizeNote": "Never smaller than your device’s accessibility setting.",
+  "settingsExperience": "Experience",
+  "experienceStandard": "Standard",
+  "experienceGuided": "Guided",
+  "experienceGuidedDesc": "Larger actions, clearer guidance, less technical detail up front.",
+  "settingsMotion": "Motion",
+  "motionSystem": "Follow system",
+  "motionReduced": "Reduced",
+  "motionNote": "Reduced motion pauses ambient animation. Risk changes always stay visible.",
+  "settingsHaptics": "Haptics",
+  "hapticsOn": "On",
+  "hapticsOff": "Off",
+  "settingsFamilyStatus": "Family Shield alerts",
+  "settingsNotificationState": "Notification permission",
+  "notifStateGranted": "Allowed",
+  "notifStateDenied": "Off — enable in device settings",
+  "notifStateUnknown": "Not determined",
+  "settingsNotificationNote": "Notification sound and delivery are controlled by your device notification settings.",
+  "settingsOpenNotifSettings": "Open notification settings",
+  "settingsHowItWorks": "How it works",
+  "settingsAnalysisLangs": "Conversation-risk analysis currently supports English and Egyptian Arabic. The app interface language can be changed independently.",
+  "settingsVersion": "Version {version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLocalOnly": "Your name, language, and appearance preferences stay on this device.",
+  "msgFamilyShieldDisabled": "Family Shield is disabled.",
+  "msgNeedTrustedContact": "Add someone to your Trusted Circle before sending a Family Shield alert.",
+  "msgDemoAlertBroadcast": "Demo alert broadcast to {count} family member(s).",
+  "@msgDemoAlertBroadcast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "msgAlertAccepted": "Alert accepted for delivery to {count} family member(s).",
+  "@msgAlertAccepted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "msgRelayRejected": "Relay rejected the alert ({code}).",
+  "@msgRelayRejected": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "msgServiceUnavailable": "Alert service unavailable ({code}).",
+  "@msgServiceUnavailable": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "msgNetworkAlert": "Network error — alert could not be sent.",
+  "msgNetworkResponse": "Network error — response could not be sent.",
+  "msgChooseResponse": "Choose Safe or Still Suspicious before responding.",
+  "msgInvalidTarget": "Response target is not a valid Family Shield ID.",
+  "msgDemoResponse": "Demo — response simulated, nothing left this device.",
+  "msgFamilyUpdateSent": "Family update sent.",
+  "msgCircleFull": "Trusted Circle is full (5 people). Remove someone first.",
+  "msgDuplicateContact": "That Family Shield ID is already in your Trusted Circle.",
+  "msgNameRequired": "Name is required.",
+  "msgInvalidShieldId": "Response target is not a valid Family Shield ID.",
+  "msgPhoneTooLong": "Phone number is too long.",
+  "msgDemoReadOnly": "Demo contacts are read-only",
+  "msgPushSetupFailed": "Push setup failed on this device.",
+  "msgPushLinkFailed": "Could not link your Family Shield ID.",
+  "msgPushEnableFailed": "Could not enable push alerts. Try again.",
+  "msgPushStateFailed": "Push state could not be read.",
+  "msgMicUnsupported": "Microphone capture is not supported on this platform. Try Demo Mode instead.",
+  "msgMicBlocked": "Microphone access is blocked. Enable it in system settings, or use Demo Mode.",
+  "msgMicDenied": "Microphone permission was denied. Grant access to run Live Mic, or use Demo Mode.",
+  "msgMicFailed": "Microphone failed to start. Check the device and retry, or use Demo Mode.",
+  "msgFileEmpty": "That file appears to be empty.",
+  "msgFileTooLarge": "That file is too large — recordings up to 25 MB are supported.",
+  "msgFileTooLong": "That recording is too long — up to 15 minutes are supported.",
+  "msgFileNoAudio": "The recording decoded to no audio — nothing to analyze.",
+  "msgEmptyTranscript": "Provider returned an empty transcript.",
+  "msgTranscriptionFailed": "The transcription provider could not process the audio.",
+  "msgTranscriptionTimeout": "Transcription timed out — the acoustic result is still available.",
+  "msgCloudNotConfigured": "Cloud transcription isn't configured in this build. Acoustic analysis is still available on-device.",
+  "msgEnhancedLocked": "Enhanced recording transcription is included with Sentinel Shield. On-device acoustic analysis is still available.",
+  "msgSubsNotConfigured": "Subscriptions are not configured in this build.",
+  "msgSubsInitFailed": "Subscriptions could not be initialized.",
+  "msgPlansLoadFailed": "Plans could not be loaded from the store.",
+  "msgPurchaseFailed": "The purchase could not be completed.",
+  "msgNoConnection": "No connection — check your network and try again.",
+  "msgStoreUnavailable": "The store is unavailable right now. Try again later.",
+  "msgPurchaseNotAllowed": "Purchases are not allowed on this device or account.",
+  "msgPurchasePending": "The payment is pending approval.",
+  "msgRestoreFailed": "Purchases could not be restored right now.",
+  "msgNoPaidPlans": "No paid plans are available in this store yet.",
+  "msgPurchasePendingActivation": "The purchase did not activate a plan yet — it may take a moment. Use Restore Purchases to check again.",
+  "msgDemoCheckoutFailed": "Demo checkout failed — please try again.",
+  "msgTokenFailed": "Could not prepare transcription — try again.",
+  "reasonFinancial": "Financial transfer demand detected",
+  "reasonSecrecy": "Secrecy & isolation pressure",
+  "reasonUrgency": "Urgency manipulation tactics",
+  "reasonImpersonation": "Identity impersonation claim: “{claim}”",
+  "@reasonImpersonation": {
+    "placeholders": {
+      "claim": {
+        "type": "String"
+      }
+    }
+  },
+  "reasonAcoustic": "Acoustic anomaly indicators elevated",
+  "reasonCoordinated": "Coordinated scam pattern — amplified",
+  "reasonNone": "No significant threat indicators",
+  "actionContinueMonitoring": "Continue monitoring",
+  "actionAdviseCaution": "Advise caution — verify caller identity",
+  "actionEndCall": "End call immediately and alert a trusted contact",
+  "actionEndCallShort": "End the call immediately",
+  "actionNoCodes": "Do not share OTPs, PINs or banking details",
+  "actionVerifyChannel": "Verify the caller through an official channel",
+  "actionReport": "Report the number to your carrier or authorities",
+  "actionEnableFamily": "Enable Family Shield alerts for relatives",
+  "actionNoTimeOffers": "Do not act on time-limited offers under pressure",
+  "evidenceImpersonation": "Impersonation",
+  "evidenceMoney": "Money Request",
+  "evidenceUrgency": "Urgency",
+  "evidenceSecrecy": "Secrecy",
+  "sourceLiveMic": "Live Microphone",
+  "sourceLiveMicSession": "Live Microphone Session",
+  "sourceDemoAudio": "Generated Demo Audio",
+  "sourceDemoTranscript": "Local Demo Transcript",
+  "sourceUserTranscript": "User-provided transcript",
+  "sourceUploadedRecording": "Uploaded Recording",
+  "sourceRecording": "Recording",
+  "sourceAssemblyAiPrerecorded": "AssemblyAI Pre-recorded",
+  "sourceAssemblyAiStreaming": "AssemblyAI Streaming",
+  "sourceNoneAcoustic": "None — acoustic analysis only",
+  "callerUnknown": "Unknown Caller (+20 10 ••• ••42)",
+  "callerSuspicious": "Suspicious Contact (+1 888 ••• 0112)",
+  "reportDisclaimer": "AI-generated forensic telemetry. Not a legal or judicial determination.",
+  "reportAnalysisPartial": "Analysis: Partial — acoustic signals only",
+  "reportAcousticScore": "Acoustic anomaly score: {score}/100",
+  "@reportAcousticScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "reportConvNotAnalyzed": "Conversation-risk signals were not analyzed.",
+  "reportRiskLine": "Risk: {risk} — Threat Score: {score}/100",
+  "@reportRiskLine": {
+    "placeholders": {
+      "risk": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "reportIdLine": "ID: {id}",
+  "@reportIdLine": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTimeLine": "Time: {time}",
+  "@reportTimeLine": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCallerLine": "Caller: {caller}",
+  "@reportCallerLine": {
+    "placeholders": {
+      "caller": {
+        "type": "String"
+      }
+    }
+  },
+  "reportDurationLine": "Duration: {duration}",
+  "@reportDurationLine": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSignalsLine": "Signals: {reasons}",
+  "@reportSignalsLine": {
+    "placeholders": {
+      "reasons": {
+        "type": "String"
+      }
+    }
+  },
+  "reportAudioSourceLine": "Audio source: {source}",
+  "@reportAudioSourceLine": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTranscriptionLine": "Transcription: {source}",
+  "@reportTranscriptionLine": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "reportShaLine": "Audio SHA-256: {sha}",
+  "@reportShaLine": {
+    "placeholders": {
+      "sha": {
+        "type": "String"
+      }
+    }
+  },
+  "elevatedAcousticSummary": "Elevated acoustic anomalies — conversation-risk signals were not analyzed",
+  "demoTranscript1": "This is urgent — act now before the offer expires.",
+  "demoTranscript2": "Don't tell anyone until it's done.",
+  "metricAcousticAnomaly": "Acoustic Anomaly Score",
+  "recordingFormatsHint": "WAV · MP3 · M4A/AAC · OGG/OPUS · FLAC — up to 25 MB or 15 minutes.",
+  "recordingAcousticScoreLabel": "Acoustic anomaly score",
+  "recordingVerifyNormalBody": "A score is a risk signal, not proof. Verify the speaker through a number you already trust — never one provided in the recording — before acting on any request.",
+  "familyVerifyKnownSender": "Call {name} using the trusted number you saved — not a number provided by the suspicious caller.",
+  "@familyVerifyKnownSender": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyVerifyUnknownSender": "Verify through a channel you already trust. Do not act on instructions from the alert alone.",
+  "familyResolutionSafe": "Safe after verification",
+  "familyResolutionStillSuspicious": "Still suspicious",
+  "familyResolutionUnresolved": "Unresolved",
+  "familyResolutionLabel": "Resolution: {status}",
+  "@familyResolutionLabel": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "familyReceiverReady": "Ready to receive alerts",
+  "familyReceiverShareNote": "Share this ID only with someone you want to receive Family Shield alerts from.",
+  "familyShieldIdCopyTooltip": "Copy Family Shield ID",
+  "msgFamilyDisabled": "Family Shield is disabled.",
+  "msgAlertDelivered": "Alert accepted for delivery to {count} family member(s).",
+  "@msgAlertDelivered": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "msgFamilyIdInvalid": "Family Shield ID must look like vg_ followed by 32 hex characters. Ask your family member to copy it from their app (Settings → Family Shield Receiver).",
+  "msgMicStartFailed": "Microphone failed to start. Check the device and retry, or use Demo Mode.",
+  "scoreUrgency": "URGENCY",
+  "scoreFinancial": "FINANCIAL",
+  "scoreSecrecy": "SECRECY",
+  "demoBadgeCompact": "DEMO",
+  "postCallDemoAlertDesc": "Demo Mode — sends a simulated alert to demo contacts; no real notification is delivered.",
+  "postCallAskTrustDesc": "Ask a person you trust for a second set of eyes — send them a Family Shield alert.",
+  "recordingConversationAbsent": "CONVERSATION SIGNAL · NOT ANALYZED",
+  "msgDemoAlertDelivered": "Demo alert broadcast to {count} family member(s).",
+  "@msgDemoAlertDelivered": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "msgResponseRejected": "Relay rejected the response ({code}).",
+  "@msgResponseRejected": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "msgAlertUnavailable": "Alert service unavailable ({code}).",
+  "@msgAlertUnavailable": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "msgAlertNetworkError": "Network error — alert could not be sent.",
+  "msgResponseNetworkError": "Network error — response could not be sent.",
+  "msgResolutionRequired": "Choose Safe or Still Suspicious before responding.",
+  "msgDemoResponseSent": "Demo — response simulated, nothing left this device.",
+  "pushAlertBodyHigh": "A high-risk call was flagged on a monitored device. Verify directly with your relative before any funds move.",
+  "pushAlertBodySuspicious": "A suspicious-call warning was flagged on a monitored device. Verify directly with your relative before any funds move.",
+  "pushAlertBodyPartial": "Elevated acoustic signals were flagged in a recording on a monitored device. Conversation-risk signals were not analyzed — verify directly with your relative.",
+  "familyReceiverTestDeviceHint": "vg_… external id of test device",
+  "verifyStepHangup": "Hang up — do not send money.",
+  "familyUpdateIncidentId": "Incident {id}",
+  "@familyUpdateIncidentId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "familyUpdateReceivedAt": "Received {time}",
+  "@familyUpdateReceivedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  }
+}

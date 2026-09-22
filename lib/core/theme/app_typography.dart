@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import 'app_colors.dart';
 
 /// VoxGuard type scale.
 ///
@@ -14,7 +13,6 @@ abstract final class AppTypography {
   static const TextStyle displayLarge = TextStyle(
     fontSize: 30,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
     letterSpacing: -0.5,
     height: 1.15,
   );
@@ -22,48 +20,41 @@ abstract final class AppTypography {
   static const TextStyle displaySmall = TextStyle(
     fontSize: 26,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
     letterSpacing: -0.4,
   );
 
   static const TextStyle titleLarge = TextStyle(
     fontSize: 20,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
     letterSpacing: -0.2,
   );
 
   static const TextStyle titleMedium = TextStyle(
     fontSize: 16,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
   );
 
   static const TextStyle bodyLarge = TextStyle(
     fontSize: 15,
     fontWeight: FontWeight.w400,
-    color: AppColors.textPrimary,
     height: 1.4,
   );
 
   static const TextStyle bodyMedium = TextStyle(
     fontSize: 13.5,
     fontWeight: FontWeight.w400,
-    color: AppColors.textMuted,
     height: 1.4,
   );
 
   static const TextStyle labelLarge = TextStyle(
     fontSize: 13,
     fontWeight: FontWeight.w600,
-    color: AppColors.textPrimary,
     letterSpacing: 0.3,
   );
 
   static const TextStyle labelSmall = TextStyle(
     fontSize: 11,
     fontWeight: FontWeight.w700,
-    color: AppColors.textMuted,
     letterSpacing: 1.1,
   );
 
@@ -71,7 +62,6 @@ abstract final class AppTypography {
   static const TextStyle statLarge = TextStyle(
     fontSize: 22,
     fontWeight: FontWeight.w700,
-    color: AppColors.textPrimary,
     letterSpacing: -0.3,
   );
 

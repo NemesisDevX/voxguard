@@ -14,8 +14,10 @@ import 'package:voxguard/features/family_shield/presentation/screens/family_aler
 import 'package:voxguard/features/family_shield/presentation/screens/family_shield_update_screen.dart';
 import 'package:voxguard/features/forensics/domain/services/incident_repository.dart';
 import 'package:voxguard/features/home/presentation/screens/home_screen.dart';
+import 'package:voxguard/core/services/preferences/app_preferences.dart';
 import 'package:voxguard/features/onboarding/presentation/screens/onboarding_screen.dart';
 import 'package:voxguard/features/onboarding/presentation/screens/startup_gate.dart';
+import 'package:voxguard/features/onboarding/presentation/screens/welcome_setup_screen.dart';
 import 'package:voxguard/features/protection/domain/models/composite_threat_report.dart';
 import 'package:voxguard/features/protection/presentation/bloc/safecall_state.dart';
 import 'package:voxguard/features/protection/presentation/screens/safecall_screen.dart';
@@ -92,12 +94,19 @@ void main() {
   setUp(() async {
     SharedPreferences.setMockInitialValues({});
     prefs = await SharedPreferences.getInstance();
+    // Tests in this file exercise the post-setup gate: Welcome Setup
+    // is already done unless a test explicitly re-arms it.
+    AppPreferencesLocator.instance =
+        AppPreferences.inMemory(setupCompleted: true);
   });
 
   Future<void> pumpGate(
     WidgetTester tester,
-    IOnboardingStateStore store,
-  ) async {
+    IOnboardingStateStore store, {
+    bool setupCompleted = true,
+  }) async {
+    AppPreferencesLocator.instance =
+        AppPreferences.inMemory(setupCompleted: setupCompleted);
     await tester.pumpWidget(MaterialApp(home: StartupGate(
       onboardingStore: store,
     )));
@@ -112,7 +121,16 @@ void main() {
   }
 
   group('startup gate', () {
-    testWidgets('first launch shows onboarding', (tester) async {
+    testWidgets('fresh install shows Welcome Setup before onboarding',
+        (tester) async {
+      await pumpGate(tester, _FakeStore(false), setupCompleted: false);
+      expect(find.byType(WelcomeSetupScreen), findsOneWidget);
+      expect(find.byType(OnboardingScreen), findsNothing);
+      expect(find.byType(HomeScreen), findsNothing);
+    });
+
+    testWidgets('first launch after setup shows onboarding',
+        (tester) async {
       await pumpGate(tester, _FakeStore(false));
       expect(find.byType(OnboardingScreen), findsOneWidget);
       expect(find.byType(HomeScreen), findsNothing);

@@ -1,10 +1,10 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../../core/constants/app_strings.dart';
 import '../../../protection/domain/models/audio_forensic_metrics.dart';
 import '../../../protection/domain/models/composite_threat_report.dart';
 import '../../../protection/domain/models/semantic_threat_signals.dart';
 import '../../../protection/domain/models/transcript_snippet.dart';
+import '../../../../core/l10n/l10n.dart';
 
 /// Immutable record of a single flagged protection session.
 ///
@@ -117,22 +117,22 @@ final class IncidentReport extends Equatable {
   String toShareText() {
     final reasons = threatReasons.join('; ');
     final assessment = analysisIsPartial
-        ? 'Analysis: Partial — acoustic signals only\n'
-            'Acoustic anomaly score: '
-            '${(acousticMetrics.syntheticVoiceScore * 100).round()}/100\n'
-            'Conversation-risk signals were not analyzed.\n'
-        : 'Risk: ${riskLevel.name} — Threat Score: '
-            '${(peakRiskScore * 100).round()}/100\n';
-    return '${AppStrings.incidentReportTitle}\n'
-        'ID: $id\n'
-        'Time: $timestampLabel\n'
-        'Caller: $callerLabel\n'
-        'Duration: $durationLabel\n'
+        ? '${l10n.reportAnalysisPartial}\n'
+            '${l10n.reportAcousticScore(
+                (acousticMetrics.syntheticVoiceScore * 100).round())}\n'
+            '${l10n.reportConvNotAnalyzed}\n'
+        : '${l10n.reportRiskLine(
+                riskLevel.name, (peakRiskScore * 100).round())}\n';
+    return '${l10n.incidentReportTitle}\n'
+        '${l10n.reportIdLine(id)}\n'
+        '${l10n.reportTimeLine(timestampLabel)}\n'
+        '${l10n.reportCallerLine(callerLabel)}\n'
+        '${l10n.reportDurationLine(durationLabel)}\n'
         '$assessment'
-        'Signals: $reasons\n'
-        'Audio source: $audioSourceLabel\n'
-        'Transcription: $transcriptionSourceLabel\n'
-        'Audio SHA-256: $audioDigestSha256\n'
+        '${l10n.reportSignalsLine(reasons)}\n'
+        '${l10n.reportAudioSourceLine(audioSourceLabel)}\n'
+        '${l10n.reportTranscriptionLine(transcriptionSourceLabel)}\n'
+        '${l10n.reportShaLine(audioDigestSha256)}\n'
         '\n$disclaimer';
   }
 

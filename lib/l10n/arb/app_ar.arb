@@ -1,0 +1,967 @@
+{
+  "@@locale": "ar",
+  "appName": "VoxGuard",
+  "actionCancel": "إلغاء",
+  "actionContinue": "متابعة",
+  "actionDone": "تم",
+  "actionSave": "حفظ",
+  "actionDelete": "حذف",
+  "actionClose": "إغلاق",
+  "actionSkip": "تخطي الآن",
+  "actionSkipSetup": "تخطي",
+  "actionRetry": "إعادة المحاولة",
+  "actionBack": "رجوع",
+  "actionEdit": "تعديل",
+  "actionRemove": "إزالة",
+  "actionCopy": "نسخ",
+  "actionView": "عرض",
+  "actionOpenSystemSettings": "فتح إعدادات النظام",
+  "actionCopyId": "نسخ المعرف",
+  "actionAddPerson": "إضافة شخص",
+  "howItWorksTitle": "كيف يعمل VoxGuard",
+  "exploreApp": "استكشاف VoxGuard",
+  "unrecognizedIdentity": "هوية VoxGuard غير معروفة",
+  "safecallIntro": "يستمع VoxGuard عبر الميكروفون إلى أنماط صوتية وحوارية مريبة.",
+  "familyAlertUnknownSender": "تنبيه Family Shield من هوية VoxGuard غير معروفة.",
+  "pushAlertTitle": "🚨 تنبيه VoxGuard Family Shield",
+  "incidentReportTitle": "تقرير حادثة VoxGuard",
+  "recordingUnreadable": "تعذّر على VoxGuard قراءة هذا التسجيل — قد يكون تالفًا أو بصيغة غير مدعومة.",
+  "recordingUndecodable": "تعذّر على VoxGuard فكّ ترميز هذا التسجيل — قد لا تكون الصيغة مدعومة على هذا الجهاز.",
+  "recordingAnalyzerIntro": "يفحص VoxGuard الشذوذات الصوتية، وعند اختيارك النسخ النصي، إشارات مخاطر المحادثة.",
+  "partialRecordingNote": "لم تُحلَّل إشارات مخاطر المحادثة، لذا لا يستطيع VoxGuard إنتاج درجة تهديد كاملة.",
+  "enhancedModeLockedDesc": "يضيف Sentinel Shield نسخًا نصيًا محسّنًا — يُرسَل التسجيل عبر مرحّل النسخ الخاص بـ VoxGuard فقط بعد اشتراكك. التحليل على الجهاز يبقى مجانيًا.",
+  "enhancedModeReadyDesc": "لإنشاء نص مكتوب، سيُرسَل هذا التسجيل عبر مرحّل النسخ الخاص بـ VoxGuard إلى مزوّد تحويل الكلام إلى نص المُعدّ. لا يحتفظ VoxGuard بالتسجيل بشكل دائم.",
+  "onboardingSignalsBody": "أثناء جلسة SafeCall التي تبدأها بنفسك، يستمع VoxGuard إلى إشارات الخطر — وليس يقين الهوية أبدًا — ويشرح ما سمعه بلغة واضحة.",
+  "onboardingNoInterception": "لا يعترض VoxGuard مكالمات هاتفك الخلوية — جلسة الحماية دائمًا اختيارك.",
+  "onboardingFamilyBody": "عندما تبدو المكالمة مريبة، يمكن لمن تثق بهم مساعدتك على القرار. تحصل كل نسخة من VoxGuard على معرف Family Shield مُبهم — يحفظه المقربون في دائرتهم الموثوقة لاستقبال تنبيهات الأمان الخاصة بك والرد عليها.",
+  "onboardingPrivacyMic": "تُعالَج أصوات الميكروفون في الذاكرة أثناء الجلسة — لا يخزّن VoxGuard أي تسجيل صوتي أبدًا. يطلب Live Mic إذن الميكروفون فقط عندما تختاره؛ ويعمل وضع العرض بدونه.",
+  "onboardingPrivacyAlerts": "تحمل تنبيهات Family Shield فقط معرف VoxGuard مُبهمًا ومرجع حادثة ومستوى خطر — لا صوت ولا نصوصًا ولا أسماء ولا أرقام هواتف أبدًا.",
+  "whyFlaggedTitle": "لماذا أشار VoxGuard إلى هذه المكالمة",
+  "whyElevatedAcousticTitle": "لماذا رصد VoxGuard إشارات صوتية مرتفعة",
+  "whyFlaggedRecordingTitle": "لماذا أشار VoxGuard إلى هذا التسجيل",
+  "whyFlaggedCallTitle": "لماذا أشار VoxGuard إلى هذه المكالمة",
+  "whyFlaggedItTitle": "لماذا أشار VoxGuard إليها",
+  "welcomeTitle": "طريقة أهدأ للرد.",
+  "welcomeSubtitle": "يساعدك VoxGuard على التوقف والتحقق والبقاء مسيطرًا عندما تبدو المكالمة مريبة.",
+  "welcomeLanguageLabel": "اختر لغتك",
+  "welcomeLanguageSystem": "اتباع لغة الجهاز",
+  "welcomeNamePrompt": "بماذا نناديك؟",
+  "welcomeNameHint": "الاسم الأول أو اسم الدلع",
+  "welcomeNameNote": "اختياري — يُحفظ على هذا الجهاز فقط.",
+  "welcomeContinue": "متابعة",
+  "onboardingVoiceTitle": "الصوت المألوف قد يكون مضللًا أيضًا.",
+  "onboardingVoiceBody1": "يستنسخ المحتالون الأصوات ويزوّرون الأرقام ويضغطون على من تحب. سماع صوت مألوف ليس دليلًا على هوية المتحدث.",
+  "onboardingVoiceBody2": "الاستعجال والسرية وضغط الدفع هي العلامات الحقيقية — وليس الصوت نفسه.",
+  "onboardingVoiceBody3": "معرف المتصل والصوت وحدهما لا يمكنهما إثبات الهوية أبدًا.",
+  "onboardingSignalsTitle": "إشارتان. قرار بشري واحد.",
+  "onboardingSignalSemantic": "إشارة المحادثة — الاستعجال ومطالب الدفع وضغط السرية فيما يُقال.",
+  "onboardingSignalAcoustic": "إشارة الصوت — مؤشرات شذوذ؛ أسلوب مساعد تقديري وليس حكمًا جنائيًا.",
+  "onboardingSignalScore": "درجة إشارة الخطر هي إشارة، وليست احتمال أن تكون المكالمة مزيفة.",
+  "onboardingVerifyTitle": "عندما تشعر أن شيئًا ما خاطئ، تحقق بشكل مستقل.",
+  "onboardingVerifyBody": "إشارة الخطر سبب للتوقف — وليست حكمًا. الخطوة الأقوى دائمًا بيدك:",
+  "onboardingVerifyStep1": "توقف — لا ترسل أموالًا أو رموزًا أو بيانات تحت الضغط أبدًا.",
+  "onboardingVerifyStep2": "أعد الاتصال بالشخص على رقم تثق به مسبقًا — وليس رقمًا أعطاك إياه المتصل.",
+  "onboardingVerifyStep3": "اتفق على عبارة أمان عائلية دون اتصال — اطلبها عندما تبدو المكالمة مريبة.",
+  "onboardingFamilyTitle": "Family Shield: عيون إضافية تسندك.",
+  "onboardingFamilyBody1": "الأسماء وأرقام الهواتف الموثوقة تبقى على الجهاز الذي حفظها.",
+  "onboardingFamilyBody2": "إعداد دائرتك الموثوقة اختياري — يمكنك فعله لاحقًا من الإعدادات.",
+  "onboardingFamilyIdPending": "يظهر معرف Family Shield هنا فور انتهاء التطبيق من الإعداد.",
+  "onboardingYourId": "معرفك: {id}",
+  "@onboardingYourId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "familyShieldIdCopied": "تم نسخ معرّف Family Shield",
+  "familyAlertsEnabled": "تنبيهات العائلة مفعّلة",
+  "onboardingNotifOff": "الإشعارات معطّلة — يمكنك تفعيلها لاحقًا من تطبيق الإعدادات على جهازك.",
+  "onboardingPushUnsupported": "تنبيهات الدفع غير مدعومة على هذه المنصة.",
+  "onboardingPushNotConfigured": "تنبيهات الدفع غير مُعدّة في هذا الإصدار.",
+  "onboardingEnablingNotif": "جارٍ تفعيل الإشعارات…",
+  "onboardingEnableAlerts": "تفعيل تنبيهات العائلة",
+  "onboardingPrivacyTitle": "صوتك تحت سيطرتك.",
+  "onboardingPrivacyBody": "عند إعداد النسخ السحابي، يتدفق الصوت المباشر إلى مزوّد النسخ المُعدّ لإنتاج نص للتحليل.",
+  "onboardingPrivacyLoop": "دليل ← توقف ← تحقق ← أشخاص تثق بهم",
+  "onboardingPrivacyChoice": "ابدأ جلسة SafeCall عندما تريد الحماية — أنت دائمًا من يختار Live Mic أو وضع العرض.",
+  "startupStoreError": "تعذّر حفظ تقدّمك — ستظهر شاشة التهيئة مرة أخرى عند التشغيل التالي.",
+  "shieldStatusReady": "VoxGuard جاهز",
+  "shieldSubtitle": "حماية صوتية فورية في الاستعداد",
+  "homeGreetingNamed": "سعداء برؤيتك، {name}.",
+  "@homeGreetingNamed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "quickActions": "الحماية",
+  "startSafeCall": "بدء SafeCall",
+  "startSafeCallDesc": "مكالمة محمية داخل التطبيق مع قياسات تهديد مباشرة.",
+  "protectionCheckTitle": "ابدأ فحص حماية",
+  "protectionCheckDesc": "استخدم مكبر الصوت أو شغّل صوتًا مريبًا قريبًا — يستمع VoxGuard إلى إشارات الخطر.",
+  "protectionCheckCta": "بدء SafeCall",
+  "analyzeRecording": "تحليل تسجيل",
+  "analyzeRecordingDesc": "افحص تسجيل مكالمة أو مذكرة صوتية محفوظة.",
+  "incidentLogTooltip": "سجل الحوادث",
+  "familyShieldTitle": "Family Shield",
+  "familyReadyWithCircle": "الدائرة الموثوقة جاهزة",
+  "familyNeedsSetup": "يحتاج إعدادًا",
+  "familyStatusHint": "عيون إضافية عندما تبدو المكالمة مريبة.",
+  "navShield": "الحماية",
+  "navIncidents": "الحوادث",
+  "navSettings": "الإعدادات",
+  "safeCallTitle": "SafeCall",
+  "safeCallActive": "جلسة حماية نشطة",
+  "unknownCaller": "متصل غير معروف",
+  "maskedNumber": "+1 (•••) ••• ••42",
+  "endCall": "إنهاء",
+  "endCallAndVerify": "إنهاء المكالمة والتحقق",
+  "liveBadge": "مباشر",
+  "signalSynthetic": "مؤشرات الشذوذ الصوتي",
+  "signalUrgency": "ضغط الاستعجال",
+  "signalFinancial": "مطلب تحويل مالي",
+  "signalSecrecy": "طلب السرية والعزل",
+  "statusNormal": "طبيعي",
+  "statusElevated": "مرتفع",
+  "bannerProtected": "محمي",
+  "bannerProtectedDetail": "كل الإشارات طبيعية — لا مؤشرات تهديد",
+  "bannerElevated": "خطر مرتفع",
+  "bannerElevatedDetail": "نمط مريب — مراقبة عن كثب",
+  "bannerThreat": "رُصدت مكالمة عالية الخطورة",
+  "bannerThreatDetail": "رُصدت أنماط انتحال هوية ومطالب مالية",
+  "threatScoreLabel": "درجة التهديد",
+  "simulateScam": "محاكاة احتيال",
+  "stopSimulation": "إيقاف العرض",
+  "pauseHeadline": "توقف قبل التصرف.",
+  "verifyBeforeYouAct": "تحقق قبل أن تتصرف.",
+  "technicalDetails": "تفاصيل تقنية",
+  "liveTranscript": "النص المباشر",
+  "transcriptEmpty": "يظهر النص هنا أثناء مكالمة محمية.",
+  "transcriptDemoPending": "سيظهر نص العرض هنا.",
+  "transcriptListening": "يستمع إلى الكلام…",
+  "transcriptNoLive": "تحليل الصوت نشط — النسخ المباشر غير متاح.",
+  "speakerCaller": "المتصل",
+  "speakerYou": "أنت",
+  "safeCallPickerTitle": "ابدأ جلسة حماية",
+  "modeLiveMic": "الميكروفون المباشر",
+  "modeLiveMicDesc": "حلّل صوت الميكروفون الحقيقي — مكالمات على السماعة الخارجية أو صوت يُشغَّل قريبًا.",
+  "modeLiveMicBadge": "جلسة حقيقية",
+  "modeDemo": "هجوم تجريبي",
+  "modeDemoDesc": "شغّل سيناريو العرض المجهز — صوت مولّد ونص تجريبي. لا يوجد صوت حقيقي.",
+  "modeDemoBadge": "عرض توضيحي",
+  "modeLiveBadgeShort": "ميكروفون مباشر",
+  "modeDemoBadgeShort": "عرض",
+  "modeDemoModeLabel": "وضع العرض",
+  "durationMinSec": "{m}:{ss}",
+  "@durationMinSec": {
+    "placeholders": {
+      "m": {
+        "type": "int"
+      },
+      "ss": {
+        "type": "int"
+      }
+    }
+  },
+  "durationHourMinSec": "{h}:{mm}:{ss}",
+  "@durationHourMinSec": {
+    "placeholders": {
+      "h": {
+        "type": "int"
+      },
+      "mm": {
+        "type": "int"
+      },
+      "ss": {
+        "type": "int"
+      }
+    }
+  },
+  "lensBandSafe": "آمن",
+  "lensBandCaution": "حذر",
+  "lensBandHigh": "خطر مرتفع",
+  "lensInterpSafe": "الإشارات تبدو طبيعية — واصل الاستماع.",
+  "lensInterpCaution": "شيء ما يبدو غريبًا — راقب الإشارات.",
+  "lensInterpHigh": "توقف قبل التصرف.",
+  "lensRiskSignal": "إشارة الخطر",
+  "lensA11yPartial": "إشارة جزئية — شذوذ صوتي {acoustic} من 100. لم يُجرَ تحليل المحادثة.",
+  "@lensA11yPartial": {
+    "placeholders": {
+      "acoustic": {
+        "type": "int"
+      }
+    }
+  },
+  "lensA11yFull": "إشارة الخطر {band}، {score} من 100. التحليل الصوتي {acoustic} من 100.",
+  "@lensA11yFull": {
+    "placeholders": {
+      "band": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      },
+      "acoustic": {
+        "type": "int"
+      }
+    }
+  },
+  "lensDemoAudio": "صوت تجريبي",
+  "lensLayerConversation": "المحادثة",
+  "lensLayerVoice": "الصوتيات",
+  "lensNotAnalyzed": "لم تُحلَّل",
+  "signalPartialState": "صوتيات فقط",
+  "acousticAnomalyLabel": "شذوذ صوتي",
+  "conversationNotAnalyzed": "لم تُحلَّل إشارات مخاطر المحادثة.",
+  "acousticOnlyMonitoring": "المراقبة الصوتية نشطة. تحليل المحادثة يتطلب نسخًا نصيًا.",
+  "bannerAcousticOnly": "مراقبة صوتية فقط — إشارات المحادثة لم تُحلَّل",
+  "bannerAcousticElevated": "شذوذ صوتي مرتفع — إشارات المحادثة لم تُحلَّل",
+  "acousticAnomalyElevatedNote": "رُصدت مؤشرات شذوذ صوتي مرتفعة.",
+  "postCallEnded": "انتهت جلسة الحماية",
+  "postCallReview": "راجع الأدلة قبل اتخاذ أي إجراء آخر.",
+  "postCallPause": "توقف.",
+  "postCallVerifyCta": "تحقق بشكل مستقل",
+  "callSavedNumberHint": "أعد الاتصال بالشخص على رقم تثق به مسبقًا.",
+  "verifyIdentityTitle": "تحقق من الهوية",
+  "verifyIdentityBody": "أعد الاتصال بالشخص على رقم تثق به مسبقًا — وليس الرقم الذي اتصل بك للتو.",
+  "callTrustedContact": "اتصل بشخص موثوق",
+  "sendDemoFamilyAlert": "إرسال تنبيه عائلي تجريبي",
+  "familyAlertSent": "بُثّ التنبيه التجريبي إلى العائلة",
+  "familySafePhrase": "نصيحة: اتفقوا على عبارة أمان عائلية دون اتصال — اطلبها من المتصل.",
+  "viewIncidentReport": "عرض تقرير الحادثة",
+  "incidentLogged": "سُجّلت مكالمة عالية الخطورة",
+  "postCallNoFlags": "لم تُرصد أنماط عالية الخطورة أثناء هذه المكالمة.",
+  "postCallSessionSummary": "ملخص الجلسة",
+  "postCallFamilyShield": "Family Shield",
+  "postCallFamilyDemoNote": "وضع العرض — يرسل تنبيهًا محاكى إلى جهات تجريبية؛ لا يصل أي إشعار حقيقي.",
+  "postCallFamilyPrompt": "اطلب من شخص تثق به رأيًا ثانيًا — أرسل له تنبيه Family Shield.",
+  "postCallSendFamilyAlert": "إرسال تنبيه عائلي",
+  "postCallSendFamilyAlertDesc": "أرسل تنبيه Family Shield إلى أشخاص في دائرتك الموثوقة",
+  "verifyStepCall": "اتصل بالشخص على رقم محفوظ وموثوق.",
+  "verifyStepPhrase": "اطلب عبارة الأمان العائلية إن لم تكن متأكدًا.",
+  "sheetScoreSummary": "{headline} درجة التهديد: {score}/100.",
+  "@sheetScoreSummary": {
+    "placeholders": {
+      "headline": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "incidentsTitle": "الحوادث",
+  "incidentEmptyTitle": "لا حوادث مسجلة",
+  "incidentEmptyBody": "ستظهر الجلسات المُشار إليها والتسجيلات المحلَّلة هنا كسجل أمان.",
+  "bandPartial": "تحليل جزئي",
+  "bandHigh": "خطر مرتفع",
+  "bandCritical": "حرج / خطر مرتفع",
+  "bandSuspicious": "مريب",
+  "bandSafe": "آمن",
+  "incidentPartialSummary": "شذوذ صوتي {score}/100 — مخاطر المحادثة لم تُحلَّل",
+  "@incidentPartialSummary": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "incidentNoThreats": "لا تهديدات كبيرة رُصدت",
+  "incidentReasonsDetected": "{count} رُصدت",
+  "@incidentReasonsDetected": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "incidentDeleteTitle": "حذف هذه الحادثة؟",
+  "incidentDeleteBody": "سيُحذف {id} نهائيًا من هذا الجهاز. لا يمكن التراجع.",
+  "@incidentDeleteBody": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentDeleteTooltip": "حذف الحادثة",
+  "incidentCopied": "نُسخ تقرير الحادثة إلى الحافظة.",
+  "incidentFamilyResponses": "ردود Family Shield",
+  "familyMarkedSafe": "{name} اعتبر الوضع آمنًا",
+  "@familyMarkedSafe": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyStillConcerned": "{name} ما زال قلقًا",
+  "@familyStillConcerned": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "incidentRecommended": "الخطوات التالية الموصى بها",
+  "incidentTechnicalEvidence": "أدلة تقنية",
+  "incidentAudioSha": "بصمة الصوت SHA-256",
+  "incidentAcousticSignals": "إشارات الشذوذ الصوتي",
+  "metricSpectralFlux": "التدفق الطيفي",
+  "metricSpectralRolloff": "الانحدار الطيفي",
+  "metricZeroCrossing": "معدل العبور الصفري",
+  "metricAcousticScore": "درجة الشذوذ الصوتي",
+  "incidentSemanticSignals": "إشارات التهديد الدلالي",
+  "semUrgency": "الاستعجال",
+  "semFinancial": "مالي",
+  "semSecrecy": "السرية",
+  "incidentTranscriptTimeline": "الجدول الزمني للنص",
+  "incidentNoTranscript": "لم يُلتقط نص.",
+  "incidentBroadcast": "بثّ إلى Family Shield",
+  "incidentBroadcastDemoNote": "وضع العرض — لا يُرسَل إشعار حقيقي",
+  "incidentShare": "مشاركة تقرير الحادثة",
+  "incidentScoreLine": "{score}/100",
+  "@incidentScoreLine": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "acousticAnomalyPrefix": "شذوذ صوتي ",
+  "analyzeRecordingTitle": "تحليل تسجيل",
+  "recordingStepTitle": "حلّل تسجيل مكالمة أو مذكرة صوتية",
+  "recordingFormats": "WAV · MP3 · M4A/AAC · OGG/OPUS · FLAC — حتى 25 م.ب أو 15 دقيقة.",
+  "recordingChooseAudio": "اختر صوتًا",
+  "recordingPrivacyLabel": "الخصوصية",
+  "recordingKeepLocal": "إبقاء الصوت على هذا الجهاز",
+  "recordingKeepLocalDesc": "التحليل الصوتي يعمل محليًا. لا يُرفَع شيء.",
+  "recordingIncludeConversation": "تضمين تحليل المحادثة",
+  "recordingCloudNotConfigured": "النسخ السحابي غير مُعدّ في هذا الإصدار. التحليل الصوتي متاح على الجهاز.",
+  "recordingCancelAnalysis": "إلغاء التحليل",
+  "recordingAnalyzeAction": "تحليل التسجيل",
+  "recordingChooseDifferent": "اختر ملفًا مختلفًا",
+  "recordingViewIncident": "عرض تقرير الحادثة",
+  "recordingAnalyzeAnother": "تحليل تسجيل آخر",
+  "recordingMetaFormat": "الصيغة",
+  "recordingMetaSize": "الحجم",
+  "recordingMetaDuration": "المدة",
+  "recordingSentinelBadge": "SENTINEL",
+  "recordingManualTranscript": "إضافة نص مكتوب بدلًا من ذلك",
+  "recordingManualTranscriptLabel": "نص مقدَّم من المستخدم",
+  "recordingManualTranscriptHint": "ألصق نصًا لديك بالفعل — يبقى على هذا الجهاز.",
+  "recordingStagePreparing": "تجهيز الصوت",
+  "recordingStageAcoustic": "تحليل الإشارات الصوتية",
+  "recordingStageUploading": "رفع للنسخ النصي",
+  "recordingStageTranscribing": "نسخ المحادثة",
+  "recordingStageEvaluating": "تقييم مخاطر المحادثة",
+  "recordingStageBuilding": "بناء النتيجة",
+  "recordingThreatScore": "درجة التهديد",
+  "recordingConvNotAnalyzed": "إشارة المحادثة · لم تُحلَّل",
+  "recordingAcousticSignals": "إشارات الشذوذ الصوتي",
+  "recordingAcousticScore": "درجة الشذوذ الصوتي",
+  "recordingMetricFlux": "التدفق الطيفي",
+  "recordingMetricRolloff": "الانحدار الطيفي",
+  "recordingMetricZcr": "معدل العبور الصفري",
+  "recordingTranscriptLabel": "نص التسجيل",
+  "recordingVerifyTitle": "تحقق قبل أن تتصرف",
+  "recordingVerifyBody": "هذا فحص صوتي فقط — لم تُحلَّل المحادثة نفسها. لا تعتمد على نتيجة جزئية لاعتبار تسجيلٍ آمنًا: تحقق من المتحدث عبر قناة تثق بها مسبقًا.",
+  "stepPickRecording": "اختر تسجيلًا",
+  "stepPrivacyDepth": "اختر عمق الخصوصية",
+  "stepAnalyze": "حلّل",
+  "stepResult": "افهم النتيجة",
+  "familyAlertTitle": "تنبيه Family Shield",
+  "familyAlertAcoustic": "طلب منك {name} التحقق من تحذير صوتي مرتفع من تسجيل.",
+  "@familyAlertAcoustic": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyAlertHighRisk": "قد يتعامل {name} مع مكالمة عالية الخطورة.",
+  "@familyAlertHighRisk": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyAlertSuspicious": "تلقّى {name} تحذير مكالمة مريبة من VoxGuard.",
+  "@familyAlertSuspicious": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyMarkedSafeNote": "عُدّ آمنًا بعد تحقق مستقل.",
+  "familyStillSuspiciousNote": "ما زال مريبًا — واصل التحقق.",
+  "familyUpdateFailed": "{localCopy} تعذّر إرسال التحديث العائلي — تحقق من اتصالك.",
+  "@familyUpdateFailed": {
+    "placeholders": {
+      "localCopy": {
+        "type": "String"
+      }
+    }
+  },
+  "familyBandAlert": "تنبيه",
+  "familyVerifyDirectly": "تحقق مباشرة",
+  "familyVerifyCall": "اتصل بـ {name} على الرقم الموثوق الذي حفظته — وليس رقمًا قدّمه المتصل المريب.",
+  "@familyVerifyCall": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyVerifyChannel": "تحقق عبر قناة تثق بها مسبقًا. لا تتصرف بناءً على تعليمات التنبيه وحده.",
+  "familyCallAction": "اتصل بـ {name}",
+  "@familyCallAction": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyCallActionUnknown": "اتصل بـ {name}",
+  "@familyCallActionUnknown": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyNoTrustedNumber": "لا رقم موثوقًا محفوظًا. تواصل عبر رقم تثق به مسبقًا.",
+  "familyMarkSafe": "اعتبار آمنًا",
+  "familyStillSuspicious": "ما زال مريبًا",
+  "familyTipNoMoney": "لا ترسل أموالًا أو بطاقات هدايا.",
+  "familyTipNoCodes": "لا تشارك رموز OTP أو PIN أو بيانات بنكية.",
+  "familyTipChannel": "تحقق عبر قناة مستقلة أخرى.",
+  "familyTipAuthorities": "تواصل مع البنك أو شركة الاتصالات أو السلطات المحلية عند الحاجة.",
+  "familyDetailsTitle": "التفاصيل",
+  "familyDetailsBody": "الحادثة {incident}\nاستُلمت {time}\n{status}",
+  "@familyDetailsBody": {
+    "placeholders": {
+      "incident": {
+        "type": "String"
+      },
+      "time": {
+        "type": "String"
+      },
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "familyStatusSafe": "آمن بعد التحقق",
+  "familyStatusSuspicious": "ما زال مريبًا",
+  "familyStatusUnresolved": "لم يُحسم",
+  "familyPrivacyNote": "الخصوصية: شُاركت فقط هوية جهاز مُبهمة ومستوى خطر. لا صوت ولا نص ولا أسماء ولا أرقام هواتف في تنبيهات Family Shield.",
+  "familyUpdateTitle": "تحديث Family Shield",
+  "familyUpdateMarkedSafe": "{who} اعتبر الوضع آمنًا",
+  "@familyUpdateMarkedSafe": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "familyUpdateConcerned": "{who} ما زال قلقًا",
+  "@familyUpdateConcerned": {
+    "placeholders": {
+      "who": {
+        "type": "String"
+      }
+    }
+  },
+  "familyUpdateHumanNote": "هذا تحديث تحقق بشري — لا يغيّر تقييم الذكاء الاصطناعي للخطر.\n\nالحادثة {incident}",
+  "@familyUpdateHumanNote": {
+    "placeholders": {
+      "incident": {
+        "type": "String"
+      }
+    }
+  },
+  "familyAlertReceived": "وصل تنبيه Family Shield",
+  "familyAlertFraming": "شخص تعرفه يطلب رأيًا ثانيًا.",
+  "yourJudgment": "حكمك أنت",
+  "humanResponseNote": "مكالمتك هي التحقق — وليس التطبيق. اعتبار الوضع آمنًا أو مريبًا ردّ بشري؛ لا يغيّر تحليل الخطر.",
+  "familyReceiverTitle": "مستقبل Family Shield",
+  "familyReceiverDesc": "استقبل تنبيهًا عندما يواجه شخص في دائرتك الموثوقة مكالمة عالية الخطورة.",
+  "familyReceiverShareHint": "شارك هذا المعرف فقط مع من تريد استقبال تنبيهات Family Shield منه.",
+  "familyReceiverEnable": "تفعيل تنبيهات العائلة",
+  "familyReceiverOpenSettings": "فتح إعدادات النظام",
+  "familyReceiverNotConfigured": "إعداد الدفع غير متاح — ONESIGNAL_APP_ID غير مُعدّ في هذا الإصدار.",
+  "familyReceiverDevRecipient": "DEV · مستلم تنبيه تجريبي",
+  "familyReceiverSetTest": "تعيين مستلم تجريبي",
+  "familyStateReady": "جاهز لاستقبال التنبيهات",
+  "familyStateRegistering": "جارٍ التسجيل…",
+  "familyStateNeedPermission": "إذن الإشعارات مطلوب",
+  "familyStateBlocked": "الإشعارات محظورة — فعّلها من إعدادات النظام",
+  "familyStateNotConfigured": "الدفع غير مُعدّ",
+  "familyStateUnsupported": "غير مدعوم على هذه المنصة",
+  "familyStateError": "خطأ في التسجيل{detail}",
+  "@familyStateError": {
+    "placeholders": {
+      "detail": {
+        "type": "String"
+      }
+    }
+  },
+  "familyShieldIdLabel": "معرف Family Shield",
+  "familyShieldIdCopy": "نسخ معرف Family Shield",
+  "familyShieldIdCopiedShort": "تم نسخ معرف Family Shield",
+  "trustedCircleTitle": "الدائرة الموثوقة",
+  "trustedCircleCount": "{count} من {max}",
+  "@trustedCircleCount": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      },
+      "max": {
+        "type": "String"
+      }
+    }
+  },
+  "trustedCircleDesc": "الأشخاص الذين تطلب منهم رأيًا ثانيًا. تصلهم التنبيهات عبر معرف Family Shield — أرقام الهواتف تبقى على هذا الجهاز.",
+  "trustedNoPhone": " · بدون هاتف",
+  "trustedPhoneStored": " · هاتف محفوظ",
+  "trustedAddTitle": "إضافة شخص موثوق",
+  "trustedEditTitle": "تعديل شخص",
+  "trustedFindIdHint": "يمكنهم إيجاد معرف Family Shield في تطبيقهم ضمن الإعدادات ← مستقبل Family Shield.",
+  "trustedNameField": "الاسم",
+  "trustedShieldIdField": "معرف Family Shield",
+  "trustedPhoneField": "رقم هاتف موثوق (اختياري)",
+  "paywallTitle": "إشارتان.\nقرار بشري واحد.",
+  "paywallSubtitle": "VoxGuard يشير إلى الخطر — وأنت تتحقق. الخطط المدفوعة توسّع ما تراه الإشارتان.",
+  "securityBadge": "الفوترة عبر متجر تطبيقاتك",
+  "demoStoreBadge": "متجر تجريبي",
+  "demoStoreNotice": "دفع محاكى — لن يحدث أي خصم حقيقي.",
+  "storeUnavailableNotice": "الاشتراكات غير مُعدّة في هذا الإصدار.",
+  "monthly": "شهري",
+  "annual": "سنوي",
+  "mostPopular": "الأكثر شيوعًا",
+  "upgradeNow": "ترقية الآن",
+  "continueFree": "المتابعة مجانًا",
+  "subscribeNow": "اشترك",
+  "activateDemoPlan": "تفعيل الخطة التجريبية",
+  "demoPlanActivated": "فُعّلت الخطة التجريبية — لا خصم حقيقي",
+  "noPurchasesRestored": "لا مشتريات نشطة.",
+  "terms": "شروط الخدمة",
+  "privacy": "سياسة الخصوصية",
+  "restore": "استعادة المشتريات",
+  "upgradeTooltip": "عرض الخطط",
+  "plansLoadError": "تعذّر تحميل الخطط.",
+  "planNotAvailable": "هذه الخطة غير متاحة في هذا المتجر.",
+  "planActivated": "فُعّل {name} — ترقية الحماية",
+  "@planActivated": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "planFreeLabel": "مجاني",
+  "planNotAvailableShort": "غير متاح",
+  "planFreeBadge": "مجاني",
+  "planSentinelBadge": "SENTINEL نشط",
+  "planFamilyBadge": "FAMILY VAULT نشط",
+  "tierQuickCheck": "Quick Check",
+  "tierQuickCheckTag": "أدوات أمان محلية",
+  "tierQuickCheckF1": "مراقبة الشذوذ الصوتي عبر الميكروفون المباشر",
+  "tierQuickCheckF2": "تحليل التسجيلات على الجهاز",
+  "tierQuickCheckF3": "فحص نص يدوي — يُحلَّل محليًا",
+  "tierQuickCheckF4": "سجل حوادث محلي",
+  "tierQuickCheckF5": "استقبال تنبيهات Family Shield والرد عليها",
+  "tierSentinel": "Sentinel Shield",
+  "tierSentinelTag": "حماية واعية بالمحادثة",
+  "tierSentinelF1": "كل مزايا Quick Check",
+  "tierSentinelF2": "نسخ تلقائي للميكروفون المباشر وللتسجيلات المحسّن — عند إعداد البنية التحتية",
+  "tierSentinelF3": "تحليل مخاطر المحادثة المدعوم بالنص",
+  "tierSentinelF4": "درجة تهديد مدموجة متعددة الإشارات",
+  "tierFamily": "Family Vault",
+  "tierFamilyTag": "حلقة التحقق البشري",
+  "tierFamilyF1": "كل مزايا Sentinel Shield",
+  "tierFamilyF2": "إرسال تنبيهات Family Shield إلى دائرتك الموثوقة",
+  "tierFamilyF3": "حتى 5 جهات موثوقة محفوظة محليًا",
+  "tierFamilyF4": "ردود الأمان تعود إليك بخصوصية",
+  "familyVaultUnlocksAlerts": "يتيح Family Vault إرسال تنبيهات أمان إلى دائرتك الموثوقة.",
+  "acousticProtectionActive": "الحماية الصوتية نشطة. تحليل المحادثة المدعوم بالنص يُتاح مع Sentinel Shield.",
+  "currentPlan": "الخطة الحالية: {tier}",
+  "@currentPlan": {
+    "placeholders": {
+      "tier": {
+        "type": "String"
+      }
+    }
+  },
+  "currentPlanDemo": " (تجريبي)",
+  "viewPlans": "عرض الخطط",
+  "manageSubscription": "إدارة الاشتراك",
+  "purchasesRestored": "استُعيدت المشتريات.",
+  "purchasesRestoreFailed": "تعذّرت استعادة المشتريات الآن.",
+  "subscriptionSection": "الاشتراك",
+  "demoStoreSection": "متجر تجريبي",
+  "billingMonthly": "شهري",
+  "billingAnnual": "سنوي",
+  "settingsTitle": "الإعدادات",
+  "settingsSectionProfile": "الملف الشخصي",
+  "settingsSectionAppearance": "المظهر",
+  "settingsSectionSafety": "الأمان والعائلة",
+  "settingsSectionNotifications": "الإشعارات",
+  "settingsSectionSubscription": "الاشتراك",
+  "settingsSectionAbout": "حول والخصوصية",
+  "settingsDisplayName": "الاسم المعروض",
+  "settingsDisplayNameNone": "غير مُعيّن",
+  "settingsDisplayNameHint": "بماذا نناديك؟",
+  "settingsDisplayNameNote": "يُحفظ على هذا الجهاز فقط — لا يُشارَك أبدًا.",
+  "settingsLanguage": "اللغة",
+  "languageSystem": "لغة النظام",
+  "languageEn": "English",
+  "languageAr": "العربية",
+  "languageEs": "Español",
+  "languageFr": "Français",
+  "settingsTheme": "السمة",
+  "themeSystem": "النظام",
+  "themeLight": "فاتح",
+  "themeDark": "داكن",
+  "settingsAccent": "لون مميز",
+  "accentPeriwinkle": "زهري أرجواني",
+  "accentSoftBlue": "أزرق هادئ",
+  "accentSoftViolet": "بنفسجي هادئ",
+  "settingsTextSize": "حجم النص",
+  "textSizeSystem": "النظام",
+  "textSizeLarge": "كبير",
+  "textSizeExtraLarge": "كبير جدًا",
+  "textSizeNote": "لن يكون أصغر من إعداد إمكانية الوصول في جهازك أبدًا.",
+  "settingsExperience": "نمط العرض",
+  "experienceStandard": "قياسي",
+  "experienceGuided": "إرشادي",
+  "experienceGuidedDesc": "أزرار أكبر وإرشاد أوضح وتفاصيل تقنية أقل في البداية.",
+  "settingsMotion": "الحركة",
+  "motionSystem": "اتباع النظام",
+  "motionReduced": "مخفَّض",
+  "motionNote": "الحركة المخفَّضة توقف الرسوم المحيطية. تغيّرات الخطر تبقى واضحة دائمًا.",
+  "settingsHaptics": "الاهتزاز",
+  "hapticsOn": "مفعّل",
+  "hapticsOff": "متوقف",
+  "settingsFamilyStatus": "تنبيهات Family Shield",
+  "settingsNotificationState": "إذن الإشعارات",
+  "notifStateGranted": "مسموح",
+  "notifStateDenied": "متوقف — فعّله من إعدادات الجهاز",
+  "notifStateUnknown": "غير محدد",
+  "settingsNotificationNote": "صوت الإشعار وطريقة وصوله يتحكم بهما إعداد الإشعارات في جهازك.",
+  "settingsOpenNotifSettings": "فتح إعدادات الإشعارات",
+  "settingsHowItWorks": "كيف يعمل",
+  "settingsAnalysisLangs": "تحليل مخاطر المحادثة يدعم حاليًا الإنجليزية والعربية المصرية. يمكن تغيير لغة واجهة التطبيق بشكل مستقل.",
+  "settingsVersion": "الإصدار {version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsLocalOnly": "اسمك ولغتك وتفضيلات المظهر تبقى على هذا الجهاز.",
+  "msgFamilyShieldDisabled": "Family Shield متوقف.",
+  "msgNeedTrustedContact": "أضف شخصًا إلى دائرتك الموثوقة قبل إرسال تنبيه Family Shield.",
+  "msgDemoAlertBroadcast": "بُثّ التنبيه التجريبي إلى {count} من أفراد العائلة.",
+  "@msgDemoAlertBroadcast": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "msgAlertAccepted": "قُبل التنبيه للتسليم إلى {count} من أفراد العائلة.",
+  "@msgAlertAccepted": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "msgRelayRejected": "رفض المُرحِّل التنبيه ({code}).",
+  "@msgRelayRejected": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "msgServiceUnavailable": "خدمة التنبيهات غير متاحة ({code}).",
+  "@msgServiceUnavailable": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "msgNetworkAlert": "خطأ في الشبكة — تعذّر إرسال التنبيه.",
+  "msgNetworkResponse": "خطأ في الشبكة — تعذّر إرسال الرد.",
+  "msgChooseResponse": "اختر آمن أو ما زال مريبًا قبل الرد.",
+  "msgInvalidTarget": "هدف الرد ليس معرف Family Shield صالحًا.",
+  "msgDemoResponse": "عرض — حُاكي الرد، لم يغادر شيء هذا الجهاز.",
+  "msgFamilyUpdateSent": "تم إرسال التحديث العائلي.",
+  "msgCircleFull": "الدائرة الموثوقة ممتلئة (5 أشخاص). أزل شخصًا أولًا.",
+  "msgDuplicateContact": "معرف Family Shield هذا موجود في دائرتك الموثوقة.",
+  "msgNameRequired": "الاسم مطلوب.",
+  "msgInvalidShieldId": "هدف الرد ليس معرّف Family Shield صالحًا.",
+  "msgPhoneTooLong": "رقم الهاتف طويل جدًا.",
+  "msgDemoReadOnly": "جهات الاتصال التجريبية للقراءة فقط",
+  "msgPushSetupFailed": "فشل إعداد الدفع على هذا الجهاز.",
+  "msgPushLinkFailed": "تعذّر ربط معرف Family Shield.",
+  "msgPushEnableFailed": "تعذّر تفعيل تنبيهات الدفع. حاول مجددًا.",
+  "msgPushStateFailed": "تعذّرت قراءة حالة الدفع.",
+  "msgMicUnsupported": "التقاط الميكروفون غير مدعوم على هذه المنصة. جرّب وضع العرض.",
+  "msgMicBlocked": "الوصول إلى الميكروفون محظور. فعّله من إعدادات النظام، أو استخدم وضع العرض.",
+  "msgMicDenied": "رُفض إذن الميكروفون. امنح الإذن لتشغيل Live Mic، أو استخدم وضع العرض.",
+  "msgMicFailed": "فشل تشغيل الميكروفون. تحقق من الجهاز وأعد المحاولة، أو استخدم وضع العرض.",
+  "msgFileEmpty": "يبدو أن هذا الملف فارغ.",
+  "msgFileTooLarge": "هذا الملف كبير جدًا — تُدعم تسجيلات حتى 25 م.ب.",
+  "msgFileTooLong": "هذا التسجيل طويل جدًا — تُدعم حتى 15 دقيقة.",
+  "msgFileNoAudio": "فكّ ترميز التسجيل لم ينتج صوتًا — لا شيء للتحليل.",
+  "msgEmptyTranscript": "أعاد المزوّد نصًا فارغًا.",
+  "msgTranscriptionFailed": "تعذّر على مزوّد النسخ معالجة الصوت.",
+  "msgTranscriptionTimeout": "انتهت مهلة النسخ — النتيجة الصوتية ما زالت متاحة.",
+  "msgCloudNotConfigured": "النسخ السحابي غير مُعدّ في هذا الإصدار. التحليل الصوتي متاح على الجهاز.",
+  "msgEnhancedLocked": "نسخ التسجيلات المحسّن مشمول في Sentinel Shield. التحليل الصوتي على الجهاز متاح دائمًا.",
+  "msgSubsNotConfigured": "الاشتراكات غير مُعدّة في هذا الإصدار.",
+  "msgSubsInitFailed": "تعذّر تهيئة الاشتراكات.",
+  "msgPlansLoadFailed": "تعذّر تحميل الخطط من المتجر.",
+  "msgPurchaseFailed": "تعذّر إتمام الشراء.",
+  "msgNoConnection": "لا اتصال — تحقق من شبكتك وحاول مجددًا.",
+  "msgStoreUnavailable": "المتجر غير متاح الآن. حاول لاحقًا.",
+  "msgPurchaseNotAllowed": "المشتريات غير مسموحة على هذا الجهاز أو الحساب.",
+  "msgPurchasePending": "الدفع بانتظار الموافقة.",
+  "msgRestoreFailed": "تعذّرت استعادة المشتريات الآن.",
+  "msgNoPaidPlans": "لا خطط مدفوعة متاحة في هذا المتجر بعد.",
+  "msgPurchasePendingActivation": "لم يفعّل الشراء خطة بعد — قد يستغرق لحظة. استخدم استعادة المشتريات للتحقق مجددًا.",
+  "msgDemoCheckoutFailed": "فشل الدفع التجريبي — حاول مجددًا.",
+  "msgTokenFailed": "تعذّر تجهيز النسخ — حاول مجددًا.",
+  "reasonFinancial": "رُصد مطلب تحويل مالي",
+  "reasonSecrecy": "ضغط سرية وعزل",
+  "reasonUrgency": "تكتيكات تلاعب بالاستعجال",
+  "reasonImpersonation": "ادعاء انتحال هوية: «{claim}»",
+  "@reasonImpersonation": {
+    "placeholders": {
+      "claim": {
+        "type": "String"
+      }
+    }
+  },
+  "reasonAcoustic": "مؤشرات الشذوذ الصوتي مرتفعة",
+  "reasonCoordinated": "نمط احتيال منسّق — مضخَّم",
+  "reasonNone": "لا مؤشرات تهديد كبيرة",
+  "actionContinueMonitoring": "مواصلة المراقبة",
+  "actionAdviseCaution": "توخَّ الحذر — تحقق من هوية المتصل",
+  "actionEndCall": "أنهِ المكالمة فورًا وأبلغ شخصًا موثوقًا",
+  "actionEndCallShort": "أنهِ المكالمة فورًا",
+  "actionNoCodes": "لا تشارك رموز OTP أو PIN أو بيانات بنكية",
+  "actionVerifyChannel": "تحقق من المتصل عبر قناة رسمية",
+  "actionReport": "أبلغ شركة الاتصالات أو السلطات عن الرقم",
+  "actionEnableFamily": "فعّل تنبيهات Family Shield للأقارب",
+  "actionNoTimeOffers": "لا تتصرف بناءً على عروض محدودة الوقت تحت الضغط",
+  "evidenceImpersonation": "انتحال هوية",
+  "evidenceMoney": "طلب مال",
+  "evidenceUrgency": "استعجال",
+  "evidenceSecrecy": "سرية",
+  "sourceLiveMic": "ميكروفون مباشر",
+  "sourceLiveMicSession": "جلسة ميكروفون مباشر",
+  "sourceDemoAudio": "صوت تجريبي مولّد",
+  "sourceDemoTranscript": "نص تجريبي محلي",
+  "sourceUserTranscript": "نص مقدَّم من المستخدم",
+  "sourceUploadedRecording": "تسجيل مرفوع",
+  "sourceRecording": "تسجيل",
+  "sourceAssemblyAiPrerecorded": "AssemblyAI مُسجَّل",
+  "sourceAssemblyAiStreaming": "AssemblyAI مباشر",
+  "sourceNoneAcoustic": "لا يوجد — تحليل صوتي فقط",
+  "callerUnknown": "متصل غير معروف (+20 10 ••• ••42)",
+  "callerSuspicious": "جهة مريبة (+1 888 ••• 0112)",
+  "reportDisclaimer": "قياسات جنائية مولّدة بالذكاء الاصطناعي. ليست حكمًا قانونيًا أو قضائيًا.",
+  "reportAnalysisPartial": "التحليل: جزئي — إشارات صوتية فقط",
+  "reportAcousticScore": "درجة الشذوذ الصوتي: {score}/100",
+  "@reportAcousticScore": {
+    "placeholders": {
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "reportConvNotAnalyzed": "لم تُحلَّل إشارات مخاطر المحادثة.",
+  "reportRiskLine": "الخطر: {risk} — درجة التهديد: {score}/100",
+  "@reportRiskLine": {
+    "placeholders": {
+      "risk": {
+        "type": "String"
+      },
+      "score": {
+        "type": "int"
+      }
+    }
+  },
+  "reportIdLine": "المعرف: {id}",
+  "@reportIdLine": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTimeLine": "الوقت: {time}",
+  "@reportTimeLine": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  },
+  "reportCallerLine": "المتصل: {caller}",
+  "@reportCallerLine": {
+    "placeholders": {
+      "caller": {
+        "type": "String"
+      }
+    }
+  },
+  "reportDurationLine": "المدة: {duration}",
+  "@reportDurationLine": {
+    "placeholders": {
+      "duration": {
+        "type": "String"
+      }
+    }
+  },
+  "reportSignalsLine": "الإشارات: {reasons}",
+  "@reportSignalsLine": {
+    "placeholders": {
+      "reasons": {
+        "type": "String"
+      }
+    }
+  },
+  "reportAudioSourceLine": "مصدر الصوت: {source}",
+  "@reportAudioSourceLine": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "reportTranscriptionLine": "النسخ: {source}",
+  "@reportTranscriptionLine": {
+    "placeholders": {
+      "source": {
+        "type": "String"
+      }
+    }
+  },
+  "reportShaLine": "بصمة الصوت SHA-256: {sha}",
+  "@reportShaLine": {
+    "placeholders": {
+      "sha": {
+        "type": "String"
+      }
+    }
+  },
+  "elevatedAcousticSummary": "شذوذات صوتية مرتفعة — إشارات مخاطر المحادثة لم تُحلَّل",
+  "demoTranscript1": "هذا عاجل — تصرف الآن قبل انتهاء العرض.",
+  "demoTranscript2": "لا تخبر أحدًا حتى ينتهي الأمر.",
+  "metricAcousticAnomaly": "درجة الشذوذ الصوتي",
+  "recordingFormatsHint": "WAV · MP3 · M4A/AAC · OGG/OPUS · FLAC — حتى 25 ميغابايت أو 15 دقيقة.",
+  "recordingAcousticScoreLabel": "درجة الشذوذ الصوتي",
+  "recordingVerifyNormalBody": "النتيجة مجرد إشارة خطر وليست دليلًا. تحقق من المتحدث عبر رقم تثق به مسبقًا — وليس رقمًا ورد في التسجيل — قبل تنفيذ أي طلب.",
+  "familyVerifyKnownSender": "اتصل بـ{name} على الرقم الموثوق الذي حفظته — وليس رقمًا قدّمه المتصل المشبوه.",
+  "@familyVerifyKnownSender": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "familyVerifyUnknownSender": "تحقق عبر قناة تثق بها مسبقًا. لا تتصرف بناءً على التنبيه وحده.",
+  "familyResolutionSafe": "آمن بعد التحقق",
+  "familyResolutionStillSuspicious": "ما زال مشبوهًا",
+  "familyResolutionUnresolved": "غير محسوم",
+  "familyResolutionLabel": "الحالة: {status}",
+  "@familyResolutionLabel": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "familyReceiverReady": "جاهز لاستقبال التنبيهات",
+  "familyReceiverShareNote": "شارك هذا المعرّف فقط مع من تريد استقبال تنبيهات Family Shield منه.",
+  "familyShieldIdCopyTooltip": "نسخ معرّف Family Shield",
+  "msgFamilyDisabled": "Family Shield معطّل.",
+  "msgAlertDelivered": "تم قبول التنبيه للتسليم إلى {count} من أفراد العائلة.",
+  "@msgAlertDelivered": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "msgFamilyIdInvalid": "يجب أن يبدو معرّف Family Shield مثل vg_ متبوعة بـ32 حرفًا ست عشريًا. اطلب من فرد عائلتك نسخه من تطبيقه (الإعدادات ← مستقبل Family Shield).",
+  "msgMicStartFailed": "تعذّر تشغيل الميكروفون. تحقق من الجهاز وأعد المحاولة، أو استخدم وضع العرض.",
+  "scoreUrgency": "الاستعجال",
+  "scoreFinancial": "مالي",
+  "scoreSecrecy": "السرية",
+  "demoBadgeCompact": "تجريبي",
+  "postCallDemoAlertDesc": "وضع العرض — يرسل تنبيهًا محاكى إلى جهات تجريبية؛ لا يُرسَل أي إشعار حقيقي.",
+  "postCallAskTrustDesc": "اطلب من شخص تثق به رأيًا ثانيًا — أرسل له تنبيه Family Shield.",
+  "recordingConversationAbsent": "إشارة المحادثة · لم تُحلَّل",
+  "msgDemoAlertDelivered": "بُثّ تنبيه تجريبي إلى {count} من أفراد العائلة.",
+  "@msgDemoAlertDelivered": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "msgResponseRejected": "رفض المُرحِّل الرد ({code}).",
+  "@msgResponseRejected": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "msgAlertUnavailable": "خدمة التنبيهات غير متاحة ({code}).",
+  "@msgAlertUnavailable": {
+    "placeholders": {
+      "code": {
+        "type": "int"
+      }
+    }
+  },
+  "msgAlertNetworkError": "خطأ في الشبكة — تعذّر إرسال التنبيه.",
+  "msgResponseNetworkError": "خطأ في الشبكة — تعذّر إرسال الرد.",
+  "msgResolutionRequired": "اختر «آمن» أو «ما زال مشبوهًا» قبل الرد.",
+  "msgDemoResponseSent": "وضع العرض — تمت محاكاة الرد، ولم يغادر شيء هذا الجهاز.",
+  "pushAlertBodyHigh": "رُصدت مكالمة عالية الخطورة على جهاز مراقَب. تحقق مباشرة مع قريبك قبل تحويل أي أموال.",
+  "pushAlertBodySuspicious": "رُصد تحذير مكالمة مشبوهة على جهاز مراقَب. تحقق مباشرة مع قريبك قبل تحويل أي أموال.",
+  "pushAlertBodyPartial": "رُصدت إشارات صوتية مرتفعة في تسجيل على جهاز مراقَب. إشارات خطر المحادثة لم تُحلَّل — تحقق مباشرة مع قريبك.",
+  "familyReceiverTestDeviceHint": "vg_… المعرّف الخارجي لجهاز الاختبار",
+  "verifyStepHangup": "أنهِ المكالمة — ولا ترسل أموالاً.",
+  "familyUpdateIncidentId": "الواقعة {id}",
+  "@familyUpdateIncidentId": {
+    "placeholders": {
+      "id": {
+        "type": "String"
+      }
+    }
+  },
+  "familyUpdateReceivedAt": "تم الاستلام {time}",
+  "@familyUpdateReceivedAt": {
+    "placeholders": {
+      "time": {
+        "type": "String"
+      }
+    }
+  }
+}

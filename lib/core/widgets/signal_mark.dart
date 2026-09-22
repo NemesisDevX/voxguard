@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 
-import '../theme/app_colors.dart';
+import '../theme/app_palette.dart';
 
 /// The Signal Mark — VoxGuard's primary visual symbol.
 ///
@@ -15,27 +15,28 @@ class SignalMark extends StatelessWidget {
   const SignalMark({
     super.key,
     this.size = 26,
-    this.color = AppColors.accent,
-    this.secondaryColor = AppColors.signalAcoustic,
+    this.color,
+    this.secondaryColor,
   });
 
   final double size;
 
-  /// Outer path — conversation evidence.
-  final Color color;
+  /// Outer path — conversation evidence. Defaults to the accent.
+  final Color? color;
 
-  /// Inner path — acoustic evidence.
-  final Color secondaryColor;
+  /// Inner path — acoustic evidence. Defaults to the acoustic hue.
+  final Color? secondaryColor;
 
   @override
   Widget build(BuildContext context) {
+    final p = context.palette;
     return SizedBox(
       width: size,
       height: size,
       child: CustomPaint(
         painter: _SignalMarkPainter(
-          primary: color,
-          secondary: secondaryColor,
+          primary: color ?? p.accent,
+          secondary: secondaryColor ?? p.signalAcoustic,
         ),
       ),
     );

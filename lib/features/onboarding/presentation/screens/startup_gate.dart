@@ -2,27 +2,35 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../../../core/l10n/l10n.dart';
 import '../../../../core/services/onboarding/onboarding_state_store.dart';
+import '../../../../core/services/preferences/app_preferences.dart';
 import '../../../home/presentation/screens/home_screen.dart';
 import '../../../protection/presentation/safecall_launcher.dart';
+import '../widgets/launch_splash.dart';
 import 'onboarding_screen.dart';
+import 'welcome_setup_screen.dart';
 
-/// Startup gate inside the app's single Navigator — first run shows
-/// onboarding, completed users land on Home. A Family Shield
-/// notification tap still routes through the shared navigator key, so
-/// a cold-start alert can push its screen above onboarding.
+/// Startup gate inside the app's single Navigator — the bootstrap
+/// chain is LaunchSplash → Welcome Setup (first run only) →
+/// safety/privacy onboarding → Home. A Family Shield notification tap
+/// still routes through the shared navigator key, so a cold-start
+/// alert can push its screen above whatever the gate is showing.
 ///
 /// This widget is `home:` — it stays mounted for the app's lifetime
-/// even while its build output swaps between onboarding and Home.
-/// That makes its [State.context] a durable navigation owner for the
+/// even while its build output swaps between stages. That makes its
+/// [State.context] a durable navigation owner for the
 /// onboarding→SafeCall handoff: launching from the gate's context
 /// guarantees the post-call safety sheet still has a mounted context
 /// after onboarding completes and the onboarding widget unmounts.
 class StartupGate extends StatefulWidget {
-  const StartupGate({super.key, this.onboardingStore});
+  const StartupGate({super.key, this.onboardingStore, this.preferences});
 
   /// Injectable for tests; defaults to the persisted store.
   final IOnboardingStateStore? onboardingStore;
+
+  /// Injectable for tests; defaults to the process-wide preferences.
+  final AppPreferences? preferences;
 
   @override
   State<StartupGate> createState() => _StartupGateState();
@@ -31,6 +39,8 @@ class StartupGate extends StatefulWidget {
 class _StartupGateState extends State<StartupGate> {
   late final IOnboardingStateStore _store =
       widget.onboardingStore ?? OnboardingStateLocator.instance;
+  late final AppPreferences _prefs =
+      widget.preferences ?? AppPreferencesLocator.instance;
   bool? _completed;
 
   /// In-flight completion write — guards against double taps racing
@@ -44,8 +54,19 @@ class _StartupGateState extends State<StartupGate> {
   @override
   void initState() {
     super.initState();
+    _prefs.addListener(_onPrefs);
     _load();
   }
+
+  @override
+  void dispose() {
+    _prefs.removeListener(_onPrefs);
+    super.dispose();
+  }
+
+  /// Welcome Setup completing flips `setupCompleted`; the gate simply
+  /// rebuilds — the welcome screen unmounts and onboarding appears.
+  void _onPrefs() => setState(() {});
 
   Future<void> _load() async {
     final done = await _store.isCompleted();
@@ -70,10 +91,7 @@ class _StartupGateState extends State<StartupGate> {
     if (!mounted) return;
     if (!persisted) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Couldn\'t save your progress — onboarding '
-              'will show again next launch.'),
-        ),
+        SnackBar(content: Text(context.l10n.startupStoreError)),
       );
     }
     setState(() => _completed = true);
@@ -96,14 +114,23 @@ class _StartupGateState extends State<StartupGate> {
 
   @override
   Widget build(BuildContext context) {
-    return switch (_completed) {
-      null => const Scaffold(
-          body: Center(child: CircularProgressIndicator())),
-      true => const HomeScreen(),
-      false => OnboardingScreen(
-          onCompleted: _complete,
-          onStartSafeCall: _startSafeCall,
-        ),
-    };
+    final completed = _completed;
+    if (completed == null) {
+      return const LaunchSplash();
+    }
+    if (!_prefs.setupCompleted) {
+      // Welcome Setup is a display-only stage — it just flips the
+      // persisted flag the gate is already listening to.
+      return const WelcomeSetupScreen(onDone: _noop);
+    }
+    if (!completed) {
+      return OnboardingScreen(
+        onCompleted: _complete,
+        onStartSafeCall: _startSafeCall,
+      );
+    }
+    return const HomeScreen();
   }
+
+  static void _noop() {}
 }

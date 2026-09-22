@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../l10n/l10n.dart';
 
 /// A trusted person reachable by Family Shield alerts.
 ///
@@ -148,14 +149,10 @@ final class FamilyContactRules {
     String? trustedPhone,
   }) {
     if (name.trim().isEmpty) {
-      throw const FamilyContactException('Name is required.');
+      throw FamilyContactException(l10n.msgNameRequired);
     }
     if (!externalIdPattern.hasMatch(externalId.trim())) {
-      throw const FamilyContactException(
-        'Family Shield ID must look like vg_ followed by 32 hex '
-        'characters. Ask your family member to copy it from their '
-        'app (Settings → Family Shield Receiver).',
-      );
+      throw FamilyContactException(l10n.msgFamilyIdInvalid);
     }
     if (trustedPhone != null &&
         trustedPhone.length > FamilyContactRules.maxPhoneLength) {

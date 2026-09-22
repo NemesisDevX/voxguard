@@ -110,6 +110,33 @@ Rules:
   toward its status color — layers keep identity at low evidence and
   converge on the risk band as evidence accumulates.
 
+### Theme-aware palette
+
+`lib/core/theme/app_palette.dart` — `AppPalette` is the
+`ThemeExtension` all presentation code consumes via
+`context.palette` (never `AppColors` directly in widgets; painters
+and context-less helpers receive a palette explicitly).
+
+| Brightness | Base | Surface | Text | Accent-aware |
+|---|---|---|---|---|
+| Dark | `#0E1014` deep ink | `#15181F`→`#1D2029` | `#F4F1EA` warm off-white | periwinkle `#8B9CC9` |
+| Light | `#F6F3EC` warm off-white | `#FFFFFF` elevated | `#1F2430` ink | periwinkle `#5468A8` |
+
+- Semantic colors (`statusSafe/Warning/Danger`, `signal*`) are
+  centrally owned per-brightness — accents and user customization
+  can never recolor them (test-enforced).
+- Curated accents: `periwinkle`, `softBlue`, `softViolet` — tint
+  interactive surfaces only (buttons, selection, nav highlight).
+- Restrained gradients appear only where hierarchy earns them:
+  Welcome Setup hero, launch surface — never on every card, never
+  glassmorphism, never glow borders.
+- Text size pref is a floor (`max(osScale, floor)`) — 1.0 / 1.18 /
+  1.35; the app never shrinks text below the OS setting.
+- Reduced motion: `MediaQuery.disableAnimations` ORs OS + app pref;
+  breathing stops, theme swap is instant, launch is a static fade.
+
+Full rules: `docs/PERSONALIZATION_AND_LOCALIZATION.md`.
+
 ---
 
 ## 4. Typography
