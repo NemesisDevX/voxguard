@@ -28114,12 +28114,13 @@ _.ok=k
 _.p1=l
 _.p2=""
 _.p3=!1
-_.p4=null
-_.R8=m
+_.R8=_.p4=0
 _.RG=null
-_.rx=n
-_.ry=o
-_.to=p
+_.rx=m
+_.ry=null
+_.to=n
+_.x1=o
+_.x2=p
 _.e=q
 _.f=r
 _.r=s
@@ -95100,7 +95101,7 @@ if(b.c>=0.5)r.push("Secrecy & isolation pressure")
 if(o>=0.5)r.push("Urgency manipulation tactics")
 o=b.e
 if(o.length!==0)r.push('Identity impersonation claim: "'+B.b.gY(o)+'"')
-if(q>=0.7)r.push("Synthetic-voice indicators elevated")
+if(q>=0.7)r.push("Acoustic anomaly indicators elevated")
 if(n)r.push("Coordinated scam pattern \u2014 amplified")
 if(r.length===0)r.push("No significant threat indicators")
 return new A.Mp(p,s,r,this.aky(s))},
@@ -95128,8 +95129,8 @@ s.hr(s.gaiS(),t.Vh)
 s.hr(s.gaiO(),t.NT)
 s.hr(new A.ajO(s),t.Fk)
 s.hr(new A.ajP(s),t.OG)},
-A4(a){var s=new A.al($.aj,t.W),r=this.to
-this.to=s
+A4(a){var s=new A.al($.aj,t.W),r=this.x2
+this.x2=s
 r.f1(new A.ajK(a,new A.b4(s,t.Q)))
 return s},
 zF(a,b){return this.aiR(a,b)},
@@ -95151,7 +95152,7 @@ for(;;)switch(s){case 0:s=2
 return A.k(q.iS(),$async$uP)
 case 2:q.HT()
 p=q.go=q.CW
-q.p4=new A.d1(Date.now(),0,!1)
+q.RG=new A.d1(Date.now(),0,!1)
 s=3
 return A.k(p.hH(),$async$uP)
 case 3:q.ah5(p)
@@ -95166,12 +95167,12 @@ ai3(a,b){var s,r,q=this,p=q.c
 if(!(p instanceof A.fV)&&!(p instanceof A.wq))return
 s=a.a
 p=s.b
-q.R8.D(0,p)
+q.rx.D(0,p)
 if(q.k1)q.cx.a2B(p)
 p=s.a
 q.k3=0.4*A.aWH(p)+0.6*q.k3
 r=q.at.qX(p)
-q.rx=q.rx.cZ(r,0.35)
+q.to=q.to.cZ(r,0.35)
 p=q.v9()
 if(!b.d)b.a.$1(p)},
 zG(a,b){return this.aj5(a,b)},
@@ -95204,20 +95205,24 @@ s.k1=r
 if(s.c instanceof A.fV){r=s.v9()
 if(!b.d)b.a.$1(r)}},
 v3(a){return this.alg(a)},
-alg(a){var s=0,r=A.q(t.H),q,p=this,o,n,m
+alg(a){var s=0,r=A.q(t.H),q,p=this,o,n,m,l,k,j
 var $async$v3=A.r(function(b,c){if(b===1)return A.n(c,r)
-for(;;)switch(s){case 0:n=p.p1
-m=A.a3(n.a,t.N)
-n=n.b
-if(n.length!==0)m.push(n)
-o=B.b.bo(m," ")
+for(;;)switch(s){case 0:m=p.p4
+l=++p.R8
+k=p.p1
+j=A.a3(k.a,t.N)
+k=k.b
+if(k.length!==0)j.push(k)
+o=B.b.bo(j," ")
 s=3
 return A.k(p.ax.qX(o),$async$v3)
-case 3:p.ry=c
+case 3:n=c
+if(m!==p.p4||l!==p.R8){s=1
+break}if(!(p.c instanceof A.fV)||a.d||a.e){s=1
+break}p.x1=n
 if(B.c.dr(o).length!==0)p.p3=!0
-if(!(p.c instanceof A.fV)||a.d||a.e){s=1
-break}n=p.v9()
-if(!a.d)a.a.$1(n)
+l=p.v9()
+if(!a.d)a.a.$1(l)
 case 1:return A.o(q,r)}})
 return A.p($async$v3,r)},
 aiP(a,b){var s,r,q,p=this
@@ -95246,20 +95251,20 @@ s=3
 return A.k(p.iS(),$async$uM)
 case 3:s=p.k4===B.dH?4:6
 break
-case 4:n=p.ay.KM(p.rx,p.ry)
-if(p.p4==null)m=0
+case 4:n=p.ay.KM(p.to,p.x1)
+if(p.RG==null)m=0
 else{e=Date.now()
-l=p.p4
+l=p.RG
 l.toString
 m=B.e.cK(new A.d1(e,0,!1).fv(l).a,1e6)}e=Date.now()
 l=p.db.rR(9000)
 k=Date.now()
 j=d===B.kh?"Live Microphone Session":"Unknown Caller (+20 10 \u2022\u2022\u2022 \u2022\u202242)"
-i=p.RG
-if(i==null)i=p.RG=A.aGh(B.oG.ed(p.R8.a18()).a)
+i=p.ry
+if(i==null)i=p.ry=A.aGh(B.oG.ed(p.rx.a18()).a)
 h=d.gaur()
 g=p.k4
-f=A.aEE(p.rx,!1,i,h,m,j,u.B,"INC-"+A.m2(new A.d1(e,0,!1))+"-"+(1000+l),n.a,B.Ng,g,p.ry,n.c,new A.d1(k,0,!1),p.ok,o)
+f=A.aEE(p.to,!1,i,h,m,j,u.B,"INC-"+A.m2(new A.d1(e,0,!1))+"-"+(1000+l),n.a,B.Ng,g,p.x1,n.c,new A.d1(k,0,!1),p.ok,o)
 k=$.lG
 s=7
 return A.k((k==null?$.lG=A.PF():k).mq(f),$async$uM)
@@ -95284,10 +95289,10 @@ case 2:q.HT()
 if(!b.d)b.a.$1(B.ov)
 return A.o(null,r)}})
 return A.p($async$zC,r)},
-Ih(a){var s,r,q,p,o=this,n=o.ay.KM(o.rx,o.ry),m=n.b
+Ih(a){var s,r,q,p,o=this,n=o.ay.KM(o.to,o.x1),m=n.b
 if(m.a>o.k4.a)o.k4=m
-m=o.rx
-s=o.ry
+m=o.to
+s=o.x1
 r=o.ok
 q=o.go
 q=q==null?null:q.gla()
@@ -95297,34 +95302,35 @@ return new A.fV(m,s,n,r,q,p,o.k3,o.k1,o.cy.a.e.a.a!==B.br,o.p2,o.p3)},
 v9(){return this.Ih(null)},
 iS(){var s=0,r=A.q(t.H),q=this,p,o,n
 var $async$iS=A.r(function(a,b){if(a===1)return A.n(b,r)
-for(;;)switch(s){case 0:n=q.dx
-n=n==null?null:n.aB()
-p=t.H
-o=t.uz
+for(;;)switch(s){case 0:++q.p4
+p=q.dx
+p=p==null?null:p.aB()
+o=t.H
+n=t.uz
 s=2
-return A.k(o.b(n)?n:A.cU(n,p),$async$iS)
+return A.k(n.b(p)?p:A.cU(p,o),$async$iS)
 case 2:q.dx=null
-n=q.go
-n=n==null?null:n.bv()
+p=q.go
+p=p==null?null:p.bv()
 s=3
-return A.k(o.b(n)?n:A.cU(n,p),$async$iS)
-case 3:n=q.dy
-n=n==null?null:n.aB()
+return A.k(n.b(p)?p:A.cU(p,o),$async$iS)
+case 3:p=q.dy
+p=p==null?null:p.aB()
 s=4
-return A.k(o.b(n)?n:A.cU(n,p),$async$iS)
+return A.k(n.b(p)?p:A.cU(p,o),$async$iS)
 case 4:q.dy=null
-n=q.fr
-n=n==null?null:n.aB()
+p=q.fr
+p=p==null?null:p.aB()
 s=5
-return A.k(o.b(n)?n:A.cU(n,p),$async$iS)
+return A.k(n.b(p)?p:A.cU(p,o),$async$iS)
 case 5:q.fr=null
 s=6
 return A.k(q.cx.bv(),$async$iS)
 case 6:q.k1=!1
 q.go=null
 q.PV()
-n=q.fy
-if(n!=null)n.aB()
+p=q.fy
+if(p!=null)p.aB()
 return A.o(null,r)}})
 return A.p($async$iS,r)},
 HT(){var s,r=this
@@ -95332,14 +95338,14 @@ r.ok=B.m2
 s=r.p1
 B.b.S(s.a)
 r.p2=s.b=""
-r.rx=B.eP
-r.ry=B.fZ
+r.to=B.eP
+r.x1=B.fZ
 r.k2=r.k1=r.id=r.p3=!1
 r.k3=0
 r.k4=B.dG
-r.p4=null
-r.R8.a18()
 r.RG=null
+r.rx.a18()
+r.ry=null
 r.at.b=null
 r.CW.r=!1},
 PV(){var s,r,q
