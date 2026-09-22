@@ -287,6 +287,7 @@
     }
   },
   "incidentDeleteTooltip": "حذف الحادثة",
+  "incidentDeleteFailed": "تعذّر حذف هذا الحادث. حاول مرة أخرى.",
   "incidentCopied": "نُسخ تقرير الحادثة إلى الحافظة.",
   "incidentFamilyResponses": "ردود Family Shield",
   "familyMarkedSafe": "{name} اعتبر الوضع آمنًا",
@@ -529,6 +530,7 @@
   "trustedCircleDesc": "الأشخاص الذين تطلب منهم رأيًا ثانيًا. تصلهم التنبيهات عبر معرف Family Shield — أرقام الهواتف تبقى على هذا الجهاز.",
   "trustedNoPhone": " · بدون هاتف",
   "trustedPhoneStored": " · هاتف محفوظ",
+  "trustedPhoneNone": " · بدون هاتف",
   "trustedAddTitle": "إضافة شخص موثوق",
   "trustedEditTitle": "تعديل شخص",
   "trustedFindIdHint": "يمكنهم إيجاد معرف Family Shield في تطبيقهم ضمن الإعدادات ← مستقبل Family Shield.",
@@ -556,6 +558,8 @@
   "upgradeTooltip": "عرض الخطط",
   "plansLoadError": "تعذّر تحميل الخطط.",
   "planNotAvailable": "هذه الخطة غير متاحة في هذا المتجر.",
+  "prefSaveFailed": "تعذّر حفظ هذا الإعداد — حاول مرة أخرى.",
+  "familyCallContact": "اتصل بجهة الاتصال",
   "planActivated": "فُعّل {name} — ترقية الحماية",
   "@planActivated": {
     "placeholders": {

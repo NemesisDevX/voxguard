@@ -47,8 +47,14 @@ final class AppPreferences extends ChangeNotifier {
   /// Production factory — hydrates from disk before first use.
   static Future<AppPreferences> load({SharedPreferences? prefs}) async {
     final store = prefs ?? await SharedPreferences.getInstance();
-    return AppPreferences._(_PrefsStore(store));
+    return AppPreferences._(_SharedPrefsStore(store));
   }
+
+  /// Test seam — inject a custom store (e.g. one whose writes fail)
+  /// without a real SharedPreferences backend.
+  @visibleForTesting
+  factory AppPreferences.withStore(PrefsStore store) =>
+      AppPreferences._(store);
 
   /// In-memory factory for tests — no disk I/O.
   @visibleForTesting
@@ -89,7 +95,7 @@ final class AppPreferences extends ChangeNotifier {
   /// Display-name bound — generous for real names, bounded for UI.
   static const int maxDisplayNameLength = 32;
 
-  final _PrefsStore? _prefs;
+  final PrefsStore? _prefs;
 
   bool _setupCompleted = false;
   String? _displayName;
@@ -188,80 +194,140 @@ final class AppPreferences extends ChangeNotifier {
         AppTextSize.extraLarge => 1.35,
       };
 
-  // ── Setters (persist + notify) ───────────────────────────────────
+  // ── Setters (persist first, then mutate + notify) ────────────────
+  //
+  // Every setter returns whether the write durably landed. A failed
+  // or throwing store write leaves the in-memory value untouched and
+  // does not notify — callers must not claim persistence that did
+  // not happen. In-memory instances (tests, unhydrated fallback)
+  // have no store, so they always "persist" trivially.
 
-  Future<void> completeSetup() async {
+  /// Runs one storage op; `false` on explicit failure or throw.
+  Future<bool> _write(Future<bool> Function(PrefsStore s) op) async {
+    final s = _prefs;
+    if (s == null) return true;
+    try {
+      return await op(s);
+    } catch (_) {
+      return false;
+    }
+  }
+
+  /// Marks first-run setup complete. Returns false — without
+  /// mutating state — when the flag could not be persisted, so the
+  /// Welcome flow can stay on screen instead of silently advancing.
+  Future<bool> completeSetup() async {
+    if (!await _write((s) => s.setBool(_kSetupCompleted, true))) {
+      return false;
+    }
     _setupCompleted = true;
-    await _prefs?.setBool(_kSetupCompleted, true);
     notifyListeners();
+    return true;
   }
 
   /// Stores a trimmed display name, or clears it when empty.
   /// Never transmitted — local SharedPreferences only.
-  Future<void> setDisplayName(String? raw) async {
-    _displayName = _sanitizeName(raw);
-    if (_displayName == null) {
-      await _prefs?.remove(_kDisplayName);
-    } else {
-      await _prefs?.setString(_kDisplayName, _displayName!);
+  Future<bool> setDisplayName(String? raw) async {
+    final name = _sanitizeName(raw);
+    final ok = await _write((s) => name == null
+        ? s.remove(_kDisplayName)
+        : s.setString(_kDisplayName, name));
+    if (!ok) return false;
+    _displayName = name;
+    notifyListeners();
+    return true;
+  }
+
+  Future<bool> setLocale(AppLocaleOption option) async {
+    if (!await _write((s) => s.setString(_kLocale, option.name))) {
+      return false;
     }
-    notifyListeners();
-  }
-
-  Future<void> setLocale(AppLocaleOption option) async {
     _locale = option;
-    await _prefs?.setString(_kLocale, option.name);
     notifyListeners();
+    return true;
   }
 
-  Future<void> setThemeMode(AppThemeMode mode) async {
+  Future<bool> setThemeMode(AppThemeMode mode) async {
+    if (!await _write((s) => s.setString(_kThemeMode, mode.name))) {
+      return false;
+    }
     _themeMode = mode;
-    await _prefs?.setString(_kThemeMode, mode.name);
     notifyListeners();
+    return true;
   }
 
-  Future<void> setAccent(AppAccent accent) async {
+  Future<bool> setAccent(AppAccent accent) async {
+    if (!await _write((s) => s.setString(_kAccent, accent.name))) {
+      return false;
+    }
     _accent = accent;
-    await _prefs?.setString(_kAccent, accent.name);
     notifyListeners();
+    return true;
   }
 
-  Future<void> setTextSize(AppTextSize size) async {
+  Future<bool> setTextSize(AppTextSize size) async {
+    if (!await _write((s) => s.setString(_kTextSize, size.name))) {
+      return false;
+    }
     _textSize = size;
-    await _prefs?.setString(_kTextSize, size.name);
     notifyListeners();
+    return true;
   }
 
-  Future<void> setMotion(AppMotionPref motion) async {
+  Future<bool> setMotion(AppMotionPref motion) async {
+    if (!await _write((s) => s.setString(_kMotion, motion.name))) {
+      return false;
+    }
     _motion = motion;
-    await _prefs?.setString(_kMotion, motion.name);
     notifyListeners();
+    return true;
   }
 
-  Future<void> setHaptics(AppHapticsPref haptics) async {
+  Future<bool> setHaptics(AppHapticsPref haptics) async {
+    if (!await _write((s) => s.setString(_kHaptics, haptics.name))) {
+      return false;
+    }
     _haptics = haptics;
-    await _prefs?.setString(_kHaptics, haptics.name);
     notifyListeners();
+    return true;
   }
 
-  Future<void> setExperienceMode(ExperienceMode mode) async {
+  Future<bool> setExperienceMode(ExperienceMode mode) async {
+    if (!await _write((s) => s.setString(_kExperience, mode.name))) {
+      return false;
+    }
     _experienceMode = mode;
-    await _prefs?.setString(_kExperience, mode.name);
     notifyListeners();
+    return true;
   }
 }
 
-/// Thin async storage seam so the preferences logic is testable
-/// without a real SharedPreferences instance.
-final class _PrefsStore {
-  _PrefsStore(this._prefs);
+/// Storage seam behind [AppPreferences] — public so tests can inject
+/// failing backends deterministically. Writes report the platform's
+/// own success boolean; reads return null when absent.
+abstract class PrefsStore {
+  Future<bool?> getBool(String k);
+  Future<String?> getString(String k);
+  Future<bool> setBool(String k, bool v);
+  Future<bool> setString(String k, String v);
+  Future<bool> remove(String k);
+}
+
+/// SharedPreferences-backed [PrefsStore].
+final class _SharedPrefsStore implements PrefsStore {
+  _SharedPrefsStore(this._prefs);
   final SharedPreferences _prefs;
 
+  @override
   Future<bool?> getBool(String k) async => _prefs.getBool(k);
+  @override
   Future<String?> getString(String k) async => _prefs.getString(k);
-  Future<void> setBool(String k, bool v) => _prefs.setBool(k, v);
-  Future<void> setString(String k, String v) => _prefs.setString(k, v);
-  Future<void> remove(String k) => _prefs.remove(k);
+  @override
+  Future<bool> setBool(String k, bool v) => _prefs.setBool(k, v);
+  @override
+  Future<bool> setString(String k, String v) => _prefs.setString(k, v);
+  @override
+  Future<bool> remove(String k) => _prefs.remove(k);
 }
 
 /// Guided-Mode lookup — presentation only. Guided Mode enlarges

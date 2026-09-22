@@ -100,7 +100,7 @@ class IncidentDetailScreen extends StatelessWidget {
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(
-              'Delete',
+              l10n.actionDelete,
               style: TextStyle(
                 color: p.statusDanger,
                 fontWeight: FontWeight.w700,
@@ -116,11 +116,7 @@ class IncidentDetailScreen extends StatelessWidget {
     } on IncidentPersistenceException {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-              "Couldn't delete this incident. Please try again.",
-            ),
-          ),
+          SnackBar(content: Text(l10n.incidentDeleteFailed)),
         );
       }
       return;
@@ -241,8 +237,8 @@ class _ResponseRow extends StatelessWidget {
               Expanded(
                 child: Text(
                   isSafe
-                      ? '$name marked this situation safe'
-                      : '$name is still concerned',
+                      ? l10n.familyMarkedSafe(name)
+                      : l10n.familyStillConcerned(name),
                   style: AppTypography.bodyMedium,
                 ),
               ),
@@ -364,7 +360,7 @@ class _HeaderCard extends StatelessWidget {
             Row(
               children: [
                 Text(
-                  'Acoustic anomaly ',
+                  l10n.acousticAnomalyPrefix,
                   style: AppTypography.labelLarge
                       .copyWith(color: p.textMuted),
                 ),
@@ -375,8 +371,8 @@ class _HeaderCard extends StatelessWidget {
               ],
             ),
             const SizedBox(height: 6),
-            const Text(
-              'Conversation-risk signals were not analyzed.',
+            Text(
+              l10n.conversationNotAnalyzed,
               style: AppTypography.bodyMedium,
             ),
           ] else
@@ -926,10 +922,10 @@ class _ActionsCard extends StatelessWidget {
           ),
         ),
         if (isDemo)
-          const Padding(
-            padding: EdgeInsets.only(top: 6),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
             child: Text(
-              'Demo Mode — no real notification is sent',
+              l10n.incidentBroadcastDemoNote,
               style: AppTypography.bodyMedium,
             ),
           ),
@@ -940,9 +936,9 @@ class _ActionsCard extends StatelessWidget {
           child: OutlinedButton.icon(
             onPressed: onShare,
             icon: const Icon(Icons.ios_share, size: 18),
-            label: const Text(
-              'Share Incident Report',
-              style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+            label: Text(
+              l10n.incidentShare,
+              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
             ),
             style: OutlinedButton.styleFrom(
               foregroundColor: p.textPrimary,

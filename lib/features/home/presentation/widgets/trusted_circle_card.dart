@@ -90,8 +90,8 @@ class TrustedCircleCard extends StatelessWidget {
                 Text(
                   _shortId(c.externalId) +
                       (c.trustedPhone == null
-                          ? ' · no phone'
-                          : ' · phone stored'),
+                          ? l10n.trustedPhoneNone
+                          : l10n.trustedPhoneStored),
                   style: AppTypography.bodyMedium.copyWith(fontSize: 12),
                 ),
               ],

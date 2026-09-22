@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../../../core/l10n/l10n.dart';
+import '../../../../core/l10n/localized_text.dart';
 import '../../../../core/services/preferences/app_preferences.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
@@ -40,13 +41,26 @@ class _WelcomeSetupScreenState extends State<WelcomeSetupScreen> {
   Future<void> _finish({required bool saveName}) async {
     if (_saving) return;
     _saving = true;
-    if (saveName) {
-      await _prefs.setDisplayName(_nameCtrl.text);
+    if (saveName && !await _prefs.setDisplayName(_nameCtrl.text)) {
+      return _failed();
     }
-    await _prefs.completeSetup();
+    // Never claim setup completed when the flag did not persist —
+    // stay on this screen with a retry message instead of silently
+    // advancing into onboarding.
+    if (!await _prefs.completeSetup()) {
+      return _failed();
+    }
     // The gate listens to preferences and advances itself; the
     // callback exists for direct-push contexts (tests).
     widget.onDone();
+  }
+
+  void _failed() {
+    _saving = false;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(context.l10n.prefSaveFailed)),
+    );
   }
 
   @override
@@ -154,7 +168,8 @@ class _LanguagePicker extends StatelessWidget {
                   child: _LanguageTile(
                     label: label,
                     selected: prefs.localeOption == option,
-                    onTap: () => unawaited(prefs.setLocale(option)),
+                    onTap: () =>
+                        context.savePreference(prefs.setLocale(option)),
                   ),
                 ),
               ),

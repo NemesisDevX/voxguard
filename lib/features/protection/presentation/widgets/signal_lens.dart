@@ -73,25 +73,28 @@ class SignalLens extends StatefulWidget {
   /// label used across the product. "Safe" is a score band, never a
   /// guarantee — the score is a composite risk signal, not a verdict.
   ///
-  /// Pass the ambient [AppLocalizations] for localized output; the
-  /// default keeps the English technical band (tests, diagnostics).
-  static String stateLabel(double score, [AppLocalizations? l10n]) =>
-      switch (score) {
-        < 0.40 => l10n?.lensBandSafe ?? 'SAFE',
-        < 0.75 => l10n?.lensBandCaution ?? 'CAUTION',
-        _ => l10n?.lensBandHigh ?? 'HIGH RISK',
-      };
+  /// Pass the ambient [AppLocalizations] for localized output; when
+  /// omitted the current interface locale is resolved globally (the
+  /// English fallback keeps domain tests deterministic).
+  static String stateLabel(double score, [AppLocalizations? l10n]) {
+    final l = l10n ?? l10nGlobal;
+    return switch (score) {
+      < 0.40 => l.lensBandSafe,
+      < 0.75 => l.lensBandCaution,
+      _ => l.lensBandHigh,
+    };
+  }
 
   /// Short human interpretation for the current band — the message a
   /// person should read first, before any number.
-  static String interpretation(double score, [AppLocalizations? l10n]) =>
-      switch (score) {
-        < 0.40 =>
-          l10n?.lensInterpSafe ?? 'Signals look normal — keep listening.',
-        < 0.75 => l10n?.lensInterpCaution ??
-            'Something feels off — watch the signals.',
-        _ => l10n?.lensInterpHigh ?? 'Pause before acting.',
-      };
+  static String interpretation(double score, [AppLocalizations? l10n]) {
+    final l = l10n ?? l10nGlobal;
+    return switch (score) {
+      < 0.40 => l.lensInterpSafe,
+      < 0.75 => l.lensInterpCaution,
+      _ => l.lensInterpHigh,
+    };
+  }
 
   @override
   State<SignalLens> createState() => _SignalLensState();

@@ -5,6 +5,7 @@ import '../../../protection/domain/models/composite_threat_report.dart';
 import '../../../protection/domain/models/semantic_threat_signals.dart';
 import '../../../protection/domain/models/transcript_snippet.dart';
 import '../../../../core/l10n/l10n.dart';
+import '../../../../core/l10n/localized_text.dart';
 
 /// Immutable record of a single flagged protection session.
 ///
@@ -115,25 +116,31 @@ final class IncidentReport extends Equatable {
   /// (acoustic-only) report must never present a fused Threat Score —
   /// conversation-risk signals were not analyzed.
   String toShareText() {
-    final reasons = threatReasons.join('; ');
+    // Resolve the ambient locale at call time — a persisted incident
+    // shares in whichever language is selected NOW, without any
+    // migration of the stored (stable English) record.
+    final l = l10n;
+    final reasons = threatReasons
+        .map((r) => localizeThreatReason(l, r))
+        .join('; ');
     final assessment = analysisIsPartial
-        ? '${l10n.reportAnalysisPartial}\n'
-            '${l10n.reportAcousticScore(
+        ? '${l.reportAnalysisPartial}\n'
+            '${l.reportAcousticScore(
                 (acousticMetrics.syntheticVoiceScore * 100).round())}\n'
-            '${l10n.reportConvNotAnalyzed}\n'
-        : '${l10n.reportRiskLine(
-                riskLevel.name, (peakRiskScore * 100).round())}\n';
-    return '${l10n.incidentReportTitle}\n'
-        '${l10n.reportIdLine(id)}\n'
-        '${l10n.reportTimeLine(timestampLabel)}\n'
-        '${l10n.reportCallerLine(callerLabel)}\n'
-        '${l10n.reportDurationLine(durationLabel)}\n'
+            '${l.reportConvNotAnalyzed}\n'
+        : '${l.reportRiskLine(localizeRiskLevel(l, riskLevel.name),
+                (peakRiskScore * 100).round())}\n';
+    return '${l.incidentReportTitle}\n'
+        '${l.reportIdLine(id)}\n'
+        '${l.reportTimeLine(timestampLabel)}\n'
+        '${l.reportCallerLine(localizeSourceLabel(l, callerLabel))}\n'
+        '${l.reportDurationLine(durationLabel)}\n'
         '$assessment'
-        '${l10n.reportSignalsLine(reasons)}\n'
-        '${l10n.reportAudioSourceLine(audioSourceLabel)}\n'
-        '${l10n.reportTranscriptionLine(transcriptionSourceLabel)}\n'
-        '${l10n.reportShaLine(audioDigestSha256)}\n'
-        '\n$disclaimer';
+        '${l.reportSignalsLine(reasons)}\n'
+        '${l.reportAudioSourceLine(localizeSourceLabel(l, audioSourceLabel))}\n'
+        '${l.reportTranscriptionLine(localizeSourceLabel(l, transcriptionSourceLabel))}\n'
+        '${l.reportShaLine(audioDigestSha256)}\n'
+        '\n${disclaimer == legalDisclaimer ? l.reportDisclaimer : disclaimer}';
   }
 
   static final _idPattern = RegExp(r'^[A-Za-z0-9_\-.:@]{1,64}$');

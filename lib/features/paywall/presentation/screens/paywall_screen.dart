@@ -62,7 +62,7 @@ class _PaywallView extends StatelessWidget {
             content: Text(
               success.demo
                   ? l10n.demoPlanActivated
-                  : '$name activated — shield upgraded',
+                  : l10n.planActivated(name),
             ),
           ),
         );
@@ -98,6 +98,7 @@ class _PaywallContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
+    final l10n = context.l10n;
     final loaded = state is PaywallLoaded ? state as PaywallLoaded : null;
     if (loaded == null) return const SizedBox.shrink();
     final bloc = context.read<PaywallBloc>();
@@ -177,7 +178,7 @@ class _PaywallContent extends StatelessWidget {
                   package: loaded.selectedTier == tier
                       ? loaded.selectedPackage
                       : null,
-                  priceLabel: _priceLabel(loaded, tier),
+                  priceLabel: _priceLabel(l10n, loaded, tier),
                   cycle: loaded.cycle,
                   selected: tier == loaded.selectedTier,
                   onTap: loaded.isPurchasing
@@ -195,10 +196,11 @@ class _PaywallContent extends StatelessWidget {
   }
 
   /// Price for the tier's offered cycle — the localized string the
-  /// store returned, or 'Free' for the zero-price plan. Missing
-  /// packages render as 'Not available' (card is hidden anyway).
-  static String _priceLabel(PaywallLoaded loaded, SubscriptionTier t) {
-    if (t.isFree) return 'Free';
+  /// store returned, or the localized Free label for the zero-price
+  /// plan. Missing packages render as '—' (card is hidden anyway).
+  static String _priceLabel(
+      AppLocalizations l10n, PaywallLoaded loaded, SubscriptionTier t) {
+    if (t.isFree) return l10n.planFreeLabel;
     final offers = loaded.packages[t.tierId];
     if (offers == null || offers.isEmpty) return '—';
     final pkg = offers[loaded.cycle] ?? offers.values.first;

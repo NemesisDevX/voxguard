@@ -693,6 +693,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get incidentDeleteTooltip => 'Eliminar incidente';
 
   @override
+  String get incidentDeleteFailed =>
+      'No se pudo eliminar este incidente. Inténtalo de nuevo.';
+
+  @override
   String get incidentCopied => 'Informe de incidente copiado al portapapeles.';
 
   @override
@@ -956,6 +960,9 @@ class AppLocalizationsEs extends AppLocalizations {
   }
 
   @override
+  String get familyCallContact => 'Llamar al contacto';
+
+  @override
   String get familyNoTrustedNumber =>
       'Sin número de confianza guardado. Contáctales por un número en el que ya confíes.';
 
@@ -1112,6 +1119,9 @@ class AppLocalizationsEs extends AppLocalizations {
   String get trustedPhoneStored => ' · teléfono guardado';
 
   @override
+  String get trustedPhoneNone => ' · sin teléfono';
+
+  @override
   String get trustedAddTitle => 'Añadir persona de confianza';
 
   @override
@@ -1195,6 +1205,10 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get planNotAvailable => 'Ese plan no está disponible en esta tienda.';
+
+  @override
+  String get prefSaveFailed =>
+      'No se pudo guardar este ajuste — inténtalo de nuevo.';
 
   @override
   String planActivated(String name) {

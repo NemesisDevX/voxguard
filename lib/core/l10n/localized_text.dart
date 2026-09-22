@@ -1,4 +1,6 @@
-import 'package:flutter/widgets.dart';
+import 'dart:async';
+
+import 'package:flutter/material.dart';
 
 import 'l10n.dart';
 
@@ -24,6 +26,19 @@ extension LocalizedText on BuildContext {
   /// Localizes an evidence-category label from the semantic engine.
   String evidenceLabel(String label) =>
       localizeEvidenceLabel(l10n, label);
+
+  /// Runs a preference write and surfaces one localized retry message
+  /// when the store reports failure — the UI never claims a setting
+  /// persisted when it didn't. Successful writes are silent.
+  void savePreference(Future<bool> write) {
+    unawaited(write.then((ok) {
+      if (!ok && mounted) {
+        ScaffoldMessenger.of(this).showSnackBar(
+          SnackBar(content: Text(l10n.prefSaveFailed)),
+        );
+      }
+    }));
+  }
 }
 
 /// Context-free variants for getters, services and other sites
@@ -77,6 +92,17 @@ String localizeSourceLabel(AppLocalizations l10n, String label) =>
 /// Localizes an evidence-category label from the semantic engine.
 String localizeEvidenceLabel(AppLocalizations l10n, String label) =>
     _evidenceMap[label]?.call(l10n) ?? label;
+
+/// Localizes a persisted `ThreatRiskLevel` enum name for reports.
+/// Unknown names pass through so future levels stay visible.
+String localizeRiskLevel(AppLocalizations l10n, String levelName) =>
+    _riskLevelMap[levelName]?.call(l10n) ?? levelName;
+
+Map<String, String Function(AppLocalizations)> _riskLevelMap = {
+  'safe': (l) => l.bandSafe,
+  'suspicious': (l) => l.bandSuspicious,
+  'highRisk': (l) => l.bandHigh,
+};
 
 Map<String, String Function(AppLocalizations)> _serviceMap = {
   'Family Shield is disabled.': (l) => l.msgFamilyShieldDisabled,

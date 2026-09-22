@@ -37,10 +37,10 @@ or accounts — nothing unverified is claimed DONE.
 | 1179×2556 screenshots (7) | DONE | `submission/screenshots/` — real renders at native size, verified dimensions |
 | 1024×1024 icon | DONE — provisional | `submission/voxguard-icon-1024.png` verified dimensions; not the final Design Award identity — pending public rebrand |
 | MIT license (Next Gen OSS requirement) | DONE | `LICENSE` |
-| Flutter localization (gen_l10n, 4 locales) | DONE | `flutter_localizations` + `l10n.yaml`; **532 keys** with enforced parity across `en`/`ar`/`es`/`fr`; `context.l10n` + binding-safe `l10nGlobal`; `LocalizedText` maps frozen domain messages at the presentation layer — engines/persistence untouched |
+| Flutter localization (gen_l10n, 4 locales) | DONE | `flutter_localizations` + `l10n.yaml`; **536 keys** with enforced parity across `en`/`ar`/`es`/`fr`; `context.l10n` + binding-safe `l10nGlobal`; `LocalizedText` maps frozen domain messages at the presentation layer — engines/persistence untouched; share reports localize fully per current locale; source audit test blocks new hardcoded consumer copy |
 | First-run Welcome Setup | DONE | `welcome_setup_screen.dart` — language picker (no flags, applies immediately) + optional local-only display name (≤32 chars, trimmed, skippable); runs before safety onboarding; zero permission prompts; `StartupGate` chains splash → welcome → onboarding |
 | SignalMark launch experience | DONE | `launch_splash.dart` — finite 900 ms two-path converge animation, static fade under reduced motion; native surfaces (Android `launch_background`, iOS `LaunchImage`) regenerated to the SignalMark on deep ink |
-| Persistent preferences layer | DONE | `AppPreferences` + `AppPreferencesLocator` — display name, locale, theme, accent, text size, motion, haptics, experience mode; stable enum storage IDs; corrupt values fall back safely; `inMemory` test factory |
+| Persistent preferences layer | DONE | `AppPreferences` + `AppPreferencesLocator` — display name, locale, theme, accent, text size, motion, haptics, experience mode; stable enum storage IDs; corrupt values fall back safely; `inMemory` test factory; setters return `Future<bool>` — failed/throwing writes mutate nothing and never claim persistence (Settings + Welcome Setup surface a localized retry) |
 | Light + Dark themes with palette tokens | DONE | `AppPalette` ThemeExtension — all presentation color consumption migrated off static `AppColors`; real light theme (warm off-white base, white elevated, ink text) |
 | Curated accent personalization | DONE | periwinkle / softBlue / softViolet; accent tints interactive surfaces only — semantic safe/warning/danger + signal colors provably identical across accents |
 | Text-size preference | DONE | floor semantics: `max(osScale, 1.0/1.18/1.35)` — never shrinks below OS accessibility scale |
@@ -84,7 +84,7 @@ or accounts — nothing unverified is claimed DONE.
 |-------|--------|
 | `flutter pub get` | PASS |
 | `flutter analyze` | PASS — 0 issues |
-| `flutter test` | PASS — 330/330 (incl. 21 personalization/l10n tests + 1 welcome-flow gate test) |
+| `flutter test` | PASS — 349/349 (incl. personalization/l10n suite + 19 consistency tests: source audit, 4-locale share reports, name reactivity, pref write-failure) |
 | `flutter build web --release --base-href /voxguard/` | PASS |
 | `flutter build apk --debug` | PASS |
 | `cd server && npm ci && npm test` | PASS — 41/41 |

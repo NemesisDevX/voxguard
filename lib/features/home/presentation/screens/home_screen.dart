@@ -111,11 +111,14 @@ class _ShieldTab extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final prefs = AppPreferencesLocator.instance;
-    final name = prefs.displayName;
     return SafeArea(
       child: ListenableBuilder(
         listenable: prefs,
-        builder: (context, _) => ListView(
+        builder: (context, _) {
+          // Read inside the builder — a Settings name change rebuilds
+          // this subtree and must see the new value, not a stale one.
+          final name = prefs.displayName;
+          return ListView(
           padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
           children: [
             const ProtectionBanner(),
@@ -154,7 +157,8 @@ class _ShieldTab extends StatelessWidget {
             // an emergency banner when nothing is happening.
             _FamilyShieldStatusCard(onTap: onOpenFamily),
           ],
-        ),
+          );
+        },
       ),
     );
   }

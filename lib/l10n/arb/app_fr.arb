@@ -287,6 +287,7 @@
     }
   },
   "incidentDeleteTooltip": "Supprimer l'incident",
+  "incidentDeleteFailed": "Impossible de supprimer cet incident. Réessayez.",
   "incidentCopied": "Rapport d'incident copié dans le presse-papiers.",
   "incidentFamilyResponses": "RÉPONSES FAMILY SHIELD",
   "familyMarkedSafe": "{name} a marqué la situation comme sûre",
@@ -529,6 +530,7 @@
   "trustedCircleDesc": "Les personnes à qui demander une paire d'yeux en plus. Les alertes leur parviennent par ID Family Shield — les numéros de téléphone restent sur cet appareil.",
   "trustedNoPhone": " · sans téléphone",
   "trustedPhoneStored": " · téléphone enregistré",
+  "trustedPhoneNone": " · aucun numéro",
   "trustedAddTitle": "Ajouter une personne de confiance",
   "trustedEditTitle": "Modifier la personne",
   "trustedFindIdHint": "Ils trouvent leur ID Family Shield dans leur propre app sous Réglages → Récepteur Family Shield.",
@@ -556,6 +558,8 @@
   "upgradeTooltip": "Voir les forfaits",
   "plansLoadError": "Impossible de charger les forfaits.",
   "planNotAvailable": "Ce forfait n'est pas disponible dans cette boutique.",
+  "prefSaveFailed": "Impossible d'enregistrer ce réglage — réessayez.",
+  "familyCallContact": "Appeler le contact",
   "planActivated": "{name} activé — protection améliorée",
   "@planActivated": {
     "placeholders": {

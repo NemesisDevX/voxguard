@@ -1296,6 +1296,12 @@ abstract class AppLocalizations {
   /// **'Delete incident'**
   String get incidentDeleteTooltip;
 
+  /// No description provided for @incidentDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t delete this incident. Please try again.'**
+  String get incidentDeleteFailed;
+
   /// No description provided for @incidentCopied.
   ///
   /// In en, this message translates to:
@@ -1758,6 +1764,12 @@ abstract class AppLocalizations {
   /// **'Call {name}'**
   String familyCallActionUnknown(String name);
 
+  /// No description provided for @familyCallContact.
+  ///
+  /// In en, this message translates to:
+  /// **'Call contact'**
+  String get familyCallContact;
+
   /// No description provided for @familyNoTrustedNumber.
   ///
   /// In en, this message translates to:
@@ -2022,6 +2034,12 @@ abstract class AppLocalizations {
   /// **' · phone stored'**
   String get trustedPhoneStored;
 
+  /// No description provided for @trustedPhoneNone.
+  ///
+  /// In en, this message translates to:
+  /// **' · no phone'**
+  String get trustedPhoneNone;
+
   /// No description provided for @trustedAddTitle.
   ///
   /// In en, this message translates to:
@@ -2183,6 +2201,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'That plan is not available in this store.'**
   String get planNotAvailable;
+
+  /// No description provided for @prefSaveFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save that setting — please try again.'**
+  String get prefSaveFailed;
 
   /// No description provided for @planActivated.
   ///

@@ -687,6 +687,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get incidentDeleteTooltip => 'Delete incident';
 
   @override
+  String get incidentDeleteFailed =>
+      'Couldn\'t delete this incident. Please try again.';
+
+  @override
   String get incidentCopied => 'Incident report copied to clipboard.';
 
   @override
@@ -947,6 +951,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get familyCallContact => 'Call contact';
+
+  @override
   String get familyNoTrustedNumber =>
       'No trusted number saved. Contact them through a number you already trust.';
 
@@ -1101,6 +1108,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get trustedPhoneStored => ' · phone stored';
 
   @override
+  String get trustedPhoneNone => ' · no phone';
+
+  @override
   String get trustedAddTitle => 'Add trusted person';
 
   @override
@@ -1184,6 +1194,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get planNotAvailable => 'That plan is not available in this store.';
+
+  @override
+  String get prefSaveFailed =>
+      'Couldn\'t save that setting — please try again.';
 
   @override
   String planActivated(String name) {

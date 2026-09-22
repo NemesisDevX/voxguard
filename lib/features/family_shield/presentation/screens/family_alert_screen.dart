@@ -67,13 +67,11 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
       return l10n.familyAlertUnknownSender;
     }
     if (_partial) {
-      return '$_senderName asked you to verify an elevated acoustic '
-          'warning from a recording.';
+      return l10n.familyAlertAcoustic(_senderName);
     }
     return widget.alert.riskLevel == 'highRisk'
-        ? '$_senderName may be dealing with a high-risk call.'
-        : '$_senderName received a suspicious-call warning '
-            'from ${l10n.appName}.';
+        ? l10n.familyAlertHighRisk(_senderName)
+        : l10n.familyAlertSuspicious(_senderName);
   }
 
   Future<void> _resolve(AlertResolution resolution) async {
@@ -178,8 +176,9 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
                   onPressed: () =>
                       TrustedPhoneLauncher.callTrusted(phone),
                   icon: const Icon(Icons.call_outlined),
-                  label: Text(
-                      'Call ${_knownSender ? _senderName : 'contact'}'),
+                  label: Text(_knownSender
+                      ? l10n.familyCallAction(_senderName)
+                      : l10n.familyCallContact),
                 ),
               )
             else

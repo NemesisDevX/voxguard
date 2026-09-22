@@ -1031,8 +1031,8 @@ class _ModePickerView extends StatelessWidget {
             Icon(Icons.graphic_eq,
                 size: 52, color: p.accent),
             const SizedBox(height: 16),
-            const Text(
-              'Start a Protection Session',
+            Text(
+              l10n.safeCallPickerTitle,
               style: AppTypography.displaySmall,
               textAlign: TextAlign.center,
             ),

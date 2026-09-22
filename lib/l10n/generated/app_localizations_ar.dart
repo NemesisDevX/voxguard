@@ -676,6 +676,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get incidentDeleteTooltip => 'حذف الحادثة';
 
   @override
+  String get incidentDeleteFailed => 'تعذّر حذف هذا الحادث. حاول مرة أخرى.';
+
+  @override
   String get incidentCopied => 'نُسخ تقرير الحادثة إلى الحافظة.';
 
   @override
@@ -933,6 +936,9 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get familyCallContact => 'اتصل بجهة الاتصال';
+
+  @override
   String get familyNoTrustedNumber =>
       'لا رقم موثوقًا محفوظًا. تواصل عبر رقم تثق به مسبقًا.';
 
@@ -1086,6 +1092,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get trustedPhoneStored => ' · هاتف محفوظ';
 
   @override
+  String get trustedPhoneNone => ' · بدون هاتف';
+
+  @override
   String get trustedAddTitle => 'إضافة شخص موثوق';
 
   @override
@@ -1167,6 +1176,9 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get planNotAvailable => 'هذه الخطة غير متاحة في هذا المتجر.';
+
+  @override
+  String get prefSaveFailed => 'تعذّر حفظ هذا الإعداد — حاول مرة أخرى.';
 
   @override
   String planActivated(String name) {

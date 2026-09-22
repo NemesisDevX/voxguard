@@ -6,6 +6,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../../../core/constants/legal_links.dart';
 import '../../../../core/l10n/l10n.dart';
+import '../../../../core/l10n/localized_text.dart';
 import '../../../../core/services/preferences/app_preferences.dart';
 import '../../../../core/services/push/onesignal_push_identity_service.dart';
 import '../../../../core/services/push/push_identity_service.dart';
@@ -213,7 +214,8 @@ class _ProfileSection extends StatelessWidget {
             context: context,
             title: l10n.settingsLanguage,
             current: prefs.localeOption,
-            onSelected: (v) => unawaited(prefs.setLocale(v)),
+            onSelected: (v) =>
+                context.savePreference(prefs.setLocale(v)),
             options: [
               (AppLocaleOption.system, l10n.languageSystem),
               (AppLocaleOption.en, l10n.languageEn),
@@ -257,8 +259,8 @@ class _ProfileSection extends StatelessWidget {
         ],
       ),
     );
-    if (saved != null) {
-      await prefs.setDisplayName(saved);
+    if (saved != null && context.mounted) {
+      context.savePreference(prefs.setDisplayName(saved));
     }
   }
 }
@@ -286,7 +288,8 @@ class _AppearanceSection extends StatelessWidget {
             context: context,
             title: l10n.settingsTheme,
             current: prefs.themeMode,
-            onSelected: (v) => unawaited(prefs.setThemeMode(v)),
+            onSelected: (v) =>
+                context.savePreference(prefs.setThemeMode(v)),
             options: [
               (AppThemeMode.system, l10n.themeSystem),
               (AppThemeMode.light, l10n.themeLight),
@@ -307,7 +310,8 @@ class _AppearanceSection extends StatelessWidget {
             context: context,
             title: l10n.settingsTextSize,
             current: prefs.textSize,
-            onSelected: (v) => unawaited(prefs.setTextSize(v)),
+            onSelected: (v) =>
+                context.savePreference(prefs.setTextSize(v)),
             options: [
               (AppTextSize.system, l10n.textSizeSystem),
               (AppTextSize.large, l10n.textSizeLarge),
@@ -331,7 +335,8 @@ class _AppearanceSection extends StatelessWidget {
             context: context,
             title: l10n.settingsExperience,
             current: prefs.experienceMode,
-            onSelected: (v) => unawaited(prefs.setExperienceMode(v)),
+            onSelected: (v) =>
+                context.savePreference(prefs.setExperienceMode(v)),
             options: [
               (ExperienceMode.standard, l10n.experienceStandard),
               (ExperienceMode.guided, l10n.experienceGuided),
@@ -354,7 +359,8 @@ class _AppearanceSection extends StatelessWidget {
             context: context,
             title: l10n.settingsMotion,
             current: prefs.motion,
-            onSelected: (v) => unawaited(prefs.setMotion(v)),
+            onSelected: (v) =>
+                context.savePreference(prefs.setMotion(v)),
             options: [
               (AppMotionPref.system, l10n.motionSystem),
               (AppMotionPref.reduced, l10n.motionReduced),
@@ -402,7 +408,8 @@ class _AccentRow extends StatelessWidget {
                   AppAccent.softBlue => l10n.accentSoftBlue,
                   AppAccent.softViolet => l10n.accentSoftViolet,
                 },
-                onTap: () => unawaited(prefs.setAccent(accent)),
+                onTap: () =>
+                    context.savePreference(prefs.setAccent(accent)),
               ),
             ),
         ],
@@ -473,8 +480,8 @@ class _HapticsRow extends StatelessWidget {
           ),
           Switch(
             value: prefs.hapticsEnabled,
-            onChanged: (on) => unawaited(prefs
-                .setHaptics(on ? AppHapticsPref.on : AppHapticsPref.off)),
+            onChanged: (on) => context.savePreference(
+                prefs.setHaptics(on ? AppHapticsPref.on : AppHapticsPref.off)),
           ),
         ],
       ),

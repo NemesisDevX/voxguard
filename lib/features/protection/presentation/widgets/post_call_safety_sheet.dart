@@ -460,7 +460,7 @@ class _FamilyShieldCardState extends State<_FamilyShieldCard> {
                   label: Text(
                     demo
                         ? l10n.sendDemoFamilyAlert
-                        : 'Send Family Alert',
+                        : l10n.postCallSendFamilyAlert,
                     style:
                         const TextStyle(fontWeight: FontWeight.w700),
                   ),

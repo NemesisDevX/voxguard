@@ -64,7 +64,7 @@ the alert payload").
 
 Proper Flutter localization: `flutter_localizations` + `gen_l10n`
 (`l10n.yaml`, sources in `lib/l10n/arb/`, output in
-`lib/l10n/generated/`). **532 message keys**, identical sets across
+`lib/l10n/generated/`). **536 message keys**, identical sets across
 `en`, `ar`, `es`, `fr` — parity enforced by test.
 
 - `context.l10n` for widgets; `l10n`/`l10nGlobal` accessor resolves
@@ -74,6 +74,19 @@ Proper Flutter localization: `flutter_localizations` + `gen_l10n`
   domain/service English messages to localized strings at the
   presentation layer — engines and persisted data are untouched;
   unrecognized messages pass through unchanged.
+- `IncidentReport.toShareText()` localizes the risk band, known
+  threat reasons, caller/audio/transcription source labels and the
+  legal disclaimer through the same mapping — resolved at call time,
+  so a persisted incident shares in whichever language is selected
+  NOW without any storage migration. Incident id, timestamps,
+  SHA-256, scores and raw transcript content stay verbatim.
+- A source audit test scans presentation `lib/` files for
+  multi-word English literals in UI-bearing contexts (`Text`,
+  labels, tooltips, dialogs, SnackBars, string-returning positions)
+  and fails on any bypass. Explicitly whitelisted: `vg_…` protocol
+  IDs, `SHA-256`, numeric/time formats, URLs, placeholders, and
+  domain constants used for comparison (never rendered) such as
+  `'No significant threat indicators'`.
 - Arabic uses full RTL layout automatically. Mixed Arabic/Latin
   transcript rendering keeps the existing first-strong-direction
   behavior (Noto Naskh fallback in captures).
@@ -142,13 +155,39 @@ via `permission_handler.openAppSettings()`. There is deliberately
 no fake custom sound picker — notification sound and per-app
 behavior are controlled by the OS, and the UI says so.
 
-## 8. Tests
+## 8. Preference write truthfulness
 
-`test/personalization_test.dart` (21 tests) covers: ARB parity and
-truth sweep, preference defaults/round-trip/corrupt-fallback/name
+Every `AppPreferences` setter returns `Future<bool>`: the store
+write runs first; only a successful write mutates in-memory state
+and notifies listeners. A failed or throwing write returns `false`
+with zero state change — the UI never claims persistence that did
+not happen. `PrefsStore` is a public seam so tests can inject
+deterministic failing backends (`_FailingStore`).
+
+- Settings routes every write through `context.savePreference(...)`,
+  which shows the localized `prefSaveFailed` snackbar on failure.
+- Welcome Setup stays on screen with the same message when
+  `completeSetup()` or the display-name write fails — it never
+  silently advances into onboarding.
+- In-memory (test/unhydrated) instances have no store and always
+  return `true`.
+
+## 9. Tests
+
+`test/personalization_test.dart` covers: ARB parity and truth
+sweep, preference defaults/round-trip/corrupt-fallback/name
 sanitization, Welcome Setup skip + name persistence + immediate
 language switch + RTL + no permission prompts, accent vs semantic
 color separation, text-scale floor both directions, reduced motion
 from OS and app, haptics suppression, Guided Mode presentation
 delta, Family Shield payload name exclusion, and 360 px / 1.5×
 rendering in all four locales.
+
+`test/localization_consistency_test.dart` covers: the consumer-copy
+source audit, fully localized share reports in all four locales,
+post-persist locale switching, Home display-name live
+reactivity (edit + clear), Family Alert localized placeholders
+(partial vs full scope), Incident Detail localized actions,
+post-call Family Alert copy, the localized Free price label, and
+the preference write-failure contract including the Welcome Setup
+stay-and-report path.

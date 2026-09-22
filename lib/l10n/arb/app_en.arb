@@ -287,6 +287,7 @@
     }
   },
   "incidentDeleteTooltip": "Delete incident",
+  "incidentDeleteFailed": "Couldn't delete this incident. Please try again.",
   "incidentCopied": "Incident report copied to clipboard.",
   "incidentFamilyResponses": "FAMILY SHIELD RESPONSES",
   "familyMarkedSafe": "{name} marked this situation safe",
@@ -434,6 +435,7 @@
       }
     }
   },
+  "familyCallContact": "Call contact",
   "familyNoTrustedNumber": "No trusted number saved. Contact them through a number you already trust.",
   "familyMarkSafe": "Mark Safe",
   "familyStillSuspicious": "Still Suspicious",
@@ -529,6 +531,7 @@
   "trustedCircleDesc": "The people you can ask for a second set of eyes. Alerts reach them by Family Shield ID — phone numbers stay on this device.",
   "trustedNoPhone": " · no phone",
   "trustedPhoneStored": " · phone stored",
+  "trustedPhoneNone": " · no phone",
   "trustedAddTitle": "Add trusted person",
   "trustedEditTitle": "Edit person",
   "trustedFindIdHint": "They can find their Family Shield ID in their own app under Settings → Family Shield Receiver.",
@@ -556,6 +559,7 @@
   "upgradeTooltip": "View plans",
   "plansLoadError": "Could not load plans.",
   "planNotAvailable": "That plan is not available in this store.",
+  "prefSaveFailed": "Couldn't save that setting — please try again.",
   "planActivated": "{name} activated — shield upgraded",
   "@planActivated": {
     "placeholders": {
