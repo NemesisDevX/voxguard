@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>VoxGuard — Privacy Policy</title>
+<title>PauseSignal — Privacy Policy</title>
 <style>
   body { background:#0B0D13; color:#F8FAFC; font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif; margin:0; padding:32px 20px; }
   main { max-width:720px; margin:0 auto; line-height:1.65; }
@@ -15,19 +15,19 @@
 </head>
 <body>
 <main>
-<h1>VoxGuard Privacy Policy</h1>
-<p class="muted">Last updated: September 21, 2026 · Applies to the VoxGuard app and this site.</p>
+<h1>PauseSignal Privacy Policy</h1>
+<p class="muted">Last updated: September 21, 2026 · Applies to the PauseSignal app and this site.</p>
 
-<p>VoxGuard is a consumer safety tool that analyzes voice scam risk during
+<p>PauseSignal is a consumer safety tool that analyzes voice scam risk during
 protection sessions <em>you start yourself</em>. This policy describes what the
 app actually does today — not aspirational behavior.</p>
 
 <h2>Microphone</h2>
 <ul>
   <li>The microphone is requested <strong>only after you explicitly start a Live Mic
-  protection session</strong>. VoxGuard never asks for microphone access at launch,
+  protection session</strong>. PauseSignal never asks for microphone access at launch,
   and never listens in the background.</li>
-  <li>Raw Live Mic audio is processed <strong>in memory only</strong>. VoxGuard does
+  <li>Raw Live Mic audio is processed <strong>in memory only</strong>. PauseSignal does
   not store a raw microphone recording.</li>
   <li>If you are entitled to transcript-backed analysis and cloud transcription is
   configured, Live Mic audio is streamed to the configured transcription provider
@@ -44,9 +44,9 @@ app actually does today — not aspirational behavior.</p>
   network calls. You may optionally paste a transcript you already have — it is
   analyzed locally.</li>
   <li><strong>Include conversation analysis</strong>: the selected audio is uploaded
-  once to the VoxGuard transcription relay, which forwards it to the configured
-  speech-to-text provider. VoxGuard does not permanently store the uploaded file;
-  the original file on your device is never copied into VoxGuard storage.</li>
+  once to the PauseSignal transcription relay, which forwards it to the configured
+  speech-to-text provider. PauseSignal does not permanently store the uploaded file;
+  the original file on your device is never copied into PauseSignal storage.</li>
 </ul>
 
 <h2>Incident reports (on-device)</h2>
@@ -63,13 +63,13 @@ app actually does today — not aspirational behavior.</p>
 <ul>
   <li>Trusted Circle names and phone numbers you enter are stored
   <strong>locally on your device</strong> (maximum 5 contacts) and are never sent
-  to VoxGuard servers.</li>
+  to PauseSignal servers.</li>
   <li>A Family Shield alert is sent only when <strong>you tap to send it</strong>
   after a flagged session. The alert payload contains privacy-minimal metadata:
-  an opaque VoxGuard identity (<code>vg_…</code>), an incident reference, a risk
+  an opaque PauseSignal identity (<code>vg_…</code>), an incident reference, a risk
   band, an analysis-scope flag, and later a Safe / Still Suspicious response —
   never audio, transcripts, names, or phone numbers.</li>
-  <li>Alerts travel through a VoxGuard-operated relay which holds the OneSignal
+  <li>Alerts travel through a PauseSignal-operated relay which holds the OneSignal
   credentials; OneSignal delivers the push notification to devices that opted in.
   An "accepted" result means the relay accepted the request — it is not a
   guarantee of delivery to a specific device.</li>
@@ -96,7 +96,7 @@ app actually does today — not aspirational behavior.</p>
 <h2>Purchases</h2>
 <ul>
   <li>Subscriptions are handled by RevenueCat and your app store (Google Play /
-  App Store). VoxGuard receives an entitlement state (which plan is active) — we
+  App Store). PauseSignal receives an entitlement state (which plan is active) — we
   do not see or store your payment details.</li>
   <li>Web and desktop builds use a clearly labelled Demo Store that simulates
   checkout and never charges money.</li>
@@ -106,7 +106,7 @@ app actually does today — not aspirational behavior.</p>
 <ul>
   <li>No accounts, no analytics SDK, no advertising SDK, no cross-device
   tracking.</li>
-  <li>No contact-book or call-log access. VoxGuard cannot intercept native
+  <li>No contact-book or call-log access. PauseSignal cannot intercept native
   cellular calls.</li>
   <li>Direct Groq semantic analysis exists as a developer-only experiment and is
   disabled in production builds; the production semantic engine runs on-device.</li>

@@ -1,6 +1,6 @@
 {
-    "name": "VoxGuard",
-    "short_name": "VoxGuard",
+    "name": "PauseSignal",
+    "short_name": "PauseSignal",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0B0D13",
