@@ -78,13 +78,13 @@ or accounts — nothing unverified is claimed DONE.
 | RevenueCat Project ID | BLOCKED_EXTERNAL | dashboard value for Devpost form |
 | Devpost submission | BLOCKED_EXTERNAL | manual submission before Sep 30, 2026 11:45 PM PDT |
 
-## Automated verification (latest run — personalization/localization sprint)
+## Automated verification (latest run — localization consistency patch)
 
 | Check | Result |
 |-------|--------|
 | `flutter pub get` | PASS |
 | `flutter analyze` | PASS — 0 issues |
-| `flutter test` | PASS — 349/349 (incl. personalization/l10n suite + 19 consistency tests: source audit, 4-locale share reports, name reactivity, pref write-failure) |
+| `flutter test` | PASS — 361/361 (incl. personalization/l10n suite + consistency tests: multiline-aware source audit, domain-field guards, 4-locale share reports, name reactivity, pref write-failure, SafeCall/recording/incident/paywall localized surfaces) |
 | `flutter build web --release --base-href /voxguard/` | PASS |
 | `flutter build apk --debug` | PASS |
 | `cd server && npm ci && npm test` | PASS — 41/41 |

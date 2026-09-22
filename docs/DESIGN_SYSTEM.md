@@ -4,7 +4,7 @@ Status: **internal design reference** — VoxGuard is a working
 project name, not the final public brand. The visual system is
 deliberately name-agnostic: the `SignalMark` glyph and Signal Lens
 metaphor carry no letters, no shield, and no wordmark dependency, so
-a later rename only touches `AppStrings.appName` and store assets.
+a later rename only touches the `appName` ARB key and store assets.
 
 ---
 
