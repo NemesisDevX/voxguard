@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart' as http_testing;
@@ -11,8 +12,11 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:voxguard/core/services/alerts/family_contact_repository.dart';
 import 'package:voxguard/core/services/audio/pcm_codec.dart';
 import 'package:voxguard/core/services/family/family_shield_response.dart';
+import 'package:voxguard/core/services/preferences/app_preferences.dart';
 import 'package:voxguard/core/services/push/onesignal_push_identity_service.dart';
 import 'package:voxguard/core/services/push/push_identity_service.dart';
+import 'package:voxguard/core/theme/app_theme.dart';
+import 'package:voxguard/l10n/generated/app_localizations.dart';
 import 'package:voxguard/features/forensics/domain/models/incident_report.dart';
 import 'package:voxguard/features/forensics/domain/services/incident_repository.dart';
 import 'package:voxguard/features/forensics/presentation/screens/incident_detail_screen.dart';
@@ -1141,6 +1145,66 @@ void main() {
       await tester.tap(find.text('View Incident Report'));
       await tester.pumpAndSettle();
       expect(find.byType(IncidentDetailScreen), findsOneWidget);
+    });
+
+    testWidgets('full result renders the recommended action '
+        'localized — never the raw domain string', (tester) async {
+      AppPreferencesLocator.instance = AppPreferences.inMemory(
+        setupCompleted: true,
+        locale: AppLocaleOption.fr,
+      );
+      addTearDown(() => AppPreferencesLocator.instance =
+          AppPreferences.inMemory(setupCompleted: true));
+      tester.view.physicalSize = const Size(800, 3200);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(() {
+        tester.view.resetPhysicalSize();
+        tester.view.resetDevicePixelRatio();
+      });
+      final l = lookupAppLocalizations(const Locale('fr'));
+      await tester.pumpWidget(MaterialApp(
+        locale: const Locale('fr'),
+        supportedLocales: AppLocalizations.supportedLocales,
+        localizationsDelegates: const [
+          AppLocalizations.delegate,
+          GlobalMaterialLocalizations.delegate,
+          GlobalWidgetsLocalizations.delegate,
+          GlobalCupertinoLocalizations.delegate,
+        ],
+        theme: AppTheme.dark(),
+        home: AnalyzeRecordingScreen(
+          picker: _FakePicker(_file()),
+          analyzer: _analyzer(),
+        ),
+      ));
+      await tester.tap(find.text(l.recordingChooseAudio));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l.recordingManualTranscript));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byType(TextField), _scamTranscript);
+      await tester.scrollUntilVisible(
+        find.text(l.recordingAnalyzeAction),
+        200,
+        scrollable: find.ancestor(
+          of: find.text('call.mp3'),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      await tester.ensureVisible(find.text(l.recordingAnalyzeAction));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(l.recordingAnalyzeAction));
+      await tester.pumpAndSettle();
+
+      // The stable English action the fusion engine emitted must be
+      // mapped — never rendered raw — in a non-English UI.
+      expect(find.text(l.actionEndCall), findsWidgets);
+      expect(
+          find.text('End call immediately and alert a trusted contact'),
+          findsNothing);
+      expect(find.text('Financial transfer demand detected'),
+          findsNothing);
+      // The reasons card stays localized too.
+      expect(find.text(l.reasonFinancial), findsWidgets);
     });
 
     testWidgets('unconfigured transcription disables enhanced mode',

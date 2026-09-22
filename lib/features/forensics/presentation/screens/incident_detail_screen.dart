@@ -159,7 +159,11 @@ class IncidentDetailScreen extends StatelessWidget {
           _TechnicalEvidenceSection(incident: incident),
           const SizedBox(height: 20),
           Text(
-            incident.disclaimer,
+            // The persisted field stays stable English; the known
+            // default localizes, a future custom value passes through.
+            incident.disclaimer == IncidentReport.legalDisclaimer
+                ? l10n.reportDisclaimer
+                : incident.disclaimer,
             textAlign: TextAlign.center,
             style: AppTypography.labelSmall.copyWith(
               fontWeight: FontWeight.w500,

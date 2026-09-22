@@ -9,7 +9,7 @@ or accounts — nothing unverified is claimed DONE.
 
 | Item | Status | Proof |
 |------|--------|-------|
-| Truth sweep — no interception/background/probability/guarantee claims | DONE | repo sweep; disclaimer strings in `app_strings.dart` |
+| Truth sweep — no interception/background/probability/guarantee claims | DONE | repo sweep; disclaimer strings in `IncidentReport.legalDisclaimer` + `reportDisclaimer` ARB |
 | Package-ID collision resolved | DONE | `com.nemesisdevx.voxguard` — Android `applicationId`/`namespace`, Kotlin package path, iOS/macOS bundle IDs, Linux app ID, Windows runner; zero active release configuration uses `com.voxguard.app` (historical docs retain it factually) |
 | Incident deletion | DONE | `IIncidentRepository.deleteIncident` — persisted + in-memory impls, AppBar delete action with confirm dialog; persisted impl writes storage first and reports failure only via `IncidentPersistenceException` (no silent swallow), UI shows safe retry copy |
 | Live Shield removed from release UI | DONE | roadmap-only in README |
@@ -37,7 +37,7 @@ or accounts — nothing unverified is claimed DONE.
 | 1179×2556 screenshots (7) | DONE | `submission/screenshots/` — real renders at native size, verified dimensions |
 | 1024×1024 icon | DONE — provisional | `submission/voxguard-icon-1024.png` verified dimensions; not the final Design Award identity — pending public rebrand |
 | MIT license (Next Gen OSS requirement) | DONE | `LICENSE` |
-| Flutter localization (gen_l10n, 4 locales) | DONE | `flutter_localizations` + `l10n.yaml`; **536 keys** with enforced parity across `en`/`ar`/`es`/`fr`; `context.l10n` + binding-safe `l10nGlobal`; `LocalizedText` maps frozen domain messages at the presentation layer — engines/persistence untouched; share reports localize fully per current locale; source audit test blocks new hardcoded consumer copy |
+| Flutter localization (gen_l10n, 4 locales) | DONE | `flutter_localizations` + `l10n.yaml`; **577 keys** (programmatic non-metadata count) with enforced parity across `en`/`ar`/`es`/`fr`; `context.l10n` + binding-safe `l10nGlobal`; `LocalizedText` maps frozen domain messages at the presentation layer — engines/persistence untouched; share reports localize fully per current locale; multiline-aware source audit + domain-field guards block new hardcoded consumer copy |
 | First-run Welcome Setup | DONE | `welcome_setup_screen.dart` — language picker (no flags, applies immediately) + optional local-only display name (≤32 chars, trimmed, skippable); runs before safety onboarding; zero permission prompts; `StartupGate` chains splash → welcome → onboarding |
 | SignalMark launch experience | DONE | `launch_splash.dart` — finite 900 ms two-path converge animation, static fade under reduced motion; native surfaces (Android `launch_background`, iOS `LaunchImage`) regenerated to the SignalMark on deep ink |
 | Persistent preferences layer | DONE | `AppPreferences` + `AppPreferencesLocator` — display name, locale, theme, accent, text size, motion, haptics, experience mode; stable enum storage IDs; corrupt values fall back safely; `inMemory` test factory; setters return `Future<bool>` — failed/throwing writes mutate nothing and never claim persistence (Settings + Welcome Setup surface a localized retry) |

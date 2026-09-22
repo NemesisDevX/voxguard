@@ -64,7 +64,8 @@ the alert payload").
 
 Proper Flutter localization: `flutter_localizations` + `gen_l10n`
 (`l10n.yaml`, sources in `lib/l10n/arb/`, output in
-`lib/l10n/generated/`). **536 message keys**, identical sets across
+`lib/l10n/generated/`). **577 message keys** (counted
+programmatically — non-metadata entries), identical sets across
 `en`, `ar`, `es`, `fr` — parity enforced by test.
 
 - `context.l10n` for widgets; `l10n`/`l10nGlobal` accessor resolves
@@ -80,13 +81,22 @@ Proper Flutter localization: `flutter_localizations` + `gen_l10n`
   so a persisted incident shares in whichever language is selected
   NOW without any storage migration. Incident id, timestamps,
   SHA-256, scores and raw transcript content stay verbatim.
-- A source audit test scans presentation `lib/` files for
-  multi-word English literals in UI-bearing contexts (`Text`,
-  labels, tooltips, dialogs, SnackBars, string-returning positions)
-  and fails on any bypass. Explicitly whitelisted: `vg_…` protocol
-  IDs, `SHA-256`, numeric/time formats, URLs, placeholders, and
-  domain constants used for comparison (never rendered) such as
-  `'No significant threat indicators'`.
+- A multiline-aware source audit test scans presentation `lib/`
+  files for English literals inside UI-bearing constructs — `Text`,
+  buttons, dialog title/content/actions, SnackBars, tooltips,
+  labels, and `return`/`=>` copy positions — by resolving each
+  literal's enclosing construct rather than matching a single line.
+  A companion guard fails on stable domain fields
+  (`primaryThreatReasons` elements, `recommendedAction`,
+  `incident.disclaimer`, billing-cycle label/suffix) reaching the UI
+  without the mapper. Explicitly whitelisted: `vg_…` protocol IDs,
+  `SHA-256`, the app version `1.0.0`, numeric/time formats, URLs,
+  `{placeholders}`, provider names (`AssemblyAI`, `RevenueCat`,
+  `OneSignal`, `Demo Store`), and the fusion predicate
+  `'No significant threat indicators'`. Comparison-only wire values
+  (`'highRisk'`, `'suspicious'`, `'partial'`) never render and are
+  not copy by construction — the audit's statement analysis leaves
+  them alone.
 - Arabic uses full RTL layout automatically. Mixed Arabic/Latin
   transcript rendering keeps the existing first-strong-direction
   behavior (Noto Naskh fallback in captures).

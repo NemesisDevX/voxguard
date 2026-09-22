@@ -21,6 +21,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionDone => 'Done';
 
   @override
+  String get actionContactAuthority =>
+      'Contact the relevant bank/carrier/authority if needed';
+
+  @override
   String get actionSave => 'Save';
 
   @override
@@ -1317,6 +1321,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get billingAnnual => 'Annual';
+
+  @override
+  String get priceSuffixMonthly => '/mo';
+
+  @override
+  String get priceSuffixAnnual => '/yr';
 
   @override
   String get settingsTitle => 'Settings';

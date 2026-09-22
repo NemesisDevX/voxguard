@@ -21,6 +21,10 @@ class AppLocalizationsEs extends AppLocalizations {
   String get actionDone => 'Listo';
 
   @override
+  String get actionContactAuthority =>
+      'Contacta con el banco, la operadora o la autoridad correspondiente si es necesario';
+
+  @override
   String get actionSave => 'Guardar';
 
   @override
@@ -1333,6 +1337,12 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get billingAnnual => 'Anual';
+
+  @override
+  String get priceSuffixMonthly => '/mes';
+
+  @override
+  String get priceSuffixAnnual => '/año';
 
   @override
   String get settingsTitle => 'Ajustes';

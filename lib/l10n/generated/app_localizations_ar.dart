@@ -21,6 +21,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get actionDone => 'تم';
 
   @override
+  String get actionContactAuthority =>
+      'تواصل مع البنك أو شركة الاتصال أو الجهة المختصة عند الحاجة';
+
+  @override
   String get actionSave => 'حفظ';
 
   @override
@@ -1297,6 +1301,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get billingAnnual => 'سنوي';
+
+  @override
+  String get priceSuffixMonthly => '/شهر';
+
+  @override
+  String get priceSuffixAnnual => '/سنة';
 
   @override
   String get settingsTitle => 'الإعدادات';

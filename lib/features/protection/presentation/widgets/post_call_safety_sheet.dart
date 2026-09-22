@@ -133,7 +133,7 @@ class PostCallSafetySheet extends StatelessWidget {
               child: TextButton(
                 onPressed: () => Navigator.of(context).pop(),
                 child: Text(
-                  'Done',
+                  l10n.actionDone,
                   style: TextStyle(color: p.textMuted),
                 ),
               ),

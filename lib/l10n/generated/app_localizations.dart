@@ -126,6 +126,12 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get actionDone;
 
+  /// No description provided for @actionContactAuthority.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact the relevant bank/carrier/authority if needed'**
+  String get actionContactAuthority;
+
   /// No description provided for @actionSave.
   ///
   /// In en, this message translates to:
@@ -2429,6 +2435,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Annual'**
   String get billingAnnual;
+
+  /// No description provided for @priceSuffixMonthly.
+  ///
+  /// In en, this message translates to:
+  /// **'/mo'**
+  String get priceSuffixMonthly;
+
+  /// No description provided for @priceSuffixAnnual.
+  ///
+  /// In en, this message translates to:
+  /// **'/yr'**
+  String get priceSuffixAnnual;
 
   /// No description provided for @settingsTitle.
   ///

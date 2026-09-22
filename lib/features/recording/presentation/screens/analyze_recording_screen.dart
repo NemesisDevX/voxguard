@@ -547,7 +547,7 @@ class _SentinelChip extends StatelessWidget {
         ),
       ),
       child: Text(
-        'SENTINEL',
+        context.l10n.recordingSentinelBadge,
         style: TextStyle(
           fontSize: 8,
           fontWeight: FontWeight.w800,
@@ -722,7 +722,7 @@ class _FullResultHeader extends StatelessWidget {
         ),
         const SizedBox(height: 8),
         Text(
-          report.recommendedAction,
+          context.threatReason(report.recommendedAction),
           textAlign: TextAlign.center,
           style: AppTypography.bodyMedium,
         ),

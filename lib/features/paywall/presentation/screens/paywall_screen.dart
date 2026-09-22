@@ -204,7 +204,11 @@ class _PaywallContent extends StatelessWidget {
     final offers = loaded.packages[t.tierId];
     if (offers == null || offers.isEmpty) return '—';
     final pkg = offers[loaded.cycle] ?? offers.values.first;
-    return '${pkg.priceString}${pkg.cycle.priceSuffix}';
+    final suffix = switch (pkg.cycle) {
+      BillingCycle.monthly => l10n.priceSuffixMonthly,
+      BillingCycle.annual => l10n.priceSuffixAnnual,
+    };
+    return '${pkg.priceString}$suffix';
   }
 }
 
@@ -333,6 +337,14 @@ class _BillingToggle extends StatelessWidget {
   final List<BillingCycle> availableCycles;
   final ValueChanged<BillingCycle> onSelect;
 
+  /// Localized cycle label at the presentation boundary — the enum's
+  /// `label` stays a stable domain value.
+  String _cycleLabel(BuildContext context, BillingCycle c) =>
+      switch (c) {
+        BillingCycle.monthly => context.l10n.billingMonthly,
+        BillingCycle.annual => context.l10n.billingAnnual,
+      };
+
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
@@ -346,7 +358,8 @@ class _BillingToggle extends StatelessWidget {
       child: Row(
         children: [
           for (final c in BillingCycle.values)
-            _pill(c, c.label, enabled: availableCycles.contains(c), p: p),
+            _pill(c, _cycleLabel(context, c),
+                enabled: availableCycles.contains(c), p: p),
         ],
       ),
     );

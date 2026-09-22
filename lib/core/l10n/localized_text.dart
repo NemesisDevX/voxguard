@@ -183,6 +183,8 @@ Map<String, String Function(AppLocalizations)> _reasonMap = {
   'Verify the caller through an official channel':
       (l) => l.actionVerifyChannel,
   'Report the number to your carrier or authorities': (l) => l.actionReport,
+  'Contact the relevant bank/carrier/authority if needed':
+      (l) => l.actionContactAuthority,
   'Enable Family Shield alerts for relatives': (l) => l.actionEnableFamily,
   'Do not act on time-limited offers under pressure':
       (l) => l.actionNoTimeOffers,

@@ -24,8 +24,10 @@ class ThreatMeterCard extends StatelessWidget {
     required this.value,
     this.icon = Icons.graphic_eq,
     this.style = ThreatMeterStyle.percent,
-    this.normalLabel = 'NORMAL',
-    this.elevatedLabel = 'ELEVATED',
+    // Localized status copy — required so no English default can
+    // ever reach the chip.
+    required this.normalLabel,
+    required this.elevatedLabel,
   });
 
   /// Signal name, e.g. "Urgent Pressure".

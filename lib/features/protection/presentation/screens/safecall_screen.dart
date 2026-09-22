@@ -203,10 +203,12 @@ class _SafeCallViewState extends State<_SafeCallView>
                           duration: const Duration(milliseconds: 300),
                           child: Text(
                             conversationAnalyzed
-                                ? SignalLens.interpretation(score)
+                                ? SignalLens.interpretation(
+                                    score, context.l10n)
                                 : partialSupport,
                             key: ValueKey(conversationAnalyzed
-                                ? SignalLens.stateLabel(score)
+                                ? SignalLens.stateLabel(
+                                    score, context.l10n)
                                 : 'acoustic-only'),
                             textAlign: TextAlign.center,
                             style: AppTypography.bodyLarge.copyWith(
@@ -225,7 +227,8 @@ class _SafeCallViewState extends State<_SafeCallView>
                         const SizedBox(height: 6),
                         Center(
                           child: Text(
-                            report.primaryThreatReasons.first,
+                            context.threatReason(
+                                report.primaryThreatReasons.first),
                             textAlign: TextAlign.center,
                             style: AppTypography.bodyMedium,
                           ),
@@ -747,18 +750,24 @@ class _TechnicalDetailsState extends State<_TechnicalDetails> {
                     title: l10n.signalUrgency,
                     value: widget.semantic.urgencyScore,
                     icon: Icons.priority_high,
+                    normalLabel: l10n.statusNormal,
+                    elevatedLabel: l10n.statusElevated,
                   ),
                   const SizedBox(height: 10),
                   ThreatMeterCard(
                     title: l10n.signalFinancial,
                     value: widget.semantic.financialDemandScore,
                     icon: Icons.payments_outlined,
+                    normalLabel: l10n.statusNormal,
+                    elevatedLabel: l10n.statusElevated,
                   ),
                   const SizedBox(height: 10),
                   ThreatMeterCard(
                     title: l10n.signalSecrecy,
                     value: widget.semantic.secrecyScore,
                     icon: Icons.visibility_off_outlined,
+                    normalLabel: l10n.statusNormal,
+                    elevatedLabel: l10n.statusElevated,
                   ),
                 ],
               ),
@@ -871,8 +880,10 @@ class _SessionActionBar extends StatelessWidget {
               ? l10n.bannerAcousticElevated
               : l10n.bannerAcousticOnly)
           : report.riskLevel == ThreatRiskLevel.suspicious
-              ? report.primaryThreatReasons.firstOrNull ??
-                  l10n.bannerElevatedDetail
+              ? (report.primaryThreatReasons.firstOrNull == null
+                  ? l10n.bannerElevatedDetail
+                  : context.threatReason(
+                      report.primaryThreatReasons.first))
               : l10n.bannerProtectedDetail;
       return Container(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
@@ -932,8 +943,10 @@ class _SessionActionBar extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Text(
-            report.primaryThreatReasons.firstOrNull ??
-                l10n.bannerThreatDetail,
+            report.primaryThreatReasons.firstOrNull == null
+                ? l10n.bannerThreatDetail
+                : context.threatReason(
+                    report.primaryThreatReasons.first),
             style: AppTypography.bodyMedium,
           ),
           const SizedBox(height: 6),
