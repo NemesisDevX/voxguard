@@ -78,7 +78,9 @@ final class ThreatFusionEngine {
       );
     }
     if (acoustic.isSyntheticElevated) {
-      reasons.add('Synthetic-voice indicators elevated');
+      // User-facing copy: heuristic acoustic anomaly, not a
+      // validated synthetic-voice detection claim.
+      reasons.add('Acoustic anomaly indicators elevated');
     }
     if (coordinatedAttack) {
       reasons.add('Coordinated scam pattern — amplified');

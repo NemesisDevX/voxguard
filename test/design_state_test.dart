@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -11,6 +13,7 @@ import 'package:voxguard/features/protection/domain/models/audio_forensic_metric
 import 'package:voxguard/features/protection/domain/models/composite_threat_report.dart';
 import 'package:voxguard/features/protection/domain/models/semantic_threat_signals.dart';
 import 'package:voxguard/features/protection/domain/models/transcript_snippet.dart';
+import 'package:voxguard/features/protection/domain/services/semantic_threat_service.dart';
 import 'package:voxguard/features/protection/presentation/bloc/safecall_bloc.dart';
 import 'package:voxguard/features/protection/presentation/bloc/safecall_event.dart';
 import 'package:voxguard/features/protection/presentation/bloc/safecall_state.dart';
@@ -394,7 +397,7 @@ void main() {
             compositeRiskScore: 0.315,
             riskLevel: ThreatRiskLevel.safe,
             primaryThreatReasons: [
-              'Synthetic-voice indicators elevated'
+              'Acoustic anomaly indicators elevated'
             ],
             recommendedAction: 'Continue monitoring',
           ),
@@ -595,6 +598,134 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   });
+
+  group('stale semantic results', () {
+    // Regression: analysis is async (the dev-remote path can take
+    // seconds). A Future captured under session A must commit nothing
+    // to session B, and a superseded in-session request must never
+    // overwrite fresher evidence.
+    SafeCallMonitoring monitoring() => SafeCallMonitoring(
+          acoustic: const AudioForensicMetrics(
+            spectralFlux: 0.3,
+            spectralRolloffRatio: 0.6,
+            zeroCrossingRate: 0.2,
+            syntheticVoiceScore: 0.9,
+          ),
+          semantic: const SemanticThreatSignals.empty(),
+          report: const CompositeThreatReport(
+            compositeRiskScore: 0.315,
+            riskLevel: ThreatRiskLevel.safe,
+            primaryThreatReasons: [],
+            recommendedAction: 'Continue monitoring',
+          ),
+          transcript: const [],
+          audioSourceType: AudioSourceType.microphone,
+          isTranscriptionLive: true,
+          cloudTranscriptionEntitled: true,
+        );
+
+    testWidgets('in-flight analysis across reset — the old result '
+        'commits nothing to the new session', (tester) async {
+      final semantic = _ControlledSemanticAnalyzer();
+      final bloc = SafeCallBloc(
+        demoSource: _SilentDemoSource(),
+        semanticService: semantic,
+        initialState: monitoring(),
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: SafeCallScreen(bloc: bloc),
+      ));
+      await settle(tester);
+      expect(find.text('ACOUSTIC ONLY'), findsOneWidget);
+
+      // Session A: analysis begins and stays in flight.
+      bloc.add(const IncomingTranscriptSnippetEvent(
+          speaker: 'Caller', text: 'send the money now'));
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(semantic.pending, hasLength(1));
+
+      // Session torn down and restarted before the Future resolves.
+      bloc.add(const ResetCallEvent());
+      await settle(tester);
+      bloc.add(const StartDemoSessionEvent());
+      await settle(tester);
+      expect(find.text('ACOUSTIC ONLY'), findsOneWidget);
+
+      // Session A's result lands late — zero observable effect:
+      // no verdict, no provenance, no mutation of the new session's
+      // semantic evidence.
+      semantic.pending.single.complete(const SemanticThreatSignals(
+        urgencyScore: 1.0,
+        financialDemandScore: 1.0,
+        secrecyScore: 1.0,
+        detectedKeywords: ['transfer'],
+        impersonationClaims: [],
+      ));
+      await settle(tester);
+      expect(find.text('ACOUSTIC ONLY'), findsOneWidget);
+      final s = bloc.state as SafeCallMonitoring;
+      expect(s.semanticAnalysisHasRun, isFalse);
+      expect(s.semantic.urgencyScore, 0.0);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('overlapping analyses — newest request wins even '
+        'when the older Future resolves last', (tester) async {
+      final semantic = _ControlledSemanticAnalyzer();
+      final bloc = SafeCallBloc(
+        demoSource: _SilentDemoSource(),
+        semanticService: semantic,
+        initialState: monitoring(),
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: SafeCallScreen(bloc: bloc),
+      ));
+      await settle(tester);
+
+      // Partial → debounce elapses → request 1 begins.
+      bloc.add(const IncomingTranscriptPartialEvent(
+          'first partial hypothesis'));
+      await tester.pump(const Duration(milliseconds: 1400));
+      await tester.pump();
+      expect(semantic.pending, hasLength(1));
+
+      // A committed snippet starts request 2 while 1 is in flight.
+      bloc.add(const IncomingTranscriptSnippetEvent(
+          speaker: 'Caller', text: 'urgent: send money now'));
+      await tester.pump(const Duration(milliseconds: 60));
+      expect(semantic.pending, hasLength(2));
+
+      // Newer request resolves first — it commits.
+      semantic.pending[1].complete(const SemanticThreatSignals(
+        urgencyScore: 0.9,
+        financialDemandScore: 0,
+        secrecyScore: 0,
+        detectedKeywords: [],
+        impersonationClaims: [],
+      ));
+      await settle(tester);
+      expect(find.text('RISK SIGNAL'), findsOneWidget);
+      var s = bloc.state as SafeCallMonitoring;
+      expect(s.semantic.urgencyScore, 0.9);
+      expect(s.semanticAnalysisHasRun, isTrue);
+
+      // Older request resolves late — dropped; the newer evidence
+      // and the full fused lens are untouched.
+      semantic.pending[0].complete(const SemanticThreatSignals(
+        urgencyScore: 0,
+        financialDemandScore: 0,
+        secrecyScore: 0.99,
+        detectedKeywords: [],
+        impersonationClaims: [],
+      ));
+      await settle(tester);
+      s = bloc.state as SafeCallMonitoring;
+      expect(s.semantic.urgencyScore, 0.9);
+      expect(s.semantic.secrecyScore, 0.0);
+      expect(find.text('RISK SIGNAL'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+  });
 }
 
 /// Demo source without the chunk-generation timer — sessions start
@@ -606,4 +737,18 @@ final class _SilentDemoSource extends DemoAudioSource {
 
   @override
   Future<void> dispose() async {}
+}
+
+/// Semantic analyzer gated on test-controlled Completers — each call
+/// parks until the test resolves it, so in-flight ordering is fully
+/// deterministic with no real delays.
+final class _ControlledSemanticAnalyzer implements ISemanticThreatAnalyzer {
+  final List<Completer<SemanticThreatSignals>> pending = [];
+
+  @override
+  Future<SemanticThreatSignals> analyze(String transcript) {
+    final c = Completer<SemanticThreatSignals>();
+    pending.add(c);
+    return c.future;
+  }
 }

@@ -45,7 +45,7 @@ import 'safecall_state.dart';
 final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   SafeCallBloc({
     AcousticForensicsService? acousticService,
-    SemanticThreatService? semanticService,
+    ISemanticThreatAnalyzer? semanticService,
     ThreatFusionEngine? fusionEngine,
     IAudioStreamSource? microphoneSource,
     DemoAudioSource? demoSource,
@@ -107,7 +107,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
 
   // ── Dependencies & session state ─────────────────────────────────
   final AcousticForensicsService _acousticService;
-  final SemanticThreatService _semanticService;
+  final ISemanticThreatAnalyzer _semanticService;
   final ThreatFusionEngine _fusionEngine;
   final IAudioStreamSource _micSource;
   final DemoAudioSource _demoSource;
@@ -147,6 +147,18 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   /// lens that flipped on text alone would mint a fused band from a
   /// composite whose semantic layer is still the zero baseline.
   bool _semanticAnalysisHasRun = false;
+
+  /// Session generation — incremented whenever the session is
+  /// torn down or reset. A semantic Future captured under an older
+  /// generation commits nothing: the previous session's result must
+  /// never mutate the new session's evidence.
+  int _sessionGeneration = 0;
+
+  /// Semantic request sequence — bumped as each analysis begins.
+  /// Only the newest request of the current generation may commit;
+  /// an older Future resolving later is dropped wholesale rather
+  /// than allowed to overwrite fresher evidence.
+  int _semanticRequestSeq = 0;
 
   /// Forensic bookkeeping — call start time and a genuine rolling
   /// SHA-256 digest over every normalized PCM byte analyzed.
@@ -394,15 +406,27 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   /// Internal debounce target — keeps analysis off the per-partial
   /// hot path.
   Future<void> _runSemanticAnalysis(Emitter<SafeCallState> emit) async {
+    // Ordering guard — capture BEFORE the await. Nothing below this
+    // line may mutate session state until the result is proven fresh.
+    final generation = _sessionGeneration;
+    final requestId = ++_semanticRequestSeq;
     // Analyze the accumulated caller speech as one rolling document so
     // phrases split across STT segments still resolve.
     final context = _buffer.analysisContext;
-    _semantic = await _semanticService.analyze(context);
+    final result = await _semanticService.analyze(context);
+    // Stale if the session was reset/ended underneath us (generation
+    // moved) or a newer analysis began while this one was in flight.
+    // A stale Future has zero observable effect — return untouched.
+    if (generation != _sessionGeneration ||
+        requestId != _semanticRequestSeq) {
+      return;
+    }
+    if (state is! SafeCallMonitoring || emit.isDone) return;
+    _semantic = result;
     // Provenance is earned by completion, not by score: a benign
     // result over real conversation still means the layer ran —
     // only an empty context leaves the lens acoustic-only.
     if (context.trim().isNotEmpty) _semanticAnalysisHasRun = true;
-    if (state is! SafeCallMonitoring || emit.isDone) return;
     emit(_snapshot());
   }
 
@@ -556,7 +580,11 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   }
 
   /// Stops capture + STT without touching accumulated session state.
+  /// Also invalidates in-flight semantic work — a Future captured
+  /// under the old generation commits nothing once teardown begins
+  /// (end, reset, restart and close all funnel through here).
   Future<void> _teardownAudio() async {
+    _sessionGeneration++;
     await _audioSub?.cancel();
     _audioSub = null;
     await _activeSource?.stop();

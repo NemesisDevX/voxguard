@@ -12,13 +12,22 @@ import '../models/semantic_threat_signals.dart';
 /// failure — a deterministic bilingual (EN / Egyptian-Arabic) rule
 /// engine produces the same signal shape locally.
 ///
+/// Minimal contract for the conversation-risk engine — the seam the
+/// SafeCall bloc depends on. Tests inject a controllable fake through
+/// it; [SemanticThreatService] is the production implementation
+/// (deterministic local rules + explicit opt-in dev remote).
+abstract interface class ISemanticThreatAnalyzer {
+  /// Analyzes accumulated transcript text and returns threat signals.
+  Future<SemanticThreatSignals> analyze(String transcript);
+}
+
 /// **Security note:** remote Groq semantics are a *development-only*
 /// escape hatch — production VoxGuard uses the deterministic local
 /// rule engine. Remote analysis requires BOTH a key AND the explicit
 /// opt-in flag `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true`; a key
 /// alone (e.g. left in a release build) is not enough. A permanent
 /// Groq key must never ship in a released build.
-final class SemanticThreatService {
+final class SemanticThreatService implements ISemanticThreatAnalyzer {
   SemanticThreatService({
     http.Client? httpClient,
     String? apiKey,
@@ -51,6 +60,7 @@ final class SemanticThreatService {
   ///
   /// Uses Groq only when [remoteSemanticEnabled]; otherwise — and on
   /// any remote failure — the deterministic local rule engine runs.
+  @override
   Future<SemanticThreatSignals> analyze(String transcript) async {
     if (transcript.trim().isEmpty) {
       return const SemanticThreatSignals.empty();

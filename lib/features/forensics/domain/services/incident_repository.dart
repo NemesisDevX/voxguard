@@ -91,7 +91,7 @@ final class InMemoryIncidentRepository implements IIncidentRepository {
           'Financial transfer demand detected',
           'Secrecy & isolation pressure',
           'Identity impersonation claim: "أخوك"',
-          'Synthetic voice indicators elevated',
+          'Acoustic anomaly indicators elevated',
           'Coordinated scam pattern — amplified',
         ],
         acousticMetrics: const AudioForensicMetrics(

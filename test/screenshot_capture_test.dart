@@ -185,7 +185,7 @@ void main() {
       threatReasons: const [
         'Caller claimed to be a family member',
         'Urgent money demand detected',
-        'Acoustic indicators elevated',
+        'Acoustic anomaly indicators elevated',
       ],
       acousticMetrics: const AudioForensicMetrics(
         spectralFlux: 0.31,
