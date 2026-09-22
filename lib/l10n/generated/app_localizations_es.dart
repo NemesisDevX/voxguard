@@ -139,17 +139,17 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get whyElevatedAcousticTitle =>
-      'POR QUÉ VOXGUARD DETECTÓ SEÑALES ACÚSTICAS ELEVADAS';
+      'POR QUÉ PAUSESIGNAL DETECTÓ SEÑALES ACÚSTICAS ELEVADAS';
 
   @override
   String get whyFlaggedRecordingTitle =>
-      'POR QUÉ VOXGUARD MARCÓ ESTA GRABACIÓN';
+      'POR QUÉ PAUSESIGNAL MARCÓ ESTA GRABACIÓN';
 
   @override
-  String get whyFlaggedCallTitle => 'POR QUÉ VOXGUARD MARCÓ ESTA LLAMADA';
+  String get whyFlaggedCallTitle => 'POR QUÉ PAUSESIGNAL MARCÓ ESTA LLAMADA';
 
   @override
-  String get whyFlaggedItTitle => 'POR QUÉ VOXGUARD LA MARCÓ';
+  String get whyFlaggedItTitle => 'POR QUÉ PAUSESIGNAL LA MARCÓ';
 
   @override
   String get welcomeTitle => 'Una forma más tranquila de contestar.';

@@ -333,25 +333,25 @@ abstract class AppLocalizations {
   /// No description provided for @whyElevatedAcousticTitle.
   ///
   /// In en, this message translates to:
-  /// **'WHY VOXGUARD FOUND ELEVATED ACOUSTIC SIGNALS'**
+  /// **'WHY PAUSESIGNAL FOUND ELEVATED ACOUSTIC SIGNALS'**
   String get whyElevatedAcousticTitle;
 
   /// No description provided for @whyFlaggedRecordingTitle.
   ///
   /// In en, this message translates to:
-  /// **'WHY VOXGUARD FLAGGED THIS RECORDING'**
+  /// **'WHY PAUSESIGNAL FLAGGED THIS RECORDING'**
   String get whyFlaggedRecordingTitle;
 
   /// No description provided for @whyFlaggedCallTitle.
   ///
   /// In en, this message translates to:
-  /// **'WHY VOXGUARD FLAGGED THIS CALL'**
+  /// **'WHY PAUSESIGNAL FLAGGED THIS CALL'**
   String get whyFlaggedCallTitle;
 
   /// No description provided for @whyFlaggedItTitle.
   ///
   /// In en, this message translates to:
-  /// **'WHY VOXGUARD FLAGGED IT'**
+  /// **'WHY PAUSESIGNAL FLAGGED IT'**
   String get whyFlaggedItTitle;
 
   /// No description provided for @welcomeTitle.

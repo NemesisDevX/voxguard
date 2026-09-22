@@ -138,16 +138,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get whyElevatedAcousticTitle =>
-      'WHY VOXGUARD FOUND ELEVATED ACOUSTIC SIGNALS';
+      'WHY PAUSESIGNAL FOUND ELEVATED ACOUSTIC SIGNALS';
 
   @override
-  String get whyFlaggedRecordingTitle => 'WHY VOXGUARD FLAGGED THIS RECORDING';
+  String get whyFlaggedRecordingTitle =>
+      'WHY PAUSESIGNAL FLAGGED THIS RECORDING';
 
   @override
-  String get whyFlaggedCallTitle => 'WHY VOXGUARD FLAGGED THIS CALL';
+  String get whyFlaggedCallTitle => 'WHY PAUSESIGNAL FLAGGED THIS CALL';
 
   @override
-  String get whyFlaggedItTitle => 'WHY VOXGUARD FLAGGED IT';
+  String get whyFlaggedItTitle => 'WHY PAUSESIGNAL FLAGGED IT';
 
   @override
   String get welcomeTitle => 'A calmer way to answer.';
