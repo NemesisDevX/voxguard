@@ -29,9 +29,14 @@ public brand remain human-owned.
   working name only — a published product plus a related trademark
   filing already use it. Keep or replace is a human call; the rename
   inventory is ready (`docs/BRAND_RENAME_INVENTORY.md`).
-- **Judge premium-access method** for Shipaton (demo mode is already
-  sufficient for the judging loop; a RevenueCat promotional/sandbox
-  grant is the alternative).
+- **Judge premium-access method** for Shipaton — required, pick one:
+  configure an appropriate free trial that unlocks premium features
+  for judges, or provide a supported promo/redeem access method that
+  unlocks the in-app purchase. Demo Mode is useful for the
+  submission video, safety demonstrations and deterministic
+  fallbacks, but it is **not** a substitute for this required
+  mechanism. No trial/promo is configured or claimed yet — this is a
+  pending human configuration step.
 - **US availability** at store distribution time.
 
 ## Credentials / accounts required
@@ -115,7 +120,10 @@ Every row is **NOT RUN** until executed on real hardware. Order:
 - Final public brand decision (then run the rename inventory pass).
 - Live store URL + US availability confirmation.
 - RevenueCat Project ID for the Devpost form.
-- Premium judge-access method decision.
+- **Verified judge premium-access method** — a working free trial or
+  promo/redeem path that unlocks premium features for judges,
+  verified end-to-end before submission (separate from real
+  RevenueCat configuration and sandbox-purchase QA).
 - Final screenshots after any brand change (harness:
   `test/screenshot_capture_test.dart --update-goldens --dart-define=CAPTURE_SHOTS=true`).
 - Public demo video per `docs/DEMO_SCRIPT.md`.

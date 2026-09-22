@@ -66,7 +66,7 @@ or accounts — nothing unverified is claimed DONE.
 | US availability | BLOCKED_EXTERNAL | store distribution checkbox |
 | RevenueCat Dashboard products/entitlements/Offering | BLOCKED_EXTERNAL | dashboard config; docs in `docs/REVENUECAT_SETUP.md` |
 | Real sandbox purchase observed | NOT RUN | keyed build + physical device |
-| Judge premium-access method | BLOCKED_EXTERNAL | choose at submission: demo mode suffices for judging loop; or RC promotional/sandbox access |
+| Judge premium-access method | BLOCKED_EXTERNAL | required by Shipaton: configure a free trial or a supported promo/redeem path that unlocks premium features for judges — Demo Mode alone does NOT satisfy this; no method configured or verified yet |
 | Privacy URL live | DONE | `https://nemesisdevx.github.io/voxguard/privacy.html` — HTTP 200 verified |
 | Terms URL live | DONE | `https://nemesisdevx.github.io/voxguard/terms.html` — HTTP 200 verified |
 | OneSignal campaign deployed | BLOCKED_EXTERNAL | dashboard credentials; spec in `docs/ONESIGNAL_CAMPAIGN.md` |
