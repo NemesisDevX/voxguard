@@ -895,7 +895,7 @@ class _ReasonsCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return _Card(
-      title: 'WHY VOXGUARD FLAGGED IT',
+      title: AppStrings.whyFlaggedItTitle,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -959,7 +959,7 @@ class _AcousticCard extends StatelessWidget {
             const Padding(
               padding: EdgeInsets.only(top: 8),
               child: Text(
-                'Elevated synthetic-voice indicators detected.',
+                AppStrings.acousticAnomalyElevatedNote,
                 style: AppTypography.bodyMedium,
               ),
             ),

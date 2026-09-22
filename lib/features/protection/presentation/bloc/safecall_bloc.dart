@@ -139,6 +139,15 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   final TranscriptBuffer _buffer = TranscriptBuffer();
   String _partialTranscript = '';
 
+  /// Semantic-analysis provenance — true only after the conversation
+  /// engine has completed at least one analysis over non-empty text
+  /// this session. STT liveness, received text and displayed partial
+  /// hypotheses are NOT evidence the engine ran: a partial debounce
+  /// (~1200 ms) separates transcript arrival from analysis, and a
+  /// lens that flipped on text alone would mint a fused band from a
+  /// composite whose semantic layer is still the zero baseline.
+  bool _semanticAnalysisHasRun = false;
+
   /// Forensic bookkeeping — call start time and a genuine rolling
   /// SHA-256 digest over every normalized PCM byte analyzed.
   DateTime? _sessionStart;
@@ -387,8 +396,12 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
   Future<void> _runSemanticAnalysis(Emitter<SafeCallState> emit) async {
     // Analyze the accumulated caller speech as one rolling document so
     // phrases split across STT segments still resolve.
-    _semantic =
-        await _semanticService.analyze(_buffer.analysisContext);
+    final context = _buffer.analysisContext;
+    _semantic = await _semanticService.analyze(context);
+    // Provenance is earned by completion, not by score: a benign
+    // result over real conversation still means the layer ran —
+    // only an empty context leaves the lens acoustic-only.
+    if (context.trim().isNotEmpty) _semanticAnalysisHasRun = true;
     if (state is! SafeCallMonitoring || emit.isDone) return;
     emit(_snapshot());
   }
@@ -538,6 +551,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
       cloudTranscriptionEntitled:
           _productAccess.capabilities.liveCloudTranscription,
       partialTranscript: _partialTranscript,
+      semanticAnalysisHasRun: _semanticAnalysisHasRun,
     );
   }
 
@@ -563,6 +577,7 @@ final class SafeCallBloc extends Bloc<SafeCallEvent, SafeCallState> {
     _partialTranscript = '';
     _acoustic = const AudioForensicMetrics.zero();
     _semantic = const SemanticThreatSignals.empty();
+    _semanticAnalysisHasRun = false;
     _demoActive = false;
     _sttLive = false;
     _sttContributed = false;

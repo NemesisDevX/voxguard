@@ -128,13 +128,14 @@ class _SafeCallViewState extends State<_SafeCallView>
         final partial = monitoring?.partialTranscript ?? '';
         final score = report.compositeRiskScore;
 
-        // The conversation layer exists only when caller text has
-        // actually arrived for analysis — STT being connected is not
-        // evidence, and an acoustic-only composite must never render
-        // as a fused verdict (semantic×0.65 caps it at 0.35 → a false
-        // SAFE even when acoustic anomalies are elevated).
+        // The conversation layer exists only after the semantic
+        // engine has COMPLETED an analysis — caller text, a visible
+        // partial and STT liveness all arrive before that, and an
+        // acoustic-only composite must never render as a fused
+        // verdict (semantic×0.65 caps it at 0.35 → a false SAFE even
+        // when acoustic anomalies are elevated).
         final conversationAnalyzed =
-            transcript.isNotEmpty || partial.isNotEmpty;
+            monitoring?.semanticAnalysisHasRun ?? false;
         final semanticScore =
             conversationAnalyzed ? semantic.combinedScore : null;
         final acousticElevated = acoustic?.isSyntheticElevated ?? false;

@@ -17,6 +17,7 @@ or accounts — nothing unverified is claimed DONE.
 | Arabic/RTL first-strong-direction detection | DONE | `threat_phrase_highlighter.dart` + tests |
 | Reduced-motion respect (Signal Lens) | DONE | `MediaQuery.disableAnimations` wired — ambient breathing stops, state still renders |
 | Acoustic-only truthfulness | DONE | `SignalLens.conversationAnalyzed` — missing conversation layer renders `ACOUSTIC ONLY` + real acoustic anomaly, never a fused SAFE verdict; `test/design_state_test.dart` |
+| Semantic-analysis provenance | DONE | `SafeCallMonitoring.semanticAnalysisHasRun` — set only after `SemanticThreatService.analyze` completes over non-empty context (benign zero-signal results count); STT liveness, transcript text and displayed partials do NOT flip the lens; first partial stays `ACOUSTIC ONLY` through the ~1200 ms debounce, then full fused mode appears; reset returns scope to acoustic-only |
 | Display name `VoxGuard` normalized | DONE | Android label, iOS `CFBundleDisplayName`, web title/manifest |
 | Original VoxGuard icon — all densities + adaptive + web | DONE — **provisional** | `tool/generate_icons.py` → mipmap-*/AppIcon/web icons; shield motif predates the Signal Lens direction — final icon ships with the public rebrand per the SignalMark visual language |
 | Branded launch screens (Android + iOS) | DONE | `launch_background.xml`, `LaunchScreen.storyboard` |
@@ -64,13 +65,13 @@ or accounts — nothing unverified is claimed DONE.
 | RevenueCat Project ID | BLOCKED_EXTERNAL | dashboard value for Devpost form |
 | Devpost submission | BLOCKED_EXTERNAL | manual submission before Sep 30, 2026 11:45 PM PDT |
 
-## Automated verification (latest run — acoustic-only correctness pass)
+## Automated verification (latest run — semantic-provenance patch)
 
 | Check | Result |
 |-------|--------|
 | `flutter pub get` | PASS |
 | `flutter analyze` | PASS — 0 issues |
-| `flutter test` | PASS — 303/303 |
+| `flutter test` | PASS — 306/306 |
 | `flutter build web --release --base-href /voxguard/` | PASS |
 | `flutter build apk --debug` | PASS |
 | `cd server && npm ci && npm test` | PASS — 41/41 |

@@ -43,6 +43,7 @@ final class SafeCallMonitoring extends SafeCallState {
     this.isTranscriptionLive = false,
     this.cloudTranscriptionEntitled = false,
     this.partialTranscript = '',
+    this.semanticAnalysisHasRun = false,
   });
 
   /// Latest acoustic forensics snapshot (Engine A).
@@ -83,6 +84,14 @@ final class SafeCallMonitoring extends SafeCallState {
   /// committed to the transcript until finalized).
   final String partialTranscript;
 
+  /// Whether the semantic engine has completed at least one analysis
+  /// over non-empty conversation this session. **The only truthful
+  /// signal that the conversation layer exists** — transcript text,
+  /// partial hypotheses and STT liveness all arrive BEFORE analysis
+  /// completes, so they cannot license a fused verdict. A benign
+  /// zero-signal result still counts: the engine ran.
+  final bool semanticAnalysisHasRun;
+
   /// Single source of truth for demo provenance.
   bool get isDemoMode => audioSourceType == AudioSourceType.demo;
 
@@ -97,6 +106,7 @@ final class SafeCallMonitoring extends SafeCallState {
     bool? isTranscriptionLive,
     bool? cloudTranscriptionEntitled,
     String? partialTranscript,
+    bool? semanticAnalysisHasRun,
   }) {
     return SafeCallMonitoring(
       acoustic: acoustic ?? this.acoustic,
@@ -110,6 +120,8 @@ final class SafeCallMonitoring extends SafeCallState {
       cloudTranscriptionEntitled:
           cloudTranscriptionEntitled ?? this.cloudTranscriptionEntitled,
       partialTranscript: partialTranscript ?? this.partialTranscript,
+      semanticAnalysisHasRun:
+          semanticAnalysisHasRun ?? this.semanticAnalysisHasRun,
     );
   }
 
@@ -125,6 +137,7 @@ final class SafeCallMonitoring extends SafeCallState {
         isTranscriptionLive,
         cloudTranscriptionEntitled,
         partialTranscript,
+        semanticAnalysisHasRun,
       ];
 }
 

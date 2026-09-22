@@ -152,6 +152,11 @@ abstract final class AppStrings {
   static const String bannerAcousticElevated =
       'Acoustic anomaly elevated — conversation signals not analyzed';
 
+  /// Honest capability wording — the engine reports heuristic
+  /// anomaly indicators, never a validated synthetic-voice verdict.
+  static const String acousticAnomalyElevatedNote =
+      'Elevated acoustic anomaly indicators observed.';
+
   static const String liveTranscript = 'LIVE TRANSCRIPT';
   static const String transcriptEmpty =
       'Transcript appears here during a protected call.';
@@ -211,6 +216,17 @@ abstract final class AppStrings {
   static const String callSavedNumberHint =
       'Call the person back using a number you already trust.';
   static const String whyFlaggedTitle = 'Why $appName Flagged This Call';
+
+  /// ALL-CAPS card titles — getters because `toUpperCase` is not a
+  /// const expression; the rename seam stays [appName].
+  static String get whyElevatedAcousticTitle =>
+      'WHY ${appName.toUpperCase()} FOUND ELEVATED ACOUSTIC SIGNALS';
+  static String get whyFlaggedRecordingTitle =>
+      'WHY ${appName.toUpperCase()} FLAGGED THIS RECORDING';
+  static String get whyFlaggedCallTitle =>
+      'WHY ${appName.toUpperCase()} FLAGGED THIS CALL';
+  static String get whyFlaggedItTitle =>
+      'WHY ${appName.toUpperCase()} FLAGGED IT';
   static const String verifyIdentityTitle = 'Verify Identity';
   static const String verifyIdentityBody =
       'Call the person back using a number you already trust — never '

@@ -407,10 +407,10 @@ class _WhyFlaggedCard extends StatelessWidget {
   String get _title {
     if (incident.audioSourceLabel == 'Uploaded Recording') {
       return incident.analysisIsPartial
-          ? 'WHY VOXGUARD FOUND ELEVATED ACOUSTIC SIGNALS'
-          : 'WHY VOXGUARD FLAGGED THIS RECORDING';
+          ? AppStrings.whyElevatedAcousticTitle
+          : AppStrings.whyFlaggedRecordingTitle;
     }
-    return 'WHY VOXGUARD FLAGGED THIS CALL';
+    return AppStrings.whyFlaggedCallTitle;
   }
 
   @override

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:voxguard/core/services/alerts/family_contact_repository.dart';
 import 'package:voxguard/core/services/audio/audio_stream_source.dart';
+import 'package:voxguard/core/services/audio/demo_audio_source.dart';
 import 'package:voxguard/core/services/family/received_family_alert_repository.dart';
 import 'package:voxguard/features/family_shield/presentation/screens/family_alert_screen.dart';
 import 'package:voxguard/features/forensics/domain/models/incident_report.dart';
@@ -244,8 +245,9 @@ void main() {
               primaryThreatReasons: ['Urgent money demand detected'],
               recommendedAction: 'End the call',
             ),
-            // A high composite requires real conversation evidence —
-            // the seeded transcript keeps scope consistent.
+            // A high composite requires completed conversation
+            // analysis — provenance + transcript keep scope truthful.
+            semanticAnalysisHasRun: true,
             transcript: [
               TranscriptSnippet(
                 speaker: 'Caller',
@@ -466,4 +468,142 @@ void main() {
       await tester.pumpWidget(const SizedBox());
     });
   });
+
+  group('semantic-analysis provenance', () {
+    // Regression: the first streaming partial arrives ~1200 ms BEFORE
+    // the debounced semantic pass completes. Deriving scope from text
+    // presence flipped the lens to a fused verdict whose semantic
+    // layer was still the zero baseline. Scope must follow analysis
+    // completion only.
+    SafeCallMonitoring monitoring() => SafeCallMonitoring(
+          acoustic: const AudioForensicMetrics(
+            spectralFlux: 0.3,
+            spectralRolloffRatio: 0.6,
+            zeroCrossingRate: 0.2,
+            syntheticVoiceScore: 0.9,
+          ),
+          semantic: const SemanticThreatSignals.empty(),
+          report: const CompositeThreatReport(
+            compositeRiskScore: 0.315,
+            riskLevel: ThreatRiskLevel.safe,
+            primaryThreatReasons: [],
+            recommendedAction: 'Continue monitoring',
+          ),
+          transcript: const [],
+          audioSourceType: AudioSourceType.microphone,
+          isTranscriptionLive: true,
+          cloudTranscriptionEntitled: true,
+        );
+
+    void expectAcousticOnly() {
+      expect(find.text('ACOUSTIC ONLY'), findsOneWidget);
+      for (final band in ['SAFE', 'CAUTION', 'HIGH RISK']) {
+        expect(find.text(band), findsNothing, reason: '$band shown');
+      }
+      expect(find.text('RISK SIGNAL'), findsNothing);
+    }
+
+    testWidgets('STT live → first partial → debounce → analyzed — '
+        'scope follows analysis completion only', (tester) async {
+      final bloc = SafeCallBloc.seeded(monitoring());
+      await tester.pumpWidget(MaterialApp(
+        home: SafeCallScreen(bloc: bloc),
+      ));
+      await settle(tester);
+      // STT confirmed live — connection is not analysis.
+      bloc.add(const TranscriptionStatusChangedEvent(true));
+      await tester.pump(const Duration(milliseconds: 60));
+      expectAcousticOnly();
+
+      // First partial arrives and renders in the feed — the lens
+      // must NOT flip to a fused verdict yet.
+      bloc.add(const IncomingTranscriptPartialEvent(
+          'hello, can you hear me'));
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(find.textContaining('hello, can you hear me'),
+          findsWidgets);
+      expectAcousticOnly();
+
+      // Inside the debounce window — still acoustic-only.
+      await tester.pump(const Duration(milliseconds: 800));
+      expectAcousticOnly();
+
+      // Debounce elapses → analysis runs over the partial context →
+      // full fused mode appears (benign text → a real, analyzed SAFE).
+      await tester.pump(const Duration(milliseconds: 600));
+      await settle(tester, 4);
+      expect(find.text('ACOUSTIC ONLY'), findsNothing);
+      expect(find.text('RISK SIGNAL'), findsOneWidget);
+      expect(find.text('SAFE'), findsOneWidget);
+
+      // Later partials do not regress the lens while their own
+      // debounce is pending — analysis already ran this session.
+      bloc.add(const IncomingTranscriptPartialEvent(
+          'and how are you today'));
+      await tester.pump(const Duration(milliseconds: 120));
+      expect(find.text('RISK SIGNAL'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('benign transcript — zero semantic scores still '
+        'count as analyzed', (tester) async {
+      final bloc = SafeCallBloc.seeded(monitoring());
+      await tester.pumpWidget(MaterialApp(
+        home: SafeCallScreen(bloc: bloc),
+      ));
+      await settle(tester);
+      expectAcousticOnly();
+
+      bloc.add(const IncomingTranscriptSnippetEvent(
+          speaker: 'Caller',
+          text: 'the weather is lovely this morning'));
+      await settle(tester, 10);
+
+      // The engine ran and found nothing — an analyzed SAFE, not an
+      // incomplete one.
+      expect(find.text('ACOUSTIC ONLY'), findsNothing);
+      expect(find.text('RISK SIGNAL'), findsOneWidget);
+      expect(find.text('SAFE'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    });
+
+    testWidgets('session reset returns scope to acoustic-only',
+        (tester) async {
+      // Silent demo source — the session starts without the
+      // generated-PCM timer so the test ends with no pending timers.
+      final bloc = SafeCallBloc(
+        demoSource: _SilentDemoSource(),
+        initialState: monitoring(),
+      );
+      await tester.pumpWidget(MaterialApp(
+        home: SafeCallScreen(bloc: bloc),
+      ));
+      await settle(tester);
+      bloc.add(const IncomingTranscriptSnippetEvent(
+          speaker: 'Caller', text: 'hello there'));
+      await settle(tester, 10);
+      expect(find.text('RISK SIGNAL'), findsOneWidget);
+
+      bloc.add(const ResetCallEvent());
+      await settle(tester);
+
+      // A new session starts unanalyzed regardless of what the last
+      // session proved.
+      bloc.add(const StartDemoSessionEvent());
+      await settle(tester);
+      expectAcousticOnly();
+      await tester.pumpWidget(const SizedBox());
+    });
+  });
+}
+
+/// Demo source without the chunk-generation timer — sessions start
+/// and emit monitoring snapshots while staying silent, so tests end
+/// with no pending periodic timers.
+final class _SilentDemoSource extends DemoAudioSource {
+  @override
+  Future<void> start() async {}
+
+  @override
+  Future<void> dispose() async {}
 }

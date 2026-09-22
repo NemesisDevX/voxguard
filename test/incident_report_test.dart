@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:voxguard/core/constants/app_strings.dart';
 import 'package:voxguard/core/services/alerts/family_contact_repository.dart';
 import 'package:voxguard/core/services/family/family_shield_response.dart';
 import 'package:voxguard/core/services/family/received_family_alert_repository.dart';
@@ -195,7 +196,7 @@ void main() {
       expect(find.text('CRITICAL / HIGH RISK'), findsNothing);
       // A recording is not a call — and a partial is an acoustic
       // warning, not a flag verdict.
-      expect(find.text('WHY VOXGUARD FOUND ELEVATED ACOUSTIC SIGNALS'),
+      expect(find.text(AppStrings.whyElevatedAcousticTitle),
           findsOneWidget);
     });
 
@@ -205,9 +206,10 @@ void main() {
         home: IncidentDetailScreen(incident: makeRecordingFull()),
       ));
       await tester.pumpAndSettle();
-      expect(find.text('WHY VOXGUARD FLAGGED THIS RECORDING'),
+      expect(find.text(AppStrings.whyFlaggedRecordingTitle),
           findsOneWidget);
-      expect(find.text('WHY VOXGUARD FLAGGED THIS CALL'), findsNothing);
+      expect(
+          find.text(AppStrings.whyFlaggedCallTitle), findsNothing);
     });
 
     testWidgets('detail screen — live call keeps "call" title',
@@ -216,7 +218,7 @@ void main() {
         home: IncidentDetailScreen(incident: makeReport()),
       ));
       await tester.pumpAndSettle();
-      expect(find.text('WHY VOXGUARD FLAGGED THIS CALL'),
+      expect(find.text(AppStrings.whyFlaggedCallTitle),
           findsOneWidget);
     });
   });
