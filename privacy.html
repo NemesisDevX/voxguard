@@ -77,6 +77,22 @@ app actually does today — not aspirational behavior.</p>
   card in Settings — never at launch.</li>
 </ul>
 
+<h2>Preferences &amp; personalization</h2>
+<ul>
+  <li>During first-run setup you may optionally enter a display name (for
+  example, "Maya"). It is stored <strong>locally on your device</strong> only
+  (SharedPreferences), trimmed, capped at 32 characters, and shown on your own
+  Home screen. It is never included in Family Shield payloads, never synced,
+  and never tied to an account — there is no account.</li>
+  <li>Your interface language (English, العربية, Español, Français), theme
+  (System / Light / Dark), accent color, text size, experience mode
+  (Standard / Guided), motion, and haptics preferences are all stored locally
+  on your device and never transmitted.</li>
+  <li>Interface localization is presentation only: conversation-risk analysis
+  currently supports English and Egyptian Arabic regardless of the interface
+  language.</li>
+</ul>
+
 <h2>Purchases</h2>
 <ul>
   <li>Subscriptions are handled by RevenueCat and your app store (Google Play /
