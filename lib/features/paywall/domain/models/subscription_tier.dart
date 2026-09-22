@@ -21,7 +21,7 @@ enum TierId {
 }
 
 /// Display metadata for a plan — name, subtitle, and the features
-/// VoxGuard genuinely implements and enforces.
+/// PauseSignal genuinely implements and enforces.
 ///
 /// This model intentionally carries NO prices: real prices come from
 /// the store's current offering ([StorePackage.priceString]), and
@@ -54,7 +54,7 @@ final class SubscriptionTier extends Equatable {
   List<Object?> get props => [tierId];
 }
 
-/// The plan catalog — what VoxGuard actually does at each level.
+/// The plan catalog — what PauseSignal actually does at each level.
 abstract final class SubscriptionTiers {
   SubscriptionTiers._();
 
@@ -93,7 +93,7 @@ abstract final class SubscriptionTiers {
 
   /// Family Vault — Sentinel plus real outbound Family Shield alerts
   /// to the locally saved Trusted Circle. "5 people" are local
-  /// contacts, not managed devices — VoxGuard has no household
+  /// contacts, not managed devices — PauseSignal has no household
   /// account system.
   static const SubscriptionTier familyVault = SubscriptionTier(
     tierId: TierId.familyVault,

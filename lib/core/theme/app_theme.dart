@@ -4,7 +4,7 @@ import '../services/preferences/app_preferences.dart';
 import 'app_palette.dart';
 import 'app_typography.dart';
 
-/// VoxGuard Material 3 themes — dark and light, accent-parameterized.
+/// PauseSignal Material 3 themes — dark and light, accent-parameterized.
 ///
 /// Every theme carries an [AppPalette] extension; widgets read colors
 /// via `context.palette` so Light Mode is a real palette, not a

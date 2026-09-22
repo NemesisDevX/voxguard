@@ -1,4 +1,4 @@
-# Final QA Matrix — VoxGuard
+# Final QA Matrix — PauseSignal
 
 Statuses: `PASS / FAIL / NOT RUN / BLOCKED_EXTERNAL`.
 Nothing is marked PASS from automated tests alone where physical
@@ -41,10 +41,23 @@ observation is required.
 | 21 | Still Suspicious | Response notifies Device A | NOT RUN |
 | 22 | Foreground behavior | In-app "View" affordance, never auto-navigates | NOT RUN |
 
-## RevenueCat (sandbox / store tester)
+## RevenueCat
 
-Full matrix: `docs/REVENUECAT_QA.md`. Summary: all 14 rows `NOT RUN`
-pending keyed build + sandbox account.
+**Next Gen judging path — Test Store:**
+
+| # | Test | Expected | Result |
+|---|------|----------|--------|
+| R1 | Judging build with `REVENUECAT_TEST_STORE_KEY` | Paywall shows **REVENUECAT TEST STORE** badge + notice | NOT RUN — needs dashboard key |
+| R2 | Test Store purchase | Real RevenueCat sheet; entitlement activates from `CustomerInfo` | NOT RUN |
+| R3 | Feature unlock | Purchased tier's features unlock in-app | NOT RUN |
+| R4 | Dashboard proof | Transaction visible in RevenueCat Test Store data | NOT RUN |
+| R5 | Restore Purchases | Same tier re-derived on reinstall/second device | NOT RUN |
+| R6 | Cancellation | Sheet dismissed → paywall stays interactive, no entitlement | NOT RUN |
+| R7 | Release-build safety | `REVENUECAT_TEST_STORE_KEY` alone never enables a release build — unavailable state shown | Covered by unit tests; physical release check NOT RUN |
+
+Production-store matrix (future commercial release):
+`docs/REVENUECAT_QA.md` — all rows `NOT RUN` pending keyed build +
+sandbox account.
 
 ## Automated verification (this environment)
 

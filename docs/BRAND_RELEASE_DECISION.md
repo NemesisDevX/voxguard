@@ -1,33 +1,55 @@
-# Brand Release Decision — VoxGuard
+# Brand Release Decision — PauseSignal
 
-Status: `BLOCKED_DECISION — public release brand`
+Status: `RESOLVED — public brand`
+
+## Decision (final for Shipaton Next Gen submission)
+
+- **Public product name: PauseSignal**
+- **Public tagline: "Hear the signal. Pause. Verify."**
+- `VoxGuard` was the old internal/project working name. It survives
+  only inside technical contracts listed below and in historical
+  references — it is no longer presented to users or judges as the
+  product brand.
 
 ## Facts
 
-- `VoxGuard` remains the **internal project name** for this repository.
-- A published call-screening product already uses the public name
-  "VoxGuard", and a current trademark filing exists in a closely related
-  category.
-- The Android package identifier `com.voxguard.app` was already in use by
-  another published Google Play application. That **technical collision is
-  resolved**: the application identifier for Android, iOS, macOS, Linux and
-  Windows builds is now `com.nemesisdevx.voxguard` (reverse-DNS base).
+- A published call-screening product previously used the public name
+  "VoxGuard", and a trademark filing existed in a closely related
+  category — the rename also retires that naming risk.
+- The application identifier `com.nemesisdevx.voxguard` remains the
+  technical identity for Android, iOS, macOS, Linux and Windows
+  builds. A public display-name change does NOT change the package
+  identity.
 
-## Decision
+## What changed
 
-- The **technical** identifier (`com.nemesisdevx.voxguard`) is final for
-  this release line and does not imply the public brand remains "VoxGuard".
-- The **public store brand must be changed before any commercial/store
-  release**, unless the project owner intentionally accepts and legally
-  clears the naming risk.
-- Public rebranding is **reserved for the upcoming visual/design sprint**
-  so that name, icon, copy and visual identity change together in one
-  pass.
-- No replacement public name has been chosen in this task.
+- All user-facing surfaces now say **PauseSignal**: `appName` in all
+  four ARBs, Android launcher label, iOS/macOS/Windows/Linux visible
+  names, web title/OpenGraph/Twitter/manifest metadata, privacy and
+  terms pages, README and judge-facing docs, submission assets.
+- The launcher/submission icon is the SignalMark
+  (`submission/pausesignal-icon-1024.png`) — the same symbol the app
+  itself ships.
+
+## What intentionally did NOT change
+
+- GitHub repository name `voxguard`, Dart package name `voxguard`
+  and `package:voxguard/...` imports.
+- `applicationId` / `namespace` / bundle IDs
+  `com.nemesisdevx.voxguard`.
+- Kotlin package/directory names.
+- `vg_...` Family Shield protocol identifiers.
+- Persisted preference/storage keys (backwards compatibility).
+- RevenueCat entitlement IDs (`sentinel`, `family_vault`) and package
+  IDs (`sentinel_monthly`, `sentinel_annual`, `family_vault_monthly`,
+  `family_vault_annual`).
+- `REVENUECAT_*`, `ONESIGNAL_*`, `ASSEMBLYAI_*`, `VOXGUARD_*`
+  environment/dart-define names, backend protocol fields.
+- Historical Git data.
+
+See `docs/BRAND_RENAME_INVENTORY.md` for the executed inventory.
 
 ## Non-claims
 
 - This document makes no claim of trademark infringement.
 - This document is not legal advice.
-- This is a factual record of a release-risk decision pending owner/legal
-  resolution.

@@ -241,7 +241,7 @@ void main() {
           tester.element(find.byType(WelcomeSetupScreen));
       expect(Directionality.of(context), TextDirection.rtl);
       // The Arabic welcome title is rendered, not the English one.
-      expect(find.text('Welcome to VoxGuard'), findsNothing);
+      expect(find.text('Welcome to PauseSignal'), findsNothing);
     });
 
     testWidgets('no microphone or notification permission is '

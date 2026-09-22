@@ -4,7 +4,7 @@ import 'package:onesignal_flutter/onesignal_flutter.dart';
 
 /// Thin adapter over the `onesignal_flutter` static SDK so the push
 /// identity service stays unit-testable. One method per SDK call —
-/// no VoxGuard logic lives here.
+/// no PauseSignal logic lives here.
 abstract interface class IOneSignalSdk {
   /// `OneSignal.initialize(appId)`
   Future<void> initialize(String appId);

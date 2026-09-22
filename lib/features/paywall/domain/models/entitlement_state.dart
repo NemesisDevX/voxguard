@@ -10,6 +10,13 @@ enum PurchaseBackendMode {
   /// Google Play / App Store via RevenueCat. Real money.
   realStore,
 
+  /// RevenueCat-hosted Test Store through the real RevenueCat SDK —
+  /// development/judging builds only. Transactions are processed and
+  /// verified by RevenueCat's official Test Store but never charge
+  /// real money. Labelled "REVENUECAT TEST STORE" and never
+  /// selectable in a release build.
+  testStore,
+
   /// In-app simulated store for web/desktop/debug builds. Always
   /// labelled "DEMO STORE" — no real charge ever occurs.
   demoStore,

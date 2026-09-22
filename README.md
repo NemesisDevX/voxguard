@@ -1,8 +1,10 @@
 <div align="center">
 
-# 🛡️ VoxGuard
+# PauseSignal
 
-### AI Voice Scam Defense & Real-Time Threat Telemetry
+### Hear the signal. Pause. Verify.
+
+AI Voice Scam Defense & Real-Time Threat Telemetry
 
 **Real-time multi-signal defense against audio deepfakes, voice impersonation, and coercion scams.**
 
@@ -29,9 +31,9 @@ Voice-cloning scams now cost consumers billions annually. And yet, nearly every 
 
 A pure deepfake detector can be beaten with a clean recording of a real voice. A pure text classifier can be beaten by a scammer who simply changes the script. **Any single signal is a single point of failure.**
 
-VoxGuard's answer is **multi-signal threat fusion**: acoustic anomaly indicators of the voice *and* the semantic fingerprint of the conversation are scored simultaneously and fused into a composite **Threat Score (0–100)** in real time. Acoustic anomaly indicators can contribute to the Threat Score even when semantic scam indicators are absent — and vice versa. Only a call that is clean on **both** axes stays green.
+PauseSignal's answer is **multi-signal threat fusion**: acoustic anomaly indicators of the voice *and* the semantic fingerprint of the conversation are scored simultaneously and fused into a composite **Threat Score (0–100)** in real time. Acoustic anomaly indicators can contribute to the Threat Score even when semantic scam indicators are absent — and vice versa. Only a call that is clean on **both** axes stays green.
 
-> VoxGuard is an assistive consumer safety tool — a risk *score*, not a probability, and not a validated forensic verdict. The acoustic engine is a **heuristic prototype**, not a scientifically validated deepfake classifier.
+> PauseSignal is an assistive consumer safety tool — a risk *score*, not a probability, and not a validated forensic verdict. The acoustic engine is a **heuristic prototype**, not a scientifically validated deepfake classifier.
 
 ---
 
@@ -39,7 +41,7 @@ VoxGuard's answer is **multi-signal threat fusion**: acoustic anomaly indicators
 
 ```
 ┌──────────────────────────────────────────────────────────────────┐
-│                        VoxGuard Pipeline                         │
+│                       PauseSignal Pipeline                         │
 │                                                                  │
 │  Audio Sources        │                    ┌─── Live Transcript    │
 │  • Live Mic PCM       ├──► AssemblyAI ─────┤   (streaming, when    │
@@ -135,25 +137,25 @@ Real DSP on every incoming audio chunk (heuristic prototype — not a validated 
 | **Live Shield** *(planned)* | Ambient microphone monitor for speakerphone and surrounding conversations — not yet implemented. |
 | **Analyze Recording** | Upload a call recording or voice note (common supported formats include WAV/MP3/M4A/AAC/OGG/OPUS/FLAC — codec availability may vary by platform/browser; ≤25 MB / ≤15 min) → normalized to the same 16 kHz mono PCM16 the live pipeline uses → chunked acoustic forensics → optional relay-based transcription + local semantic analysis → fused verdict, or an honest **Partial Analysis** when conversation signals weren't analyzed. |
 
-Every high-risk session auto-persists an **Incident Report**: ID, timestamp, genuine **SHA-256 digest** of the analyzed PCM, audio/transcription source labels (*Live Microphone* / *Generated Demo Audio* / *Uploaded Recording*), consumer-first "Why VoxGuard Flagged This Call" evidence, phrase-highlighted transcript, and recommended verification steps — viewable in the Incidents tab, with raw telemetry under a collapsible *Technical Evidence* section.
+Every high-risk session auto-persists an **Incident Report**: ID, timestamp, genuine **SHA-256 digest** of the analyzed PCM, audio/transcription source labels (*Live Microphone* / *Generated Demo Audio* / *Uploaded Recording*), consumer-first "Why PauseSignal Flagged This Call" evidence, phrase-highlighted transcript, and recommended verification steps — viewable in the Incidents tab, with raw telemetry under a collapsible *Technical Evidence* section.
 
 ### Analyze Recording — privacy modes
 
 After picking a file, the user makes an explicit choice — nothing is uploaded on selection alone:
 
 - **Keep audio on this device** — local decode + acoustic analysis only; zero network calls. An optional *user-provided transcript* field lets a privacy-conscious user paste text they already have for semantic analysis (clearly labelled `User-provided transcript`).
-- **Include conversation analysis** — the recording is sent through the VoxGuard transcription relay (`VOXGUARD_RECORDING_TRANSCRIPTION_URL`) to the configured speech-to-text provider; VoxGuard does not permanently store it. Requires an explicit tap and shows the upload stage only in this mode. If the relay isn't configured, the option is disabled with an explanation and acoustic analysis remains available.
+- **Include conversation analysis** — the recording is sent through the PauseSignal transcription relay (`VOXGUARD_RECORDING_TRANSCRIPTION_URL`) to the configured speech-to-text provider; PauseSignal does not permanently store it. Requires an explicit tap and shows the upload stage only in this mode. If the relay isn't configured, the option is disabled with an explanation and acoustic analysis remains available.
 
-**Partial results are never a "safe" verdict.** Conversation-risk signals carry 65% of the fused score, so an acoustic-only run renders *Partial Analysis* + the acoustic anomaly score — no composite Threat Score, no green SAFE badge. Flagged results persist as real local incidents (`PersistedIncidentRepository`, SharedPreferences JSON, capped at 50); the original audio file itself is never copied into VoxGuard storage — only the report and the PCM SHA-256 survive.
+**Partial results are never a "safe" verdict.** Conversation-risk signals carry 65% of the fused score, so an acoustic-only run renders *Partial Analysis* + the acoustic anomaly score — no composite Threat Score, no green SAFE badge. Flagged results persist as real local incidents (`PersistedIncidentRepository`, SharedPreferences JSON, capped at 50); the original audio file itself is never copied into PauseSignal storage — only the report and the PCM SHA-256 survive.
 
-> **Privacy boundary:** raw microphone audio is processed in memory and never stored by VoxGuard. When live transcription is configured, PCM is streamed to the transcription provider for the duration of the session only. No audio or transcripts are sent to Family Shield — alert payloads carry an incident reference and risk band only.
+> **Privacy boundary:** raw microphone audio is processed in memory and never stored by PauseSignal. When live transcription is configured, PCM is streamed to the transcription provider for the duration of the session only. No audio or transcripts are sent to Family Shield — alert payloads carry an incident reference and risk band only.
 
 ---
 
 ## Personalization & Localization
 
 - **Welcome Setup** (first run, before safety onboarding): interface language picker — English / العربية / Español / Français, no flags, applies instantly — plus an *optional* local-only display name (≤32 chars, trimmed, skippable, never synced, never in Family Shield payloads).
-- **Full localization** via `flutter_localizations` + `gen_l10n`: 532 keys with enforced parity across all four ARB locales; Arabic renders true RTL. Interface language is independent of analysis coverage — **conversation-risk analysis supports English and Egyptian Arabic**; the app says so in Settings → About.
+- **Full localization** via `flutter_localizations` + `gen_l10n`: 581 message keys with enforced parity across all four ARB locales (en/ar/es/fr); Arabic renders true RTL. Interface language is independent of analysis coverage — **conversation-risk analysis supports English and Egyptian Arabic**; the app says so in Settings → About.
 - **Themes**: System / Light / Dark with a real token layer (`AppPalette` ThemeExtension) — deep ink dark, warm off-white light.
 - **Accents**: Periwinkle / Soft Blue / Soft Violet — tint interactive surfaces only; safety colors (safe/warning/danger) are provably accent-proof.
 - **Text size**: System / Large / Extra Large as a floor — never smaller than the OS accessibility scale.
@@ -166,7 +168,7 @@ Details: `docs/PERSONALIZATION_AND_LOCALIZATION.md` · `docs/DESIGN_SYSTEM.md`
 
 ---
 
-## Monetization Architecture *(HAMM Award)*
+## Monetization Architecture
 
 The enforced product model — the same matrix `ProductAccess` and the paywall apply in code:
 
@@ -190,18 +192,19 @@ The enforced product model — the same matrix `ProductAccess` and the paywall a
 
 Real prices come from the store's **current RevenueCat Offering** — the paywall renders each package's localized `priceString`; no production price is hard-coded anywhere. The Demo Store's simulated prices are always labelled as simulation in-app, and real-store purchasing for this release is scoped to **Android and iOS** — Web/Desktop builds run the explicitly-labelled Demo Store.
 
-Built on `purchases_flutter` (RevenueCat) behind a decoupled `IPurchaseService` interface — three backends, picked by `PurchaseServiceFactory` at first use:
+Built on `purchases_flutter` (RevenueCat) behind a decoupled `IPurchaseService` interface — four backends, picked by `PurchaseServiceFactory` at first use:
 
-- **`RevenueCatPurchaseService`** — real store checkout on Android/iOS, keyed via `--dart-define=REVENUECAT_ANDROID_KEY=...`
+- **`RevenueCatPurchaseService` (real store)** — production checkout on Android/iOS, keyed via `--dart-define=REVENUECAT_ANDROID_KEY=...` / `REVENUECAT_IOS_KEY=...`
+- **`RevenueCatPurchaseService` (Test Store)** — the genuine RevenueCat-hosted Test Store through the real SDK, for Shipaton judging/development builds on Android/iOS, keyed via `--dart-define=REVENUECAT_TEST_STORE_KEY=...`; labelled **REVENUECAT TEST STORE** in-app, verified by RevenueCat, never a real-money charge, never selectable in a release build
 - **`MockSandboxPurchaseService`** — full lifecycle simulation on Web/Desktop and keyless *debug* sessions; the paywall labels itself **DEMO STORE** with "no real charge" copy
-- **`UnavailablePurchaseService`** — keyless *release* builds lock the paywall truthfully ("Subscriptions aren't configured in this build") rather than faking purchases
+- **`UnavailablePurchaseService`** — keyless *release* builds lock the paywall truthfully ("Subscriptions aren't configured in this build") rather than faking purchases — a Test Store key alone never rescues a release build
 - **Conditional-import factory** — `purchases_flutter` is *never compiled* into web builds; every platform gets a working paywall
 
 **Truthful paywall:** the paywall renders only packages the current Offering returns — localized `priceString`, billing-cycle toggle only when both cycles exist, trial copy only when the store package actually provides one. Entitlement changes propagate live via `EntitlementState`/`ProductAccess` and gate real behavior: Free gets on-device analysis + Family Shield receive/respond, Sentinel unlocks cloud transcription, Family Vault unlocks outbound Family Shield dispatch. Full configuration reference: `docs/REVENUECAT_SETUP.md`.
 
 ---
 
-## OneSignal Family Shield *(OneSignal Award)*
+## OneSignal Family Shield
 
 Privacy-by-design emergency alerting. When a call ends at high risk, the post-call verification flow offers an optional family broadcast:
 
@@ -214,7 +217,7 @@ Incident Report persisted locally
       ▼
 POST → minimal server-side relay (VOXGUARD_ALERT_RELAY_URL)
   ├── family_external_ids → configured contacts only
-  ├── title: "🚨 VoxGuard Family Shield Alert"
+  ├── title: "🚨 PauseSignal Family Shield Alert"
   ├── body:  "A high-risk call was flagged on a protected
   │           device. Verify directly before funds move."
   └── incident_id + risk_level reference
@@ -224,7 +227,7 @@ Relay holds OneSignal credentials → fans out via
 include_aliases.external_id push to relatives
 ```
 
-**Receiving device (P0.2B):** any VoxGuard install can become a real Family Shield receiver — *Settings → Family Shield Receiver → Enable Family Alerts* requests notification permission (only ever from that button, never at launch), generates an opaque `vg_…` identity persisted locally, and links it via `OneSignal.login(externalId)` so the relay's `include_aliases.external_id` reaches the device. The `onesignal_flutter` 5.x SDK is isolated behind `IPushIdentityService`; a live `FamilyPushRegistration` state tracks permission → registered transitions via the push-subscription observer (no polling). Two-device test procedure: `docs/FAMILY_SHIELD_SMOKE_TEST.md`.
+**Receiving device (P0.2B):** any PauseSignal install can become a real Family Shield receiver — *Settings → Family Shield Receiver → Enable Family Alerts* requests notification permission (only ever from that button, never at launch), generates an opaque `vg_…` identity persisted locally, and links it via `OneSignal.login(externalId)` so the relay's `include_aliases.external_id` reaches the device. The `onesignal_flutter` 5.x SDK is isolated behind `IPushIdentityService`; a live `FamilyPushRegistration` state tracks permission → registered transitions via the push-subscription observer (no polling). Two-device test procedure: `docs/FAMILY_SHIELD_SMOKE_TEST.md`.
 
 **Security boundary:** the OneSignal REST API key lives on the relay — never inside the Flutter client (the SDK only needs the App ID, which is not a secret). The client payload carries no raw audio, no transcript, no PII — just an incident reference and risk band. Without a relay URL the app runs an explicitly-labelled **Demo Mode** broadcast (`IFamilyContactRepository` → `DemoFamilyContactRepository`), keeping the full journey demoable without shipping secrets. "Alert accepted" means the relay + OneSignal API accepted the notification — confirmed device receipt is only observable on the receiving device.
 
@@ -234,7 +237,7 @@ include_aliases.external_id push to relatives
 
 ### Live Demo
 
-**[https://nemesisdevx.github.io/voxguard/](https://nemesisdevx.github.io/voxguard/)** — the full app runs in your browser (sandbox purchase + simulated alert modes engage automatically).
+**[https://nemesisdevx.github.io/voxguard/](https://nemesisdevx.github.io/voxguard/)** — a **browser demo experience** of the app. Intentionally unavailable on web: the raw Live Mic PCM capture pipeline, OneSignal mobile push, and native real-store purchasing — Demo Attack, Demo Store checkout, and simulated Family Shield alerts engage automatically so every flow is explorable.
 
 ### Local Run
 
@@ -262,7 +265,8 @@ flutter run \
 | `ASSEMBLYAI_TOKEN_BROKER_URL` | **Production transcription path** — the client GETs a short-lived streaming token (≤600 s, one-time use) from a trusted broker that holds the provider secret server-side | falls through to the next option |
 | `ASSEMBLYAI_API_KEY` | **Development only** — the client mints its own short-lived token via `GET /v3/token`. Never ship a permanent provider key in a released build | Live Mic runs acoustic-only; UI shows "Live transcription unavailable" |
 | `ASSEMBLYAI_TEMP_TOKEN` | Pre-minted short-lived token (CI/demo convenience) | — |
-| `REVENUECAT_ANDROID_KEY` / `REVENUECAT_IOS_KEY` | real store checkout + entitlement gating | debug → labeled Demo Store; release → truthfully locked paywall |
+| `REVENUECAT_ANDROID_KEY` / `REVENUECAT_IOS_KEY` | real store checkout + entitlement gating | debug → Demo Store (or Test Store if its key is set); release → truthfully locked paywall |
+| `REVENUECAT_TEST_STORE_KEY` | **Shipaton judging path** — RevenueCat Test Store via the real SDK on Android/iOS non-release builds; labelled REVENUECAT TEST STORE | debug → Demo Store; never selected in release |
 | `VOXGUARD_TERMS_URL` / `VOXGUARD_PRIVACY_POLICY_URL` | renders the legal-link buttons on the paywall | buttons never render — dead links are impossible |
 | `VOXGUARD_ALERT_RELAY_URL` | live Family Shield push via the `server/` edge relay (Cloudflare Worker) | explicit Demo Mode broadcast |
 | `VOXGUARD_RELAY_TOKEN` | shared relay client token (`Bearer` auth). **Required when the deployed relay enforces it** — the relay rejects unauthenticated requests with 401. Demo-grade abuse resistance, not a truly private mobile secret | relay returns 401 (alert not sent) |
@@ -292,13 +296,14 @@ Release signing reads `android/key.properties` (gitignored) first, then falls ba
 
 | Doc | Contents |
 |-----|----------|
-| `docs/STORE_METADATA.md` | Store listing copy, subscription descriptions, reviewer notes |
-| `docs/SHIPATON_SUBMISSION.md` | Shipaton 2026 requirements + category narratives |
+| `docs/SHIPATON_SUBMISSION.md` | Shipaton 2026 **Next Gen** submission requirements + checklist |
+| `docs/NEXT_GEN_REVENUECAT_TEST_STORE.md` | RevenueCat Test Store judging setup — dashboard + dart-define |
+| `docs/STORE_METADATA.md` | Store listing copy, subscription descriptions, reviewer notes (future commercial release) |
 | `docs/DEMO_SCRIPT.md` | <2 min timestamped demo video script |
 | `docs/ONESIGNAL_CAMPAIGN.md` | "Keep Them Coming Back" campaign spec + deploy checklist |
 | `docs/REVENUECAT_SETUP.md` / `docs/REVENUECAT_QA.md` | Store configuration + real-device purchase QA |
 | `docs/FINAL_QA.md` / `docs/FINAL_RELEASE_STATUS.md` | Hardware QA matrix + external blocker report |
-| `docs/BRAND_RELEASE_DECISION.md` | Package-ID collision resolved; public store brand pending decision |
+| `docs/BRAND_RELEASE_DECISION.md` | Public brand resolved: **PauseSignal** — technical identifiers unchanged |
 | `submission/` | 1024×1024 icon + 1179×2556 screenshots |
 
 ---
@@ -313,10 +318,15 @@ Release signing reads `android/key.properties` (gitignored) first, then falls ba
 
 ## Forensic Disclaimer
 
-> VoxGuard telemetry — including acoustic metrics, semantic scores, and composite risk assessments — is **AI-generated forensic telemetry**. It is an assistive signal for user protection, **not a legal or judicial determination**. Always verify suspicious requests through an independent, trusted channel.
+> PauseSignal telemetry — including acoustic metrics, semantic scores, and composite risk assessments — is **AI-generated forensic telemetry**. It is an assistive signal for user protection, **not a legal or judicial determination**. Always verify suspicious requests through an independent, trusted channel.
 
 ---
 
 <div align="center">
-Built for the RevenueCat Shipaton · MIT License
+
+Built for the **RevenueCat Shipaton 2026 — Next Gen Award** · MIT License
+
+Judging path: working Android app + public repo + <2 min demo video +
+RevenueCat Test Store purchase flow — no store listing required.
+
 </div>

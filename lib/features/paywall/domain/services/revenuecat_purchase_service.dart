@@ -77,19 +77,44 @@ final class PurchasesSdkAdapter implements IPurchasesAdapter {
 /// exposes plan truth exclusively through [entitlement] — SDK types
 /// never escape this boundary.
 ///
+/// Two genuine RevenueCat backends share this implementation:
+/// [RevenueCatPurchaseService.new] — the platform store key
+/// (Google Play / App Store), and [RevenueCatPurchaseService.testStore]
+/// — RevenueCat's hosted Test Store for judging/development builds.
+/// Both go through the real SDK and both derive plan truth ONLY from
+/// `CustomerInfo`; [backendMode] distinguishes them for labelling.
+///
 /// The caller is responsible for only constructing this service on
-/// Android/iOS with a configured public SDK key (see
+/// Android/iOS with a configured SDK key (see
 /// `purchase_service_factory_io.dart`); [initialize] still fails
 /// truthfully rather than fabricating access if the key is absent.
 final class RevenueCatPurchaseService implements IPurchaseService {
   RevenueCatPurchaseService({
     String? apiKey,
     IPurchasesAdapter? adapter,
+    PurchaseBackendMode backendMode = PurchaseBackendMode.realStore,
   })  : _apiKey = apiKey ?? _resolvePlatformKey(),
-        _adapter = adapter ?? const PurchasesSdkAdapter();
+        _adapter = adapter ?? const PurchasesSdkAdapter(),
+        _mode = backendMode,
+        _state = ValueNotifier(EntitlementState(backend: backendMode));
+
+  /// RevenueCat Test Store backend — the real RevenueCat SDK pointed
+  /// at a Test Store API key. Judging/development path only: the
+  /// factory never selects this in a release build. [apiKey] exists
+  /// only so tests can inject a fake key — production reads the
+  /// `REVENUECAT_TEST_STORE_KEY` dart-define.
+  RevenueCatPurchaseService.testStore({
+    String? apiKey,
+    IPurchasesAdapter? adapter,
+  }) : this(
+          apiKey: apiKey ?? testStoreKey,
+          adapter: adapter,
+          backendMode: PurchaseBackendMode.testStore,
+        );
 
   final String _apiKey;
   final IPurchasesAdapter _adapter;
+  final PurchaseBackendMode _mode;
 
   /// Public SDK keys (safe to embed — NOT secret REST keys) supplied
   /// at build time:
@@ -99,9 +124,14 @@ final class RevenueCatPurchaseService implements IPurchaseService {
       String.fromEnvironment('REVENUECAT_ANDROID_KEY');
   static const _iosKey = String.fromEnvironment('REVENUECAT_IOS_KEY');
 
-  final _state = ValueNotifier<EntitlementState>(
-    const EntitlementState(backend: PurchaseBackendMode.realStore),
-  );
+  /// RevenueCat Test Store API key — development/judging builds only.
+  /// A Test Store key must NEVER act as the production configuration:
+  /// the factory only honours it on Android/iOS in non-release builds.
+  ///   --dart-define=REVENUECAT_TEST_STORE_KEY=...
+  static const _testStoreKey =
+      String.fromEnvironment('REVENUECAT_TEST_STORE_KEY');
+
+  final ValueNotifier<EntitlementState> _state;
 
   Future<void>? _initFuture;
   bool _listenerAttached = false;
@@ -129,8 +159,16 @@ final class RevenueCatPurchaseService implements IPurchaseService {
   /// unavailable/demo backends.
   static bool get isSupported => _resolvePlatformKey().isNotEmpty;
 
+  /// The Test Store API key supplied at build time (may be empty).
+  static String get testStoreKey => _testStoreKey;
+
+  /// True when a RevenueCat Test Store key exists. The factory gates
+  /// this to non-release Android/iOS builds — it is never a release
+  /// fallback.
+  static bool get isTestStoreSupported => _testStoreKey.isNotEmpty;
+
   @override
-  PurchaseBackendMode get backendMode => PurchaseBackendMode.realStore;
+  PurchaseBackendMode get backendMode => _mode;
 
   @override
   ValueListenable<EntitlementState> get entitlement => _state;
@@ -188,7 +226,7 @@ final class RevenueCatPurchaseService implements IPurchaseService {
     final url = info.managementURL;
     _state.value = EntitlementState(
       tier: tier,
-      backend: PurchaseBackendMode.realStore,
+      backend: _mode,
       status: EntitlementStatus.ready,
       managementUrl: url == null ? null : Uri.tryParse(url),
     );

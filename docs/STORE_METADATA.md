@@ -1,4 +1,4 @@
-# Store Metadata — VoxGuard
+# Store Metadata — PauseSignal
 
 Copy deck for Google Play / App Store listings. All claims match
 shipped behavior — see `docs/FINAL_QA.md` for what is and is not
@@ -8,17 +8,17 @@ verified on hardware.
 
 | Field | Value |
 |-------|-------|
-| App name | **VoxGuard** |
-| Subtitle / short description | Voice scam risk defense — hear the threat before you trust the voice. |
+| App name | **PauseSignal** |
+| Subtitle / short description | Voice scam risk defense — hear the signal. Pause. Verify. |
 | Category | Tools / Safety |
 | Package / bundle ID | `com.nemesisdevx.voxguard` (Android + iOS) |
 | Content rating | Everyone |
 
 ## Full description
 
-> VoxGuard helps you think twice before trusting a suspicious voice.
+> PauseSignal helps you think twice before trusting a suspicious voice.
 >
-> Start a protection session and VoxGuard listens through your
+> Start a protection session and PauseSignal listens through your
 > microphone — a caller on speakerphone, a voice note, or a message
 > played nearby — and surfaces risk signals in real time:
 >
@@ -32,7 +32,7 @@ verified on hardware.
 >   Egyptian Arabic.
 > • **Live transcript with evidence highlighting** — when
 >   transcription is configured, suspicious phrases are flagged
->   inline so you can see *why* VoxGuard is concerned.
+>   inline so you can see *why* PauseSignal is concerned.
 > • **Incident reports** — every flagged session is saved on-device
 >   with its audio digest, provenance, and recommended next steps.
 > • **Analyze Recording** — check a saved audio file or paste a
@@ -44,7 +44,7 @@ verified on hardware.
 >   response comes back to you. No audio, transcript, or phone
 >   numbers ever leave in an alert.
 >
-> VoxGuard does not intercept calls, does not judge callers, and does
+> PauseSignal does not intercept calls, does not judge callers, and does
 > not claim certainty. It gives you risk signals and a moment to
 > verify — because the best defense against voice scams is a second
 > of doubt.
@@ -73,7 +73,7 @@ never quote fixed prices in listing text.
 
 - Microphone is requested only after you choose Live Mic — never at
   launch, never in the background.
-- Live Mic audio is processed in memory; VoxGuard does not store raw
+- Live Mic audio is processed in memory; PauseSignal does not store raw
   microphone recordings.
 - With an entitled plan and configured infrastructure, Live Mic
   audio may stream to the transcription provider for analysis.

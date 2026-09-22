@@ -1,4 +1,4 @@
-/// VoxGuard spacing scale — screen padding, card gaps, and section
+/// PauseSignal spacing scale — screen padding, card gaps, and section
 /// rhythm. Generous vertical space is part of the calm-first feel:
 /// screens breathe before they alarm.
 abstract final class AppSpacing {

@@ -7,7 +7,7 @@ import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../domain/models/audio_forensic_metrics.dart';
 
-/// VoxGuard's product signature: the **Signal Lens** — two signal
+/// PauseSignal's product signature: the **Signal Lens** — two signal
 /// paths read by one human decision.
 ///
 /// Layer A (outer path) is conversation / semantic evidence. Layer B

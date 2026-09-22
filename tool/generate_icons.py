@@ -1,8 +1,12 @@
-"""VoxGuard brand icon generator.
+"""PauseSignal brand icon generator.
 
-Renders an original mark — a shield outline containing a rising
-voice-waveform motif — on the product's dark graphite foundation.
-Emerald (#10B981) is the safety accent; no text inside the icon.
+Renders the SignalMark — two concentric signal paths (conversation
+evidence leading, acoustic evidence following) converging on a
+terminal decision node — on the product's dark graphite foundation.
+The mark is the canonical design painted by `SignalMark` /
+`_SignalMarkPainter` in `lib/core/widgets/signal_mark.dart`; keep the
+two implementations in sync. Deliberately no shield, no initials, no
+wordmark — readable at favicon size.
 
 Usage:  python tool/generate_icons.py
 
@@ -14,7 +18,7 @@ Outputs:
   ios/Runner/Assets.xcassets/AppIcon.appiconset/Icon-App-*.png   iOS set
   ios/Runner/Assets.xcassets/LaunchImage.imageset/LaunchImage*.png
   web/icons/Icon-*.png, web/favicon.png                         web set
-  submission/voxguard-icon-1024.png                             Shipaton
+  submission/pausesignal-icon-1024.png                          Shipaton
 """
 
 import math
@@ -25,57 +29,51 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # ── Palette (lib/core/theme/app_colors.dart) ─────────────────────────
 BG = (11, 13, 19, 255)          # 0B0D13 — graphite base
-SURFACE = (30, 35, 51, 255)     # 1E2333 — shield interior
-EMERALD = (16, 185, 129, 255)   # 10B981 — restrained safety accent
-EMERALD_HI = (52, 211, 153, 255)  # 34D399 — waveform highlight
+ACCENT = (139, 156, 201, 255)   # 8B9CC9 — accent, conversation path
+ACOUSTIC = (201, 178, 132, 255)  # C9B284 — signalAcoustic, voice path
+
+# ── SignalMark geometry (mirrors _SignalMarkPainter) ─────────────────
+_START = math.pi * 0.62
+_SWEEP = math.pi * 1.55
 
 
-def _shield_points(cx, cy, w, h):
-    """Shield outline: flat top with rounded corners, straight upper
-    sides, then a smooth quadratic taper to the bottom point.
-    Returns clockwise polygon points."""
-    x0, y0 = cx - w / 2, cy - h / 2
-    x1, y1 = cx + w / 2, cy + h / 2
-    r = w * 0.14          # top corner radius
-    side_y = y0 + h * 0.42  # where the taper to the point begins
+def _draw_signal_mark(d, cx, cy, span):
+    """Paint the SignalMark centred at (cx, cy) inside `span` px.
 
-    def qbez(p0, p1, p2, steps):
-        out = []
-        for i in range(1, steps + 1):
-            t = i / steps
-            mt = 1 - t
-            out.append((mt * mt * p0[0] + 2 * mt * t * p1[0] + t * t * p2[0],
-                        mt * mt * p0[1] + 2 * mt * t * p1[1] + t * t * p2[1]))
-        return out
+    Replicates _SignalMarkPainter: outer accent arc (start 0.62π,
+    sweep 1.55π), inner acoustic arc (radius −24% span, sweep 0.82×,
+    phase 0.10×sweep), round caps, terminal node on the outer path.
+    """
+    outer_r = span / 2 - 1.5
+    inner_r = outer_r - span * 0.24
+    stroke = max(2, round(span * 0.085))
 
-    pts = []
-    # left top corner: arc 180° → 270° around (x0+r, y0+r)
-    steps = 16
-    for i in range(steps + 1):
-        a = math.pi + (math.pi / 2) * (i / steps)
-        pts.append((x0 + r + r * math.cos(a), y0 + r + r * math.sin(a)))
-    # top edge
-    pts.append((x1 - r, y0))
-    # right top corner: arc 270° → 360° around (x1-r, y0+r)
-    for i in range(steps + 1):
-        a = 3 * math.pi / 2 + (math.pi / 2) * (i / steps)
-        pts.append((x1 - r + r * math.cos(a), y0 + r + r * math.sin(a)))
-    # right side straight down to the taper start
-    pts.append((x1, side_y))
-    # right taper: quadratic to bottom point — control pulls the side
-    # inward and downward for the classic shield sweep.
-    pts += qbez((x1, side_y), (x1 - w * 0.06, y0 + h * 0.78),
-                (cx, y1), 32)
-    # left taper: mirror — control at (x0 + w*0.06, y0 + h*0.78),
-    # ending at left side start.
-    pts += qbez((cx, y1), (x0 + w * 0.06, y0 + h * 0.78),
-                (x0, side_y), 32)
-    # close up the left side (corner arc start handled implicitly)
-    return pts
+    def arc(r, color, sweep, start):
+        # PIL arcs use degrees, 0 at 3 o'clock, clockwise — same
+        # orientation convention as Flutter's drawArc.
+        bbox = [cx - r, cy - r, cx + r, cy + r]
+        d.arc(bbox, math.degrees(start), math.degrees(start + sweep),
+              fill=color, width=stroke)
+        # Round caps: disks at both arc endpoints.
+        cap_r = stroke / 2
+        for a in (start, start + sweep):
+            px, py = cx + r * math.cos(a), cy + r * math.sin(a)
+            d.ellipse([px - cap_r, py - cap_r, px + cap_r, py + cap_r],
+                      fill=color)
+
+    arc(outer_r, ACCENT, _SWEEP, _START)
+    arc(inner_r, ACOUSTIC, _SWEEP * 0.82, _START + _SWEEP * 0.10)
+
+    # Terminal node on the outer path — the decision point.
+    end = _START + _SWEEP
+    nx, ny = cx + outer_r * math.cos(end), cy + outer_r * math.sin(end)
+    node_r = stroke * 0.62
+    d.ellipse([nx - node_r, ny - node_r, nx + node_r, ny + node_r],
+              fill=ACCENT)
 
 
 def render(size, *, maskable=False, square_full_bleed=False):
-    """Render the VoxGuard mark at `size` px.
+    """Render the PauseSignal mark at `size` px.
 
     maskable:       full-bleed background, motif inside safe zone.
     square_full_bleed: opaque square (iOS — Apple applies the mask).
@@ -91,69 +89,21 @@ def render(size, *, maskable=False, square_full_bleed=False):
         d.rounded_rectangle([0, 0, S, S], radius=S * 0.225, fill=BG)
 
     # Motif scale: maskable keeps the mark inside the inner ~62% safe
-    # zone; full-bleed squares ~78%; legacy rounded ~80%.
-    span = S * (0.62 if maskable else 0.78 if square_full_bleed else 0.80)
-    sw, sh = span * 0.82, span  # shield width/height
-    cx, cy = S / 2, S / 2
-
-    # Shield ring: outer emerald fill + inset surface fill.
-    d.polygon(_shield_points(cx, cy, sw, sh), fill=EMERALD)
-    inset = sw * 0.115
-    d.polygon(
-        _shield_points(cx, cy + sh * 0.012, sw - 2 * inset,
-                       sh - 2 * inset),
-        fill=SURFACE,
-    )
-
-    # Voice waveform: three rising rounded bars inside the shield.
-    bar_w = sw * 0.085
-    gap = sw * 0.115
-    heights = [sh * 0.26, sh * 0.42, sh * 0.30]
-    total_w = 3 * bar_w + 2 * gap
-    x = cx - total_w / 2
-    for i, hgt in enumerate(heights):
-        bx0 = x + i * (bar_w + gap)
-        by = cy + sh * 0.04  # optical center
-        color = EMERALD_HI if i == 1 else EMERALD
-        d.rounded_rectangle(
-            [bx0, by - hgt / 2, bx0 + bar_w, by + hgt / 2],
-            radius=bar_w / 2,
-            fill=color,
-        )
+    # zone; full-bleed squares ~74%; legacy rounded ~76%.
+    span = S * (0.56 if maskable else 0.74 if square_full_bleed
+                else 0.76)
+    _draw_signal_mark(d, S / 2, S / 2, span)
 
     return img.resize((size, size), Image.LANCZOS)
 
 
 def render_adaptive_foreground(size):
-    """Transparent adaptive-icon foreground — motif inside the 66dp
+    """Transparent adaptive-icon foreground — mark inside the 66dp
     safe zone of the 108dp canvas (~61%)."""
     S = size * 4
     img = Image.new("RGBA", (S, S), (0, 0, 0, 0))
     d = ImageDraw.Draw(img)
-    span = S * 0.58
-    sw, sh = span * 0.82, span
-    cx, cy = S / 2, S / 2
-    d.polygon(_shield_points(cx, cy, sw, sh), fill=EMERALD)
-    inset = sw * 0.115
-    d.polygon(
-        _shield_points(cx, cy + sh * 0.012, sw - 2 * inset,
-                       sh - 2 * inset),
-        fill=SURFACE,
-    )
-    bar_w = sw * 0.085
-    gap = sw * 0.115
-    heights = [sh * 0.26, sh * 0.42, sh * 0.30]
-    total_w = 3 * bar_w + 2 * gap
-    x = cx - total_w / 2
-    for i, hgt in enumerate(heights):
-        bx0 = x + i * (bar_w + gap)
-        by = cy + sh * 0.04
-        color = EMERALD_HI if i == 1 else EMERALD
-        d.rounded_rectangle(
-            [bx0, by - hgt / 2, bx0 + bar_w, by + hgt / 2],
-            radius=bar_w / 2,
-            fill=color,
-        )
+    _draw_signal_mark(d, S / 2, S / 2, S * 0.56)
     return img.resize((size, size), Image.LANCZOS)
 
 
@@ -220,7 +170,8 @@ def main():
     save(render(32), "web/favicon.png")
 
     print("Shipaton source:")
-    save(render(1024, square_full_bleed=True), "submission/voxguard-icon-1024.png")
+    save(render(1024, square_full_bleed=True),
+         "submission/pausesignal-icon-1024.png")
 
 
 if __name__ == "__main__":

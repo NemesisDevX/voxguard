@@ -9,7 +9,7 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get appName => 'VoxGuard';
+  String get appName => 'PauseSignal';
 
   @override
   String get actionCancel => 'Cancel';
@@ -67,74 +67,74 @@ class AppLocalizationsEn extends AppLocalizations {
   String get actionAddPerson => 'Add person';
 
   @override
-  String get howItWorksTitle => 'How VoxGuard Works';
+  String get howItWorksTitle => 'How PauseSignal Works';
 
   @override
-  String get exploreApp => 'Explore VoxGuard';
+  String get exploreApp => 'Explore PauseSignal';
 
   @override
-  String get unrecognizedIdentity => 'An unrecognized VoxGuard identity';
+  String get unrecognizedIdentity => 'An unrecognized PauseSignal identity';
 
   @override
   String get safecallIntro =>
-      'VoxGuard listens through your microphone for suspicious voice and conversation patterns.';
+      'PauseSignal listens through your microphone for suspicious voice and conversation patterns.';
 
   @override
   String get familyAlertUnknownSender =>
-      'Family Shield alert from an unrecognized VoxGuard identity.';
+      'Family Shield alert from an unrecognized PauseSignal identity.';
 
   @override
-  String get pushAlertTitle => '🚨 VoxGuard Family Shield Alert';
+  String get pushAlertTitle => '🚨 PauseSignal Family Shield Alert';
 
   @override
-  String get incidentReportTitle => 'VoxGuard Incident Report';
+  String get incidentReportTitle => 'PauseSignal Incident Report';
 
   @override
   String get recordingUnreadable =>
-      'VoxGuard could not read this recording — it may be corrupted or an unsupported format.';
+      'PauseSignal could not read this recording — it may be corrupted or an unsupported format.';
 
   @override
   String get recordingUndecodable =>
-      'VoxGuard could not decode this recording — the format may not be supported on this device.';
+      'PauseSignal could not decode this recording — the format may not be supported on this device.';
 
   @override
   String get recordingAnalyzerIntro =>
-      'VoxGuard examines acoustic anomalies and, when you choose transcription, conversation-risk signals.';
+      'PauseSignal examines acoustic anomalies and, when you choose transcription, conversation-risk signals.';
 
   @override
   String get partialRecordingNote =>
-      'Conversation-risk signals were not analyzed, so VoxGuard cannot produce a complete Threat Score.';
+      'Conversation-risk signals were not analyzed, so PauseSignal cannot produce a complete Threat Score.';
 
   @override
   String get enhancedModeLockedDesc =>
-      'Sentinel Shield adds enhanced transcription — the recording is sent through VoxGuard’s transcription relay only after you opt in. On-device analysis stays free.';
+      'Sentinel Shield adds enhanced transcription — the recording is sent through PauseSignal’s transcription relay only after you opt in. On-device analysis stays free.';
 
   @override
   String get enhancedModeReadyDesc =>
-      'To create a transcript, this recording will be sent through VoxGuard’s transcription relay to the configured speech-to-text provider. VoxGuard does not permanently store the recording.';
+      'To create a transcript, this recording will be sent through PauseSignal’s transcription relay to the configured speech-to-text provider. PauseSignal does not permanently store the recording.';
 
   @override
   String get onboardingSignalsBody =>
-      'During a SafeCall session you start yourself, VoxGuard listens for risk signals — never identity certainty — and explains what it heard in plain language.';
+      'During a SafeCall session you start yourself, PauseSignal listens for risk signals — never identity certainty — and explains what it heard in plain language.';
 
   @override
   String get onboardingNoInterception =>
-      'VoxGuard does not intercept your phone\'s cellular calls — a protection session is always your choice.';
+      'PauseSignal does not intercept your phone\'s cellular calls — a protection session is always your choice.';
 
   @override
   String get onboardingFamilyBody =>
-      'When a call feels wrong, people you trust can help you decide. Each VoxGuard installation receives an opaque Family Shield ID — trusted people save it in their own Trusted Circle to receive your private safety alerts and respond.';
+      'When a call feels wrong, people you trust can help you decide. Each PauseSignal installation receives an opaque Family Shield ID — trusted people save it in their own Trusted Circle to receive your private safety alerts and respond.';
 
   @override
   String get onboardingPrivacyMic =>
-      'Microphone audio is processed in memory while a session runs — VoxGuard never stores an audio recording. Live Mic asks for microphone access only when you choose it; Demo Mode works without it.';
+      'Microphone audio is processed in memory while a session runs — PauseSignal never stores an audio recording. Live Mic asks for microphone access only when you choose it; Demo Mode works without it.';
 
   @override
   String get onboardingPrivacyAlerts =>
-      'Family Shield alerts carry only an opaque VoxGuard ID, an incident reference, and a risk band — never audio, transcripts, names, or phone numbers.';
+      'Family Shield alerts carry only an opaque PauseSignal ID, an incident reference, and a risk band — never audio, transcripts, names, or phone numbers.';
 
   @override
-  String get whyFlaggedTitle => 'Why VoxGuard Flagged This Call';
+  String get whyFlaggedTitle => 'Why PauseSignal Flagged This Call';
 
   @override
   String get whyElevatedAcousticTitle =>
@@ -154,7 +154,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get welcomeSubtitle =>
-      'VoxGuard helps you pause, verify, and stay in control when a call feels wrong.';
+      'PauseSignal helps you pause, verify, and stay in control when a call feels wrong.';
 
   @override
   String get welcomeLanguageLabel => 'CHOOSE YOUR LANGUAGE';
@@ -289,7 +289,7 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t save your progress — onboarding will show again next launch.';
 
   @override
-  String get shieldStatusReady => 'VoxGuard Ready';
+  String get shieldStatusReady => 'PauseSignal Ready';
 
   @override
   String get shieldSubtitle => 'Real-time voice defense standing by';
@@ -314,7 +314,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get protectionCheckDesc =>
-      'Use speakerphone or play suspicious audio nearby — VoxGuard listens for risk signals.';
+      'Use speakerphone or play suspicious audio nearby — PauseSignal listens for risk signals.';
 
   @override
   String get protectionCheckCta => 'Start SafeCall';
@@ -913,7 +913,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String familyAlertSuspicious(String name) {
-    return '$name received a suspicious-call warning from VoxGuard.';
+    return '$name received a suspicious-call warning from PauseSignal.';
   }
 
   @override
@@ -1138,7 +1138,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get paywallSubtitle =>
-      'VoxGuard flags risk — you verify. Paid plans extend what the two signals can see.';
+      'PauseSignal flags risk — you verify. Paid plans extend what the two signals can see.';
 
   @override
   String get securityBadge => 'Billing handled by your app store';
@@ -1149,6 +1149,13 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get demoStoreNotice =>
       'Simulated checkout — no real charge will occur.';
+
+  @override
+  String get testStoreBadge => 'REVENUECAT TEST STORE';
+
+  @override
+  String get testStoreNotice =>
+      'Purchases run through RevenueCat\'s official Test Store — verified by RevenueCat, never a real-money charge.';
 
   @override
   String get storeUnavailableNotice =>
@@ -1298,6 +1305,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get currentPlanDemo => ' (demo)';
 
   @override
+  String get currentPlanTestStore => ' (Test Store)';
+
+  @override
   String get viewPlans => 'View plans';
 
   @override
@@ -1315,6 +1325,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get demoStoreSection => 'DEMO STORE';
+
+  @override
+  String get testStoreSection => 'REVENUECAT TEST STORE';
 
   @override
   String get billingMonthly => 'Monthly';

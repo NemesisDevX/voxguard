@@ -1,6 +1,6 @@
 # RevenueCat Setup
 
-VoxGuard gates premium capabilities through RevenueCat entitlements.
+PauseSignal gates premium capabilities through RevenueCat entitlements.
 This document is the complete configuration reference — the app is
 fully functional (and honest about it) without any of this.
 

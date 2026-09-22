@@ -10,7 +10,7 @@ import 'push_identity_service.dart';
 /// Production push identity service.
 ///
 /// Identity model (three distinct identifiers):
-///  - `vg_…` **VoxGuard External ID** — opaque, locally generated,
+///  - `vg_…` **PauseSignal External ID** — opaque, locally generated,
 ///    persisted via [IIdentityStore]; the relay targets it through
 ///    OneSignal `external_id`.
 ///  - **OneSignal push subscription ID** — provider routing handle,

@@ -122,6 +122,47 @@ void main() {
         expect(svc, isA<MockSandboxPurchaseService>());
         expect(svc.backendMode, PurchaseBackendMode.demoStore);
       });
+
+      test('${platform.name} judging build + Test Store key → real '
+          'RevenueCat SDK in test-store mode', () {
+        final svc = createPurchaseServiceFor(
+          platform: platform,
+          hasRevenueCatKey: false,
+          hasRevenueCatTestStoreKey: true,
+          isReleaseBuild: false,
+        );
+        expect(svc, isA<RevenueCatPurchaseService>());
+        expect(svc.backendMode, PurchaseBackendMode.testStore);
+        // Genuinely distinct from the local Demo Store.
+        expect(svc.backendMode,
+            isNot(PurchaseBackendMode.demoStore));
+      });
+
+      test('${platform.name} RELEASE + only a Test Store key → '
+          'unavailable, never test or demo', () {
+        final svc = createPurchaseServiceFor(
+          platform: platform,
+          hasRevenueCatKey: false,
+          hasRevenueCatTestStoreKey: true,
+          isReleaseBuild: true,
+        );
+        expect(svc, isA<UnavailablePurchaseService>());
+        expect(svc.backendMode, PurchaseBackendMode.unavailable);
+      });
+
+      test('${platform.name} production key stays authoritative over '
+          'a Test Store key', () {
+        for (final isRelease in [true, false]) {
+          final svc = createPurchaseServiceFor(
+            platform: platform,
+            hasRevenueCatKey: true,
+            hasRevenueCatTestStoreKey: true,
+            isReleaseBuild: isRelease,
+          );
+          expect(svc, isA<RevenueCatPurchaseService>());
+          expect(svc.backendMode, PurchaseBackendMode.realStore);
+        }
+      });
     }
 
     test('macOS never resolves to the real store — even with a key '
@@ -133,6 +174,7 @@ void main() {
         final svc = createPurchaseServiceFor(
           platform: TargetPlatform.macOS,
           hasRevenueCatKey: true,
+          hasRevenueCatTestStoreKey: true,
           isReleaseBuild: isRelease,
         );
         expect(svc, isA<MockSandboxPurchaseService>());
@@ -149,6 +191,7 @@ void main() {
         final svc = createPurchaseServiceFor(
           platform: platform,
           hasRevenueCatKey: true,
+          hasRevenueCatTestStoreKey: true,
           isReleaseBuild: true,
         );
         expect(svc, isA<MockSandboxPurchaseService>());

@@ -105,7 +105,7 @@ abstract class AppLocalizations {
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
-  /// **'VoxGuard'**
+  /// **'PauseSignal'**
   String get appName;
 
   /// No description provided for @actionCancel.
@@ -219,115 +219,115 @@ abstract class AppLocalizations {
   /// No description provided for @howItWorksTitle.
   ///
   /// In en, this message translates to:
-  /// **'How VoxGuard Works'**
+  /// **'How PauseSignal Works'**
   String get howItWorksTitle;
 
   /// No description provided for @exploreApp.
   ///
   /// In en, this message translates to:
-  /// **'Explore VoxGuard'**
+  /// **'Explore PauseSignal'**
   String get exploreApp;
 
   /// No description provided for @unrecognizedIdentity.
   ///
   /// In en, this message translates to:
-  /// **'An unrecognized VoxGuard identity'**
+  /// **'An unrecognized PauseSignal identity'**
   String get unrecognizedIdentity;
 
   /// No description provided for @safecallIntro.
   ///
   /// In en, this message translates to:
-  /// **'VoxGuard listens through your microphone for suspicious voice and conversation patterns.'**
+  /// **'PauseSignal listens through your microphone for suspicious voice and conversation patterns.'**
   String get safecallIntro;
 
   /// No description provided for @familyAlertUnknownSender.
   ///
   /// In en, this message translates to:
-  /// **'Family Shield alert from an unrecognized VoxGuard identity.'**
+  /// **'Family Shield alert from an unrecognized PauseSignal identity.'**
   String get familyAlertUnknownSender;
 
   /// No description provided for @pushAlertTitle.
   ///
   /// In en, this message translates to:
-  /// **'🚨 VoxGuard Family Shield Alert'**
+  /// **'🚨 PauseSignal Family Shield Alert'**
   String get pushAlertTitle;
 
   /// No description provided for @incidentReportTitle.
   ///
   /// In en, this message translates to:
-  /// **'VoxGuard Incident Report'**
+  /// **'PauseSignal Incident Report'**
   String get incidentReportTitle;
 
   /// No description provided for @recordingUnreadable.
   ///
   /// In en, this message translates to:
-  /// **'VoxGuard could not read this recording — it may be corrupted or an unsupported format.'**
+  /// **'PauseSignal could not read this recording — it may be corrupted or an unsupported format.'**
   String get recordingUnreadable;
 
   /// No description provided for @recordingUndecodable.
   ///
   /// In en, this message translates to:
-  /// **'VoxGuard could not decode this recording — the format may not be supported on this device.'**
+  /// **'PauseSignal could not decode this recording — the format may not be supported on this device.'**
   String get recordingUndecodable;
 
   /// No description provided for @recordingAnalyzerIntro.
   ///
   /// In en, this message translates to:
-  /// **'VoxGuard examines acoustic anomalies and, when you choose transcription, conversation-risk signals.'**
+  /// **'PauseSignal examines acoustic anomalies and, when you choose transcription, conversation-risk signals.'**
   String get recordingAnalyzerIntro;
 
   /// No description provided for @partialRecordingNote.
   ///
   /// In en, this message translates to:
-  /// **'Conversation-risk signals were not analyzed, so VoxGuard cannot produce a complete Threat Score.'**
+  /// **'Conversation-risk signals were not analyzed, so PauseSignal cannot produce a complete Threat Score.'**
   String get partialRecordingNote;
 
   /// No description provided for @enhancedModeLockedDesc.
   ///
   /// In en, this message translates to:
-  /// **'Sentinel Shield adds enhanced transcription — the recording is sent through VoxGuard’s transcription relay only after you opt in. On-device analysis stays free.'**
+  /// **'Sentinel Shield adds enhanced transcription — the recording is sent through PauseSignal’s transcription relay only after you opt in. On-device analysis stays free.'**
   String get enhancedModeLockedDesc;
 
   /// No description provided for @enhancedModeReadyDesc.
   ///
   /// In en, this message translates to:
-  /// **'To create a transcript, this recording will be sent through VoxGuard’s transcription relay to the configured speech-to-text provider. VoxGuard does not permanently store the recording.'**
+  /// **'To create a transcript, this recording will be sent through PauseSignal’s transcription relay to the configured speech-to-text provider. PauseSignal does not permanently store the recording.'**
   String get enhancedModeReadyDesc;
 
   /// No description provided for @onboardingSignalsBody.
   ///
   /// In en, this message translates to:
-  /// **'During a SafeCall session you start yourself, VoxGuard listens for risk signals — never identity certainty — and explains what it heard in plain language.'**
+  /// **'During a SafeCall session you start yourself, PauseSignal listens for risk signals — never identity certainty — and explains what it heard in plain language.'**
   String get onboardingSignalsBody;
 
   /// No description provided for @onboardingNoInterception.
   ///
   /// In en, this message translates to:
-  /// **'VoxGuard does not intercept your phone\'s cellular calls — a protection session is always your choice.'**
+  /// **'PauseSignal does not intercept your phone\'s cellular calls — a protection session is always your choice.'**
   String get onboardingNoInterception;
 
   /// No description provided for @onboardingFamilyBody.
   ///
   /// In en, this message translates to:
-  /// **'When a call feels wrong, people you trust can help you decide. Each VoxGuard installation receives an opaque Family Shield ID — trusted people save it in their own Trusted Circle to receive your private safety alerts and respond.'**
+  /// **'When a call feels wrong, people you trust can help you decide. Each PauseSignal installation receives an opaque Family Shield ID — trusted people save it in their own Trusted Circle to receive your private safety alerts and respond.'**
   String get onboardingFamilyBody;
 
   /// No description provided for @onboardingPrivacyMic.
   ///
   /// In en, this message translates to:
-  /// **'Microphone audio is processed in memory while a session runs — VoxGuard never stores an audio recording. Live Mic asks for microphone access only when you choose it; Demo Mode works without it.'**
+  /// **'Microphone audio is processed in memory while a session runs — PauseSignal never stores an audio recording. Live Mic asks for microphone access only when you choose it; Demo Mode works without it.'**
   String get onboardingPrivacyMic;
 
   /// No description provided for @onboardingPrivacyAlerts.
   ///
   /// In en, this message translates to:
-  /// **'Family Shield alerts carry only an opaque VoxGuard ID, an incident reference, and a risk band — never audio, transcripts, names, or phone numbers.'**
+  /// **'Family Shield alerts carry only an opaque PauseSignal ID, an incident reference, and a risk band — never audio, transcripts, names, or phone numbers.'**
   String get onboardingPrivacyAlerts;
 
   /// No description provided for @whyFlaggedTitle.
   ///
   /// In en, this message translates to:
-  /// **'Why VoxGuard Flagged This Call'**
+  /// **'Why PauseSignal Flagged This Call'**
   String get whyFlaggedTitle;
 
   /// No description provided for @whyElevatedAcousticTitle.
@@ -363,7 +363,7 @@ abstract class AppLocalizations {
   /// No description provided for @welcomeSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'VoxGuard helps you pause, verify, and stay in control when a call feels wrong.'**
+  /// **'PauseSignal helps you pause, verify, and stay in control when a call feels wrong.'**
   String get welcomeSubtitle;
 
   /// No description provided for @welcomeLanguageLabel.
@@ -585,7 +585,7 @@ abstract class AppLocalizations {
   /// No description provided for @shieldStatusReady.
   ///
   /// In en, this message translates to:
-  /// **'VoxGuard Ready'**
+  /// **'PauseSignal Ready'**
   String get shieldStatusReady;
 
   /// No description provided for @shieldSubtitle.
@@ -627,7 +627,7 @@ abstract class AppLocalizations {
   /// No description provided for @protectionCheckDesc.
   ///
   /// In en, this message translates to:
-  /// **'Use speakerphone or play suspicious audio nearby — VoxGuard listens for risk signals.'**
+  /// **'Use speakerphone or play suspicious audio nearby — PauseSignal listens for risk signals.'**
   String get protectionCheckDesc;
 
   /// No description provided for @protectionCheckCta.
@@ -1713,7 +1713,7 @@ abstract class AppLocalizations {
   /// No description provided for @familyAlertSuspicious.
   ///
   /// In en, this message translates to:
-  /// **'{name} received a suspicious-call warning from VoxGuard.'**
+  /// **'{name} received a suspicious-call warning from PauseSignal.'**
   String familyAlertSuspicious(String name);
 
   /// No description provided for @familyMarkedSafeNote.
@@ -2091,7 +2091,7 @@ abstract class AppLocalizations {
   /// No description provided for @paywallSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'VoxGuard flags risk — you verify. Paid plans extend what the two signals can see.'**
+  /// **'PauseSignal flags risk — you verify. Paid plans extend what the two signals can see.'**
   String get paywallSubtitle;
 
   /// No description provided for @securityBadge.
@@ -2111,6 +2111,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Simulated checkout — no real charge will occur.'**
   String get demoStoreNotice;
+
+  /// No description provided for @testStoreBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'REVENUECAT TEST STORE'**
+  String get testStoreBadge;
+
+  /// No description provided for @testStoreNotice.
+  ///
+  /// In en, this message translates to:
+  /// **'Purchases run through RevenueCat\'s official Test Store — verified by RevenueCat, never a real-money charge.'**
+  String get testStoreNotice;
 
   /// No description provided for @storeUnavailableNotice.
   ///
@@ -2388,6 +2400,12 @@ abstract class AppLocalizations {
   /// **' (demo)'**
   String get currentPlanDemo;
 
+  /// No description provided for @currentPlanTestStore.
+  ///
+  /// In en, this message translates to:
+  /// **' (Test Store)'**
+  String get currentPlanTestStore;
+
   /// No description provided for @viewPlans.
   ///
   /// In en, this message translates to:
@@ -2423,6 +2441,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'DEMO STORE'**
   String get demoStoreSection;
+
+  /// No description provided for @testStoreSection.
+  ///
+  /// In en, this message translates to:
+  /// **'REVENUECAT TEST STORE'**
+  String get testStoreSection;
 
   /// No description provided for @billingMonthly.
   ///

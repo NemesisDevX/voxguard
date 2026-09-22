@@ -17,12 +17,12 @@ import '../../../../core/l10n/localized_text.dart';
 import '../../../../core/theme/app_palette.dart';
 
 /// Analyze Recording — pick a local audio file, choose a privacy
-/// mode, and run the same VoxGuard threat engines SafeCall uses.
+/// mode, and run the same PauseSignal threat engines SafeCall uses.
 ///
 /// Honest contract:
 ///  - on-device mode uploads nothing — acoustic analysis only (plus
 ///    optional user-supplied transcript text for the semantic engine);
-///  - enhanced mode sends the recording through VoxGuard's
+///  - enhanced mode sends the recording through PauseSignal's
 ///    transcription relay only after an explicit user choice;
 ///  - acoustic-only output is labelled "Partial Analysis" — never a
 ///    normal SAFE verdict or composite Threat Score;

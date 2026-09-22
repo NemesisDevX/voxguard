@@ -1,4 +1,4 @@
-# VoxGuard Relay
+# PauseSignal Relay
 
 Minimal edge relay between the Flutter app and OneSignal + the
 prerecorded-transcription provider (AssemblyAI):
@@ -106,7 +106,7 @@ only. Nothing is persisted.
     "vg_fedcba9876543210fedcba9876543210",
     "vg_aabbccddeeff00112233445566778899"
   ],
-  "title": "VoxGuard Family Shield",
+  "title": "PauseSignal Family Shield",
   "body": "A high-risk call was flagged on a monitored device. Verify with your family member directly."
 }
 ```

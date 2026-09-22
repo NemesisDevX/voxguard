@@ -90,12 +90,12 @@ BEGIN
         BLOCK "040904e4"
         BEGIN
             VALUE "CompanyName", "com.nemesisdevx" "\0"
-            VALUE "FileDescription", "voxguard" "\0"
+            VALUE "FileDescription", "PauseSignal" "\0"
             VALUE "FileVersion", VERSION_AS_STRING "\0"
             VALUE "InternalName", "voxguard" "\0"
             VALUE "LegalCopyright", "Copyright (C) 2026 com.nemesisdevx. All rights reserved." "\0"
             VALUE "OriginalFilename", "voxguard.exe" "\0"
-            VALUE "ProductName", "voxguard" "\0"
+            VALUE "ProductName", "PauseSignal" "\0"
             VALUE "ProductVersion", VERSION_AS_STRING "\0"
         END
     END

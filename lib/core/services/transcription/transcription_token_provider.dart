@@ -11,7 +11,7 @@ import 'package:http/http.dart' as http;
 ///
 /// Production architecture:
 ///
-///   App → VoxGuard Token Broker → short-lived AssemblyAI token → WS
+///   App → PauseSignal Token Broker → short-lived AssemblyAI token → WS
 ///
 /// where the broker is any trusted server-side/edge endpoint holding
 /// the provider secret.

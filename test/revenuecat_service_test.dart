@@ -446,4 +446,97 @@ void main() {
       }
     });
   });
+
+  group('RevenueCatPurchaseService — Test Store judging backend', () {
+    RevenueCatPurchaseService testStoreSvc(_FakeAdapter adapter) =>
+        RevenueCatPurchaseService.testStore(
+            apiKey: 'rc_test_store_key', adapter: adapter);
+
+    test('is the real SDK service with a distinct test-store backend '
+        'mode — never the local Demo Store', () async {
+      final adapter = _FakeAdapter();
+      final svc = testStoreSvc(adapter);
+      await svc.initialize();
+
+      expect(svc, isA<RevenueCatPurchaseService>());
+      expect(svc.backendMode, PurchaseBackendMode.testStore);
+      expect(svc.backendMode, isNot(PurchaseBackendMode.demoStore));
+      expect(svc.backendMode, isNot(PurchaseBackendMode.realStore));
+      expect(svc.entitlement.value.backend,
+          PurchaseBackendMode.testStore);
+      expect(svc.entitlement.value.isDemo, isFalse);
+    });
+
+    test('derives entitlement exclusively from Test Store '
+        'CustomerInfo — same sentinel/family_vault truth', () async {
+      final adapter = _FakeAdapter(
+          initialInfo: _infoWith(active: {'sentinel'}));
+      final svc = testStoreSvc(adapter);
+      await svc.initialize();
+      expect(svc.entitlement.value.tier, TierId.sentinel);
+      expect(svc.entitlement.value.backend,
+          PurchaseBackendMode.testStore);
+
+      adapter.pushCustomerInfo(_infoWith(active: {'family_vault'}));
+      expect(svc.entitlement.value.tier, TierId.familyVault);
+      expect(svc.entitlement.value.backend,
+          PurchaseBackendMode.testStore);
+    });
+
+    test('Test Store purchase activates only when CustomerInfo '
+        'verifies the entitlement', () async {
+      final adapter = _FakeAdapter()
+        ..purchaseResultInfo = _infoWith(active: {'sentinel'});
+      final svc = testStoreSvc(adapter);
+      await svc.initialize();
+
+      final pkg = _domainPackage('sentinel_monthly', TierId.sentinel,
+          BillingCycle.monthly);
+      final outcome = await svc.purchasePackage(pkg);
+      expect(outcome.tier, TierId.sentinel);
+      expect(svc.entitlement.value.backend,
+          PurchaseBackendMode.testStore);
+    });
+
+    test('Test Store purchase that returns without entitlement does '
+        'NOT activate', () async {
+      final adapter = _FakeAdapter()
+        ..purchaseResultInfo = _infoWith();
+      final svc = testStoreSvc(adapter);
+      await svc.initialize();
+
+      final pkg = _domainPackage('sentinel_monthly', TierId.sentinel,
+          BillingCycle.monthly);
+      final outcome = await svc.purchasePackage(pkg);
+      expect(outcome.tier, isNull);
+      expect(svc.entitlement.value.tier, TierId.free);
+    });
+
+    test('Test Store restore flows through the real SDK path',
+        () async {
+      final adapter = _FakeAdapter()
+        ..restoreResultInfo = _infoWith(active: {'family_vault'});
+      final svc = testStoreSvc(adapter);
+      await svc.initialize();
+
+      expect(await svc.restorePurchases(), TierId.familyVault);
+      expect(svc.entitlement.value.backend,
+          PurchaseBackendMode.testStore);
+    });
+
+    test('empty Test Store key fails truthfully — no granted tier',
+        () async {
+      final adapter = _FakeAdapter();
+      // Bypass the dart-define by injecting an empty key explicitly.
+      final svc = RevenueCatPurchaseService(
+        apiKey: '',
+        adapter: adapter,
+        backendMode: PurchaseBackendMode.testStore,
+      );
+      await expectLater(svc.initialize(),
+          throwsA(isA<PurchaseServiceException>()));
+      expect(svc.entitlement.value.tier, TierId.free);
+      expect(adapter.configureCalls, 0);
+    });
+  });
 }

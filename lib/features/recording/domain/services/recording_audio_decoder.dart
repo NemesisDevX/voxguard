@@ -5,7 +5,7 @@ import 'package:audio_decoder/audio_decoder.dart';
 import '../models/recording_models.dart';
 import '../../../../core/l10n/l10n.dart';
 
-/// VoxGuard seam over the platform audio decoder. All analysis runs on
+/// PauseSignal seam over the platform audio decoder. All analysis runs on
 /// ONE normalized format — 16 kHz / mono / PCM16 little-endian — the
 /// same format the SafeCall pipeline feeds `AcousticForensicsService`.
 abstract interface class IRecordingAudioDecoder {
@@ -23,7 +23,7 @@ abstract interface class IRecordingAudioDecoder {
 final class PluginRecordingAudioDecoder implements IRecordingAudioDecoder {
   const PluginRecordingAudioDecoder();
 
-  /// The single format VoxGuard's acoustic engine consumes.
+  /// The single format PauseSignal's acoustic engine consumes.
   static const targetSampleRate = 16000;
   static const targetChannels = 1;
   static const targetBitDepth = 16;

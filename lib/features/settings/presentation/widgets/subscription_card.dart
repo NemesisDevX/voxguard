@@ -33,6 +33,8 @@ class SubscriptionCard extends StatelessWidget {
       valueListenable: service.entitlement,
       builder: (context, entitlement, _) {
         final isDemo = entitlement.isDemo;
+        final isTestStore =
+            entitlement.backend == PurchaseBackendMode.testStore;
         final isUnavailable =
             entitlement.backend == PurchaseBackendMode.unavailable;
         return Container(
@@ -58,22 +60,26 @@ class SubscriptionCard extends StatelessWidget {
                         style: AppTypography.titleMedium,
                       ),
                     ),
-                    if (isDemo)
+                    if (isDemo || isTestStore)
                       Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
-                          color: p.statusWarning
+                          color: (isDemo ? p.statusWarning : p.accent)
                               .withValues(alpha: 0.14),
                           borderRadius: BorderRadius.circular(5),
                         ),
                         child: Text(
-                          l10n.demoStoreSection,
+                          isDemo
+                              ? l10n.demoStoreSection
+                              : l10n.testStoreSection,
                           style: TextStyle(
                             fontSize: 8,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 0.6,
-                            color: p.statusWarning,
+                            color: isDemo
+                                ? p.statusWarning
+                                : p.accent,
                           ),
                         ),
                       ),
@@ -87,7 +93,10 @@ class SubscriptionCard extends StatelessWidget {
                               l10n, entitlement.tier)) +
                           (isDemo && entitlement.tier != TierId.free
                               ? l10n.currentPlanDemo
-                              : ''),
+                              : isTestStore &&
+                                      entitlement.tier != TierId.free
+                                  ? l10n.currentPlanTestStore
+                                  : ''),
                   style:
                       AppTypography.bodyMedium.copyWith(fontSize: 12),
                 ),

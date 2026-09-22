@@ -1,4 +1,9 @@
-# OneSignal Campaign — Shipaton "Keep Them Coming Back"
+# OneSignal Campaign — technical reference
+
+> **Note:** the active submission is the Shipaton 2026 **Next Gen**
+> Award only — this document records the implemented OneSignal
+> integration as technical work, not a category claim for this
+> submission.
 
 ## Integration status
 

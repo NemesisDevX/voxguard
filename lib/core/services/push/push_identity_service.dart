@@ -122,10 +122,10 @@ final class FamilyAlertTap {
   }
 }
 
-/// VoxGuard-owned abstraction over the push provider (OneSignal).
+/// PauseSignal-owned abstraction over the push provider (OneSignal).
 ///
 /// Keeps three distinct identifiers un-confused:
-///  - **VoxGuard External ID** (`vg_…`): our opaque, locally generated
+///  - **PauseSignal External ID** (`vg_…`): our opaque, locally generated
 ///    family identity — what the relay targets.
 ///  - **OneSignal push subscription ID**: the provider's routing handle
 ///    for this device's push channel.
@@ -162,7 +162,7 @@ abstract interface class IPushIdentityService {
   Future<void> initialize();
 
   /// User-intentional enable flow: requests notification permission,
-  /// then links the VoxGuard External ID via `OneSignal.login`.
+  /// then links the PauseSignal External ID via `OneSignal.login`.
   Future<void> enableAlerts();
 
   /// Regenerates the `vg_…` identity (testing/debug path).

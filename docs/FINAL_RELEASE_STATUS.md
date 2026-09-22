@@ -1,94 +1,93 @@
-# Final Release Status — VoxGuard
+# Final Status — PauseSignal (Shipaton Next Gen)
 
 Statuses: `DONE` / `FAILED` / `NOT RUN` / `BLOCKED_EXTERNAL` /
-`BLOCKED_DECISION`. Generated during the foundation-freeze pass after
-Sprint 6. External items are explicitly blocked on credentials, hardware,
-or accounts — nothing unverified is claimed DONE.
+`BLOCKED_DECISION`. Active target: **RevenueCat Shipaton 2026 —
+Next Gen Award only**. Next Gen substitutes a working app + demo
+video + public open-source repo for a store listing — store
+publication, release signing and paid developer accounts are future
+commercial items, not submission blockers. Nothing unverified is
+claimed DONE.
 
 ## Repo-side product work
 
 | Item | Status | Proof |
 |------|--------|-------|
 | Truth sweep — no interception/background/probability/guarantee claims | DONE | repo sweep; disclaimer strings in `IncidentReport.legalDisclaimer` + `reportDisclaimer` ARB |
-| Package-ID collision resolved | DONE | `com.nemesisdevx.voxguard` — Android `applicationId`/`namespace`, Kotlin package path, iOS/macOS bundle IDs, Linux app ID, Windows runner; zero active release configuration uses `com.voxguard.app` (historical docs retain it factually) |
-| Incident deletion | DONE | `IIncidentRepository.deleteIncident` — persisted + in-memory impls, AppBar delete action with confirm dialog; persisted impl writes storage first and reports failure only via `IncidentPersistenceException` (no silent swallow), UI shows safe retry copy |
+| Public brand = PauseSignal | DONE | `docs/BRAND_RELEASE_DECISION.md`; ARBs, platform labels, web, docs, submission assets all updated; `docs/BRAND_RENAME_INVENTORY.md` lists executed + intentionally-unchanged identifiers |
+| Package-ID collision resolved | DONE | `com.nemesisdevx.voxguard` — unchanged technical identity |
+| Incident deletion | DONE | `IIncidentRepository.deleteIncident` — persisted + in-memory impls, confirm dialog, `IncidentPersistenceException` (no silent swallow) |
 | Live Shield removed from release UI | DONE | roadmap-only in README |
 | Responsive + large-text smoke | DONE | `test/responsive_smoke_test.dart` |
 | Arabic/RTL first-strong-direction detection | DONE | `threat_phrase_highlighter.dart` + tests |
-| Reduced-motion respect (Signal Lens) | DONE | `MediaQuery.disableAnimations` wired — ambient breathing stops, state still renders |
-| Acoustic-only truthfulness | DONE | `SignalLens.conversationAnalyzed` — missing conversation layer renders `ACOUSTIC ONLY` + real acoustic anomaly, never a fused SAFE verdict; `test/design_state_test.dart` |
-| Semantic-analysis provenance | DONE | `SafeCallMonitoring.semanticAnalysisHasRun` — set only after `SemanticThreatService.analyze` completes over non-empty context (benign zero-signal results count); STT liveness, transcript text and displayed partials do NOT flip the lens; first partial stays `ACOUSTIC ONLY` through the ~1200 ms debounce, then full fused mode appears; reset returns scope to acoustic-only |
-| Stale semantic-result safety | DONE | `_sessionGeneration` + `_semanticRequestSeq` — results validate generation AND request recency before committing; a Future from a torn-down session or a superseded request mutates nothing (generation bumps in `_teardownAudio`, covering end/reset/restart/close); `ISemanticThreatAnalyzer` seam allows deterministic completer-driven tests |
-| Display name `VoxGuard` normalized | DONE | Android label, iOS `CFBundleDisplayName`, web title/manifest |
-| Original VoxGuard icon — all densities + adaptive + web | DONE — **provisional** | `tool/generate_icons.py` → mipmap-*/AppIcon/web icons; shield motif predates the Signal Lens direction — final icon ships with the public rebrand per the SignalMark visual language |
+| Reduced-motion respect (Signal Lens) | DONE | `MediaQuery.disableAnimations` wired |
+| Acoustic-only truthfulness | DONE | `SignalLens.conversationAnalyzed` — missing conversation layer renders `ACOUSTIC ONLY`, never a fused SAFE verdict; `test/design_state_test.dart` |
+| Semantic-analysis provenance | DONE | `SafeCallMonitoring.semanticAnalysisHasRun` set only after `SemanticThreatService.analyze` completes over non-empty context |
+| Stale semantic-result safety | DONE | `_sessionGeneration` + `_semanticRequestSeq` recency guards |
+| SignalMark icon — all densities + adaptive + web + submission | DONE | `tool/generate_icons.py` renders the canonical SignalMark (`lib/core/widgets/signal_mark.dart`); `submission/pausesignal-icon-1024.png` 1024×1024 |
 | Branded launch screens (Android + iOS) | DONE | `launch_background.xml`, `LaunchScreen.storyboard` |
-| `web/privacy.html` + `web/terms.html` | DONE | honest current-behavior copy; GitHub Issues as project support route |
-| Legal link defaults | DONE | `LegalLinks` defaults to the deployed GitHub Pages URLs; `VOXGUARD_*_URL` dart-defines remain valid overrides |
-| Android release-signing config | DONE | `key.properties` (storeFile/storePassword/keyAlias/keyPassword) takes priority, `VOXGUARD_KEYSTORE_FILE`/`VOXGUARD_KEYSTORE_PASSWORD`/`VOXGUARD_KEY_ALIAS`/`VOXGUARD_KEY_PASSWORD` env fallback; release without credentials fails loudly — `test/release_signing_config_test.dart` |
-| iOS push entitlements wired | DONE | `RunnerDebug.entitlements` (development) / `RunnerRelease.entitlements` (production) + `CODE_SIGN_ENTITLEMENTS` in Runner Debug/Release/Profile configs |
-| Screenshot harness reproducible | DONE | `test/screenshot_capture_test.dart` regenerates exactly the 7 committed filenames; fixtures use production `highRisk`; Arabic transcript renders real Noto Naskh glyphs via `fontFamilyFallback` |
-| Third-party font licensing | DONE | `tool/fonts/NotoNaskhArabic.ttf` unmodified + verbatim upstream `tool/fonts/OFL.txt` (SIL OFL 1.1) + `tool/fonts/README.md` attribution |
+| `web/privacy.html` + `web/terms.html` | DONE | PauseSignal copy; GitHub Issues as support route |
+| Legal link defaults | DONE | `LegalLinks` → deployed GitHub Pages URLs; `VOXGUARD_*_URL` overrides remain |
+| Android release-signing config | DONE | `key.properties` → `VOXGUARD_KEYSTORE_*` env fallback; unsigned release fails loudly — `test/release_signing_config_test.dart` |
+| iOS push entitlements wired | DONE | `RunnerDebug.entitlements` / `RunnerRelease.entitlements` + `CODE_SIGN_ENTITLEMENTS` |
+| iOS localization metadata | DONE (static) | `knownRegions` en/Base/ar/es/fr + per-locale `.strings` variant children with real `*.lproj` files; guarded by `test/ios_localization_metadata_test.dart`; NOT device-verified (no Xcode) |
+| Screenshot harness reproducible | DONE | `test/screenshot_capture_test.dart` regenerates exactly the 7 committed filenames |
+| Third-party font licensing | DONE | `tool/fonts/NotoNaskhArabic.ttf` + verbatim `OFL.txt` (SIL OFL 1.1) + attribution |
 | Store metadata pack | DONE | `docs/STORE_METADATA.md` |
-| Shipaton submission pack | DONE | `docs/SHIPATON_SUBMISSION.md` |
+| Shipaton Next Gen submission pack | DONE | `docs/SHIPATON_SUBMISSION.md` |
 | Demo script (<2 min) | DONE | `docs/DEMO_SCRIPT.md` |
-| OneSignal campaign spec | DONE | `docs/ONESIGNAL_CAMPAIGN.md` |
+| OneSignal campaign spec | DONE | `docs/ONESIGNAL_CAMPAIGN.md` — technical work documented; not a Next Gen judging category claim |
+| RevenueCat Test Store judging path | DONE (code) | `REVENUECAT_TEST_STORE_KEY` seam → real `purchases_flutter` SDK, `PurchaseBackendMode.testStore`, REVENUECAT TEST STORE UI, release-build exclusion; tests in `test/entitlement_gating_test.dart`, `test/revenuecat_service_test.dart`, `test/paywall_screen_test.dart`; setup doc `docs/NEXT_GEN_REVENUECAT_TEST_STORE.md` |
 | Purchase QA checklist | DONE | `docs/REVENUECAT_QA.md` |
 | Hardware QA matrix | DONE | `docs/FINAL_QA.md` |
-| 1179×2556 screenshots (7) | DONE | `submission/screenshots/` — real renders at native size, verified dimensions |
-| 1024×1024 icon | DONE — provisional | `submission/voxguard-icon-1024.png` verified dimensions; not the final Design Award identity — pending public rebrand |
+| 1179×2556 screenshots (7) | DONE | `submission/screenshots/` — regenerated post-rename |
+| 1024×1024 icon | DONE | `submission/pausesignal-icon-1024.png` — SignalMark, verified dimensions |
 | MIT license (Next Gen OSS requirement) | DONE | `LICENSE` |
-| Flutter localization (gen_l10n, 4 locales) | DONE | `flutter_localizations` + `l10n.yaml`; **577 keys** (programmatic non-metadata count) with enforced parity across `en`/`ar`/`es`/`fr`; `context.l10n` + binding-safe `l10nGlobal`; `LocalizedText` maps frozen domain messages at the presentation layer — engines/persistence untouched; share reports localize fully per current locale; multiline-aware source audit + domain-field guards block new hardcoded consumer copy |
-| First-run Welcome Setup | DONE | `welcome_setup_screen.dart` — language picker (no flags, applies immediately) + optional local-only display name (≤32 chars, trimmed, skippable); runs before safety onboarding; zero permission prompts; `StartupGate` chains splash → welcome → onboarding |
-| SignalMark launch experience | DONE | `launch_splash.dart` — finite 900 ms two-path converge animation, static fade under reduced motion; native surfaces (Android `launch_background`, iOS `LaunchImage`) regenerated to the SignalMark on deep ink |
-| Persistent preferences layer | DONE | `AppPreferences` + `AppPreferencesLocator` — display name, locale, theme, accent, text size, motion, haptics, experience mode; stable enum storage IDs; corrupt values fall back safely; `inMemory` test factory; setters return `Future<bool>` — failed/throwing writes mutate nothing and never claim persistence (Settings + Welcome Setup surface a localized retry) |
-| Light + Dark themes with palette tokens | DONE | `AppPalette` ThemeExtension — all presentation color consumption migrated off static `AppColors`; real light theme (warm off-white base, white elevated, ink text) |
-| Curated accent personalization | DONE | periwinkle / softBlue / softViolet; accent tints interactive surfaces only — semantic safe/warning/danger + signal colors provably identical across accents |
-| Text-size preference | DONE | floor semantics: `max(osScale, 1.0/1.18/1.35)` — never shrinks below OS accessibility scale |
-| Guided Mode | DONE | `ExperienceMode.guided` — larger CTAs/icons, more spacing via shared `context.isGuided` conditions; no second screen implementations; risk behavior unchanged |
-| Motion + haptics preferences | DONE | OS `disableAnimations` OR app pref wins; `AppHaptics` central wrapper — Off suppresses every haptic (channel-verified test) |
-| Settings Control Center | DONE | `lib/features/settings/` — Profile, Appearance, Safety & Family, Notifications (real permission state + `openAppSettings()`), Subscription, About & Privacy |
-| Privacy docs updated | DONE | `web/privacy.html` — display name / language / appearance prefs documented as local-only |
-| Arabic Home overflow at 360px/1.5× | FIXED | `protection_banner.dart` — plan badge now `Flexible` + ellipsis; AR badge copy shortened |
+| Public repository (Next Gen requirement) | VERIFIED | `github.com/NemesisDevX/voxguard` — HTTP 200 unauthenticated |
+| Flutter localization (gen_l10n, 4 locales) | DONE | **581 keys** per locale (programmatic non-metadata count), enforced parity en/ar/es/fr |
+| First-run Welcome Setup | DONE | language picker + optional local-only display name before safety onboarding |
+| SignalMark launch experience | DONE | finite 900 ms converge; static fade under reduced motion |
+| Persistent preferences layer | DONE | `AppPreferences` + locator; stable enum storage IDs; write-failure truthfulness |
+| Light + Dark themes / accents / text size / Guided Mode / motion / haptics | DONE | `AppPalette` tokens; accent-proof safety colors; text-scale floor; shared `context.isGuided`; `AppHaptics` wrapper |
+| Settings Control Center | DONE | `lib/features/settings/` |
 
-## External requirements — none fabricated
+## Next Gen submission — external steps (not repo defects)
 
-| Requirement | Status | Blocker |
-|-------------|--------|---------|
-| Public release brand | BLOCKED_DECISION | `docs/BRAND_RELEASE_DECISION.md` — existing published "VoxGuard" product + related trademark filing; rename reserved for design sprint |
-| Android release keystore | BLOCKED_EXTERNAL | `android/key.properties` + `.jks` not present in repo (correctly gitignored); build configured to fail loudly without them |
-| `flutter build appbundle --release` | BLOCKED_EXTERNAL | needs the keystore above — verified to abort with `BLOCKED_EXTERNAL — release keystore required` |
-| Google Play developer account | BLOCKED_EXTERNAL | account + $25 fee, external |
-| Google Play production eligibility (closed testing etc.) | BLOCKED_EXTERNAL | account policy requirements |
-| Apple Developer account | BLOCKED_EXTERNAL | $99/yr, external |
-| iOS build verification | NOT RUN | no macOS/Xcode on this machine |
-| iOS push signing | BLOCKED_EXTERNAL | needs Apple Team ID, provisioning profile, APNs key — entitlements files are wired, credentials are external |
-| Store listing live | BLOCKED_EXTERNAL | store accounts + review time |
-| US availability | BLOCKED_EXTERNAL | store distribution checkbox |
-| RevenueCat Dashboard products/entitlements/Offering | BLOCKED_EXTERNAL | dashboard config; docs in `docs/REVENUECAT_SETUP.md` |
-| Real sandbox purchase observed | NOT RUN | keyed build + physical device |
-| Judge premium-access method | BLOCKED_EXTERNAL | required by Shipaton: configure a free trial or a supported promo/redeem path that unlocks premium features for judges — Demo Mode alone does NOT satisfy this; no method configured or verified yet |
-| Privacy URL live | DONE | `https://nemesisdevx.github.io/voxguard/privacy.html` — HTTP 200 verified |
-| Terms URL live | DONE | `https://nemesisdevx.github.io/voxguard/terms.html` — HTTP 200 verified |
-| OneSignal campaign deployed | BLOCKED_EXTERNAL | dashboard credentials; spec in `docs/ONESIGNAL_CAMPAIGN.md` |
-| OneSignal App ID | BLOCKED_EXTERNAL | `ONESIGNAL_APP_ID` dart-define at build time |
-| Physical two-device push test | NOT RUN | needs 2 devices + configured relay/OneSignal |
-| Physical Live Mic/STT test | NOT RUN | physical device + mic |
-| Prerecorded transcription real-provider test | NOT RUN | `ASSEMBLYAI_*` config + device |
-| Public YouTube/Vimeo demo | BLOCKED_EXTERNAL | record per `docs/DEMO_SCRIPT.md` |
-| RevenueCat Project ID | BLOCKED_EXTERNAL | dashboard value for Devpost form |
-| Devpost submission | BLOCKED_EXTERNAL | manual submission before Sep 30, 2026 11:45 PM PDT |
+| Requirement | Status | Note |
+|-------------|--------|------|
+| Active-student eligibility + academic email | BLOCKED_EXTERNAL | entrant attestation on Devpost |
+| RevenueCat project + Test Store products/entitlements/Offering | BLOCKED_EXTERNAL | `docs/NEXT_GEN_REVENUECAT_TEST_STORE.md` |
+| `REVENUECAT_TEST_STORE_KEY` judging build | BLOCKED_EXTERNAL | dart-define value from the dashboard |
+| Real Test Store transaction observed | NOT RUN | needs the key + a device; entitlement unlock verified in-app from `CustomerInfo` |
+| RevenueCat Project ID | BLOCKED_EXTERNAL | dashboard value for Devpost |
+| Public demo video <2 min | BLOCKED_EXTERNAL | record per `docs/DEMO_SCRIPT.md` |
+| Devpost submission | BLOCKED_EXTERNAL | deadline Sep 30, 2026 11:45 PM PDT |
+| Physical-device QA | NOT RUN | matrix in `docs/FINAL_QA.md` / handoff |
 
-## Automated verification (latest run — localization consistency patch)
+## Future commercial release — explicitly NOT Next Gen blockers
+
+| Requirement | Status |
+|-------------|--------|
+| Android release keystore / `flutter build appbundle --release` | BLOCKED_EXTERNAL — fails loudly without credentials by design |
+| Google Play / Apple developer accounts, store review, US availability | BLOCKED_EXTERNAL |
+| iOS build verification | NOT RUN — no macOS/Xcode |
+| Production RevenueCat platform keys + sandbox purchase QA | BLOCKED_EXTERNAL |
+| OneSignal App ID + campaign deployment + two-device push test | BLOCKED_EXTERNAL / NOT RUN |
+| AssemblyAI production broker/relay + real-provider test | BLOCKED_EXTERNAL / NOT RUN |
+| Judge free-trial/promo-code mechanism | N/A for Next Gen — the Test Store path is the judging access |
+
+## Automated verification (latest run — Next Gen judging build)
 
 | Check | Result |
 |-------|--------|
 | `flutter pub get` | PASS |
 | `flutter analyze` | PASS — 0 issues |
-| `flutter test` | PASS — 361/361 (incl. personalization/l10n suite + consistency tests: multiline-aware source audit, domain-field guards, 4-locale share reports, name reactivity, pref write-failure, SafeCall/recording/incident/paywall localized surfaces) |
+| `flutter test` | PASS — 378/378 |
 | `flutter build web --release --base-href /voxguard/` | PASS |
 | `flutter build apk --debug` | PASS |
 | `cd server && npm ci && npm test` | PASS — 41/41 |
-| Screenshot capture (`--update-goldens --dart-define=CAPTURE_SHOTS=true`) | PASS — 7 PNGs at 1179×2556, exact committed filenames, Arabic glyphs verified rendered |
-| Submission icon | `submission/voxguard-icon-1024.png` — 1024×1024 verified |
-| `flutter build appbundle --release` | Expected fail-loud: `BLOCKED_EXTERNAL — release keystore required` (correct — no credentials present) |
+| ARB parity | 581 non-metadata keys × en/ar/es/fr — identical sets |
+| Screenshot capture | PASS — 7 PNGs at 1179×2556 |
+| Submission icon | `submission/pausesignal-icon-1024.png` — 1024×1024 verified |
+| iOS localization metadata | static check PASS (`test/ios_localization_metadata_test.dart`) |
+| `flutter build appbundle --release` | Expected fail-loud `BLOCKED_EXTERNAL — release keystore required` |
 | iOS build | NOT RUN — no macOS/Xcode |

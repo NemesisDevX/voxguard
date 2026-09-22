@@ -39,7 +39,7 @@ Future<void> main() async {
   runApp(VoxGuardApp(coordinator: coordinator));
 }
 
-/// Root application widget — VoxGuard, consumer-first AI voice-threat
+/// Root application widget — PauseSignal, consumer-first AI voice-threat
 /// monitor and scam-risk defense system.
 class VoxGuardApp extends StatelessWidget {
   const VoxGuardApp({super.key, this.coordinator});

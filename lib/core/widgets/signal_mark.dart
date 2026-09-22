@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_palette.dart';
 
-/// The Signal Mark — VoxGuard's primary visual symbol.
+/// The Signal Mark — PauseSignal's primary visual symbol.
 ///
 /// Two concentric signal paths, one slightly ahead of the other:
 /// conversation evidence and acoustic evidence converging toward a

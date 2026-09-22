@@ -10,10 +10,10 @@ import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../protection/presentation/safecall_launcher.dart';
 
-/// First-run onboarding — five concise pages covering what VoxGuard
+/// First-run onboarding — five concise pages covering what PauseSignal
 /// does, what leaves the phone, and when permissions are asked.
 ///
-/// [reviewMode] (Settings → "How VoxGuard Works") shows the same
+/// [reviewMode] (Settings → "How PauseSignal Works") shows the same
 /// content read-only: no Skip, no completion writes, a Done/back
 /// exit. Onboarding NEVER requests microphone or notification
 /// permission on open — the only permission action is the explicit

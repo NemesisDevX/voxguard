@@ -2,7 +2,7 @@ import 'dart:math';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// Persistence for the local VoxGuard identity (`vg_…`).
+/// Persistence for the local PauseSignal identity (`vg_…`).
 abstract interface class IIdentityStore {
   Future<String?> read();
   Future<void> write(String id);

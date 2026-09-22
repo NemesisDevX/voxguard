@@ -46,7 +46,7 @@ final class PurchaseOutcome {
   final bool wasCancelled;
 }
 
-/// Boundary between VoxGuard and the subscription backend.
+/// Boundary between PauseSignal and the subscription backend.
 ///
 /// The rest of the app reads plan truth ONLY through [entitlement];
 /// store SDK types never cross this line. Implementations:

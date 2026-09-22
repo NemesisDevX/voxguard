@@ -12,7 +12,7 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../core/l10n/localized_text.dart';
 
 /// Family Shield receiver setup — lets this device become reachable by
-/// another VoxGuard installation's alerts via its opaque `vg_…`
+/// another PauseSignal installation's alerts via its opaque `vg_…`
 /// identity. Outgoing contacts live in the [TrustedCircleCard].
 class FamilyReceiverCard extends StatefulWidget {
   const FamilyReceiverCard({super.key});

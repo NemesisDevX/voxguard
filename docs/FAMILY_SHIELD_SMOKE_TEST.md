@@ -58,7 +58,7 @@ debug build)
 |---|---|---|
 | Relay | `Alert accepted for delivery to 1 family member(s)` | relay validated + OneSignal API accepted. **Not** confirmed delivery. |
 | OneSignal | dashboard → notification shows `sent` | OneSignal queued push to the subscription |
-| Device B | system notification appears: "VoxGuard Family Shield — A high-risk call was flagged…" | **actual delivery** — the only stage that proves it |
+| Device B | system notification appears: "PauseSignal Family Shield — A high-risk call was flagged…" | **actual delivery** — the only stage that proves it |
 
 If the relay accepts but B shows nothing: check OneSignal dashboard →
 the notification's delivery stats, the device subscription's

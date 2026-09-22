@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- VoxGuard launch screen — brand graphite background with the
+<!-- PauseSignal launch screen — brand graphite background with the
      centered mark while the Flutter engine initializes. -->
 <layer-list xmlns:android="http://schemas.android.com/apk/res/android">
     <item android:drawable="@color/ic_launcher_background" />

@@ -1,4 +1,4 @@
-# VoxGuard — Competitive Design Position
+# PauseSignal — Competitive Design Position
 
 Status: internal design-position note. Factual UX differentiation —
 no claims about competitor quality, detection accuracy, or business.
@@ -7,7 +7,7 @@ no claims about competitor quality, detection accuracy, or business.
 
 ## The differentiated loop
 
-VoxGuard's primary surfaces are built around one sequence:
+PauseSignal's primary surfaces are built around one sequence:
 
 ```
 evidence → pause → independent verification → trusted human response
@@ -26,7 +26,7 @@ sounds like) and hands the decision to a person.
 - **Their unit of UX is the lookup:** a name/reputation verdict
   attached to an incoming call, driven by a crowdsourced database.
   Their screens answer "*who* is calling?".
-- **VoxGuard never identifies callers.** It has no contact database,
+- **PauseSignal never identifies callers.** It has no contact database,
   no spam-score lookup, no caller name claims. Its screens answer
   "*what signals did this conversation produce?*" — evidence the
   user can inspect, not a reputation label.
@@ -38,7 +38,7 @@ sounds like) and hands the decision to a person.
 
 - **Their unit of UX is a percentage:** "X% AI-generated". The
   product IS the probability.
-- **VoxGuard deliberately refuses a probability.** The Risk Signal
+- **PauseSignal deliberately refuses a probability.** The Risk Signal
   score is labelled a *signal*, capped by a band system
   (SAFE / CAUTION / HIGH RISK), and the acoustic engine is described
   in-product as "an assistive heuristic prototype, not a forensic
@@ -52,7 +52,7 @@ sounds like) and hands the decision to a person.
 
 - **Their unit of UX is the pre-arranged secret:** setup flows
   center on choosing and storing a family safe word.
-- **VoxGuard treats the safe phrase as *advice*, not a feature
+- **PauseSignal treats the safe phrase as *advice*, not a feature
   surface** ("agree on a family safe phrase offline"). Nothing is
   stored, challenged, or verified by the app — the phrase is a human
   practice the app recommends, not a protocol the app runs.
@@ -65,7 +65,7 @@ sounds like) and hands the decision to a person.
 - **Their unit of UX is telemetry:** grids of metrics, logs,
   shields, radar sweeps — "the system is working" rendered as the
   main content.
-- **VoxGuard enforces one-statement-per-screen hierarchy.** Home has
+- **PauseSignal enforces one-statement-per-screen hierarchy.** Home has
   one hero action. SafeCall leads with the Signal Lens and a
   human-readable interpretation ("Pause before acting."); raw DSP
   values live in a collapsed TECHNICAL DETAILS section. Incident
@@ -77,7 +77,7 @@ sounds like) and hands the decision to a person.
 
 ---
 
-## What VoxGuard does NOT compete on
+## What PauseSignal does NOT compete on
 
 - Caller-ID database size or coverage.
 - Automatic call blocking or native cellular interception

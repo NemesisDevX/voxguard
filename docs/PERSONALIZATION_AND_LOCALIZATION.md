@@ -2,9 +2,9 @@
 
 Status: **implemented foundation** — covers the preference model,
 first-run Welcome Setup, interface localization, theme/accent/text
-scaling, Guided Mode, motion and haptics rules. Public rebrand is
-still `BLOCKED_DECISION` (`BRAND_RELEASE_DECISION.md`); everything
-here is name-agnostic.
+scaling, Guided Mode, motion and haptics rules. Public brand is
+**PauseSignal** (`BRAND_RELEASE_DECISION.md`); everything here is
+name-agnostic.
 
 ---
 
@@ -64,7 +64,7 @@ the alert payload").
 
 Proper Flutter localization: `flutter_localizations` + `gen_l10n`
 (`l10n.yaml`, sources in `lib/l10n/arb/`, output in
-`lib/l10n/generated/`). **577 message keys** (counted
+`lib/l10n/generated/`). **581 message keys** (counted
 programmatically — non-metadata entries), identical sets across
 `en`, `ar`, `es`, `fr` — parity enforced by test.
 

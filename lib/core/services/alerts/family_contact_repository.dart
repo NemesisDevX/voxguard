@@ -7,7 +7,7 @@ import '../../l10n/l10n.dart';
 
 /// A trusted person reachable by Family Shield alerts.
 ///
-/// [externalId] is the opaque `vg_…` VoxGuard identity the relay
+/// [externalId] is the opaque `vg_…` PauseSignal identity the relay
 /// targets via OneSignal `external_id` — never a phone number, email
 /// or name. [trustedPhone] is local contact metadata only: it is
 /// stored on-device, never sent to the relay and never included in a
@@ -22,7 +22,7 @@ final class FamilyContact {
   });
 
   /// Stable local identifier (`fc_…`), independent of the person's
-  /// VoxGuard identity.
+  /// PauseSignal identity.
   final String id;
 
   /// User-supplied display name. Local only.

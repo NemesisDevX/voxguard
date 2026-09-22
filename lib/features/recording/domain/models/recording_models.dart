@@ -11,7 +11,7 @@ import '../../../protection/domain/models/semantic_threat_signals.dart';
 const int kMaxRecordingSourceBytes = 25 * 1024 * 1024; // 25 MB
 
 /// A user-selected audio file. Bytes are held in memory only for the
-/// duration of the analysis — never written to VoxGuard storage.
+/// duration of the analysis — never written to PauseSignal storage.
 final class PickedRecording {
   const PickedRecording({
     required this.name,
@@ -78,7 +78,7 @@ enum RecordingPrivacyMode {
   /// optional user-supplied transcript for semantic analysis.
   onDevice,
 
-  /// Recording is sent through VoxGuard's transcription relay to the
+  /// Recording is sent through PauseSignal's transcription relay to the
   /// configured speech-to-text provider for conversation analysis.
   enhancedTranscription,
 }

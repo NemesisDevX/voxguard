@@ -58,6 +58,37 @@ StorePackage _pkg(String id, TierId tier, BillingCycle cycle,
       title: id,
     );
 
+/// Fake Test Store backend — same real-SDK service shape, but
+/// labelled PurchaseBackendMode.testStore like the judging build.
+final class _TestStoreFake extends _RealStoreFake {
+  _TestStoreFake(super.packages);
+
+  final ValueNotifier<EntitlementState> _testEntitlement =
+      ValueNotifier<EntitlementState>(
+    const EntitlementState(
+      backend: PurchaseBackendMode.testStore,
+      status: EntitlementStatus.ready,
+    ),
+  );
+
+  @override
+  ValueListenable<EntitlementState> get entitlement =>
+      _testEntitlement;
+
+  @override
+  PurchaseBackendMode get backendMode => PurchaseBackendMode.testStore;
+
+  @override
+  Future<PurchaseOutcome> purchasePackage(StorePackage package) async {
+    _testEntitlement.value = EntitlementState(
+      tier: package.tierId,
+      backend: PurchaseBackendMode.testStore,
+      status: EntitlementStatus.ready,
+    );
+    return PurchaseOutcome.activated(package.tierId);
+  }
+}
+
 /// Pushes the paywall as a real route (matching production) so the
 /// "Continue Free" / post-purchase pop has somewhere to go.
 Widget _app({TierId? preselect}) => MaterialApp(
@@ -115,6 +146,31 @@ void main() {
       expect(find.textContaining('Demo plan activated'),
           findsOneWidget);
       expect(find.byType(PaywallScreen), findsNothing);
+    });
+  });
+
+  group('PaywallScreen — RevenueCat Test Store', () {
+    testWidgets('labels the judging backend distinctly from the Demo '
+        'Store and never claims real-money billing', (tester) async {
+      PurchaseServiceLocator.instance = _TestStoreFake([
+        _pkg('sentinel_monthly', TierId.sentinel, BillingCycle.monthly,
+            price: 'EGP 499.99'),
+      ]);
+      await _open(tester);
+
+      expect(find.text('REVENUECAT TEST STORE'), findsOneWidget);
+      expect(find.textContaining('Test Store'), findsWidgets);
+      // Explicitly NOT the local simulated store.
+      expect(find.text('DEMO STORE'), findsNothing);
+      expect(find.textContaining('Simulated checkout'), findsNothing);
+      // And NOT production billing either.
+      expect(find.text('Billing handled by your app store'),
+          findsNothing);
+      // Real SDK purchase CTA — not the demo activation label.
+      expect(find.text('Subscribe'), findsOneWidget);
+      expect(find.text('Activate Demo Plan'), findsNothing);
+      // Restore is a real RevenueCat path here.
+      expect(find.text('Restore Purchases'), findsOneWidget);
     });
   });
 

@@ -22,7 +22,7 @@ abstract interface class ISemanticThreatAnalyzer {
 }
 
 /// **Security note:** remote Groq semantics are a *development-only*
-/// escape hatch — production VoxGuard uses the deterministic local
+/// escape hatch — production PauseSignal uses the deterministic local
 /// rule engine. Remote analysis requires BOTH a key AND the explicit
 /// opt-in flag `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true`; a key
 /// alone (e.g. left in a release build) is not enough. A permanent

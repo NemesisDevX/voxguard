@@ -1,5 +1,5 @@
 /**
- * VoxGuard Family Shield relay — core request handling.
+ * PauseSignal Family Shield relay — core request handling.
  *
  * Receives a privacy-minimal alert request from the Flutter client,
  * validates it, and translates it into a OneSignal REST API call.
@@ -34,7 +34,7 @@ const VALID_ANALYSIS_SCOPES = new Set(['full', 'partial']);
 // Conservative identifier charset — letters, digits, _-:.@ only.
 const SAFE_ID = /^[A-Za-z0-9_\-.:@]{1,64}$/;
 
-// VoxGuard sender identities are exactly vg_<32 lowercase hex> —
+// PauseSignal sender identities are exactly vg_<32 lowercase hex> —
 // generated client-side by PushIdentityService.
 const SENDER_ID = /^vg_[0-9a-f]{32}$/;
 
@@ -167,13 +167,13 @@ export function validateAlertPayload(body) {
     return { ok: false, error: `at most ${MAX_RECIPIENTS} recipients` };
   }
   for (const id of ids) {
-    // Real Family Shield recipients are VoxGuard `vg_…` identities —
+    // Real Family Shield recipients are PauseSignal `vg_…` identities —
     // demo ids or arbitrary aliases never cross this boundary.
     if (typeof id !== 'string' || !SENDER_ID.test(id)) {
       return { ok: false, error: 'invalid recipient id' };
     }
   }
-  const title = body.title ?? 'VoxGuard Family Shield';
+  const title = body.title ?? 'PauseSignal Family Shield';
   // Fallback copy is scope/risk-aware too — a partial acoustic warning
   // is never described as a "high-risk call".
   const text = body.body ??
@@ -236,7 +236,7 @@ function validateResponsePayload(body, incidentId) {
       resolution: body.resolution,
       responderExternalId: body.responder_external_id,
       recipients: [body.target_external_id],
-      title: 'VoxGuard Family Shield Update',
+      title: 'PauseSignal Family Shield Update',
       // Neutral copy — responder_external_id is an opaque identity and
       // the shared relay does not cryptographically prove trust.
       body: 'A Family Shield response was received for your safety alert.',

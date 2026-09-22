@@ -561,7 +561,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(
-        find.textContaining('unrecognized VoxGuard identity'),
+        find.textContaining('unrecognized PauseSignal identity'),
         findsOneWidget,
       );
       expect(find.textContaining('Maya'), findsNothing);
@@ -849,7 +849,7 @@ void main() {
 
       expect(
         find.textContaining(
-            'received a suspicious-call warning from VoxGuard'),
+            'received a suspicious-call warning from PauseSignal'),
         findsOneWidget,
       );
       expect(find.text('SUSPICIOUS'), findsOneWidget);

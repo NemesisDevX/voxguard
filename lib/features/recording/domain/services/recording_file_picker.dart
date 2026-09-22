@@ -2,7 +2,7 @@ import 'package:file_picker/file_picker.dart';
 
 import '../models/recording_models.dart';
 
-/// VoxGuard seam over the platform file picker — UI code never calls
+/// PauseSignal seam over the platform file picker — UI code never calls
 /// the plugin directly, so tests inject a fake with no platform
 /// channel.
 abstract interface class IRecordingFilePicker {

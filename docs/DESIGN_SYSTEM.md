@@ -1,14 +1,14 @@
-# VoxGuard Design System
+# PauseSignal Design System
 
-Status: **internal design reference** — VoxGuard is a working
-project name, not the final public brand. The visual system is
-deliberately name-agnostic: the `SignalMark` glyph and Signal Lens
-metaphor carry no letters, no shield, and no wordmark dependency, so
-the visual system itself survives a rename unchanged. A public
-rename still requires updating every user-facing surface — the full
-Section A inventory in `docs/BRAND_RENAME_INVENTORY.md`: the
-`appName` ARB key, platform display names, web metadata and legal
-pages, docs/submission copy, and screenshots.
+Status: **internal design reference** — public brand is
+**PauseSignal** (`docs/BRAND_RELEASE_DECISION.md`). The visual
+system was designed name-agnostic: the `SignalMark` glyph and Signal
+Lens metaphor carry no letters, no shield, and no wordmark
+dependency, so the system survived the rename unchanged. The rename
+executed the full Section A inventory in
+`docs/BRAND_RENAME_INVENTORY.md` — `appName` ARB values, platform
+display names, web metadata and legal pages, docs/submission copy,
+and screenshots.
 
 ---
 

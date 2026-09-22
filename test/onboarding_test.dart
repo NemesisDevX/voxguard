@@ -260,11 +260,11 @@ void main() {
       // The entry sits below the fold — drag the settings ListView
       // itself (a second, nested Scrollable exists in the cards).
       await tester.dragUntilVisible(
-        find.text('How VoxGuard Works'),
+        find.text('How PauseSignal Works'),
         find.byType(ListView).first,
         const Offset(0, -200),
       );
-      await tester.tap(find.text('How VoxGuard Works'));
+      await tester.tap(find.text('How PauseSignal Works'));
       await tester.pump();
       await tester.pump(const Duration(milliseconds: 400));
       expect(find.byType(OnboardingScreen), findsOneWidget);
@@ -282,7 +282,7 @@ void main() {
       ));
       await tester.pumpAndSettle();
       await walkToLastPage(tester);
-      await tester.tap(find.text('Explore VoxGuard'));
+      await tester.tap(find.text('Explore PauseSignal'));
       await tester.pumpAndSettle();
       // Zero prompts through the whole flow — microphone is simply
       // never invoked (no code path), notifications only on tap.
@@ -360,7 +360,7 @@ void main() {
         ));
         await tester.pumpAndSettle();
         await walkToLastPage(tester);
-        await tester.tap(find.text('Explore VoxGuard'));
+        await tester.tap(find.text('Explore PauseSignal'));
         await tester.pumpAndSettle();
         expect(done, isTrue, reason: 'status=$status');
       }
@@ -529,7 +529,7 @@ void main() {
           responderName: null,
         ),
       ));
-      expect(find.textContaining('unrecognized VoxGuard identity'),
+      expect(find.textContaining('unrecognized PauseSignal identity'),
           findsOneWidget);
       expect(find.textContaining('trusted'), findsNothing);
     });

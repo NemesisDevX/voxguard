@@ -1,5 +1,5 @@
 /**
- * VoxGuard prerecorded-transcription relay — server-side proxy to the
+ * PauseSignal prerecorded-transcription relay — server-side proxy to the
  * configured speech-to-text provider (AssemblyAI).
  *
  * The provider API key lives ONLY in server-side env vars
@@ -213,7 +213,7 @@ async function createJob(request, env, fetchImpl, cors) {
   }
 }
 
-/** GET /transcription/jobs/{id} — compact VoxGuard status only. */
+/** GET /transcription/jobs/{id} — compact PauseSignal status only. */
 async function pollJob(request, env, fetchImpl, cors, jobId) {
   const denied = checkRelayAuth(request, env);
   if (denied) return withCors(denied, cors);
@@ -255,7 +255,7 @@ async function pollJob(request, env, fetchImpl, cors, jobId) {
     return jsonResponse(502, { error: 'transcription poll failed' }, cors);
   }
 
-  // Map provider status onto the compact VoxGuard vocabulary — raw
+  // Map provider status onto the compact PauseSignal vocabulary — raw
   // provider error bodies never reach the client.
   const status = data?.status;
   console.log(JSON.stringify({

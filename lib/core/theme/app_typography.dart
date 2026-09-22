@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 
-/// VoxGuard type scale.
+/// PauseSignal type scale.
 ///
 /// Consumer hierarchy: one primary statement per screen, one dominant
 /// action, evidence below. Warm off-white headings, muted periwinkle

@@ -1,4 +1,4 @@
-// Smoke test for the VoxGuard app shell.
+// Smoke test for the PauseSignal app shell.
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -7,7 +7,7 @@ import 'package:voxguard/core/services/preferences/app_preferences.dart';
 import 'package:voxguard/main.dart';
 
 void main() {
-  testWidgets('VoxGuard home renders shield dashboard', (tester) async {
+  testWidgets('PauseSignal home renders shield dashboard', (tester) async {
     // Completed setup + onboarding → the app opens directly into Home.
     SharedPreferences.setMockInitialValues(
         const {'voxguard.onboarding_version': 1});
@@ -16,8 +16,8 @@ void main() {
     await tester.pumpWidget(const VoxGuardApp());
     await tester.pump();
 
-    expect(find.text('VoxGuard'), findsOneWidget);
-    expect(find.text('VoxGuard Ready'), findsOneWidget);
+    expect(find.text('PauseSignal'), findsOneWidget);
+    expect(find.text('PauseSignal Ready'), findsOneWidget);
     expect(find.text('Start SafeCall'), findsOneWidget);
     // Live Shield is unimplemented — the release UI must not
     // advertise it; it exists only in README roadmap docs.

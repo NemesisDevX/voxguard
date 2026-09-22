@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
-/// Status of a prerecorded transcription job — the compact, VoxGuard
+/// Status of a prerecorded transcription job — the compact, PauseSignal
 /// vocabulary the relay returns (provider internals never surface).
 enum RecordedTranscriptionStatus {
   queued,
@@ -50,7 +50,7 @@ final class RecordedTranscriptionException implements Exception {
   String toString() => message;
 }
 
-/// Client for the VoxGuard transcription relay (`server/` Worker):
+/// Client for the PauseSignal transcription relay (`server/` Worker):
 ///   POST {base}/transcription/jobs      — raw audio bytes
 ///   GET  {base}/transcription/jobs/{id} — compact status
 ///

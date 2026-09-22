@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// VoxGuard design-system color tokens.
+/// PauseSignal design-system color tokens.
 ///
 /// Signal Lens palette: deep graphite foundations, warm off-white
 /// type, muted periwinkle for neutral evidence, mint for verified /

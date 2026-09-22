@@ -37,7 +37,7 @@ const VALID_BODY = {
   analysis_scope: 'full',
   sender_external_id: SENDER_ID,
   family_external_ids: [RECIP_A, RECIP_B],
-  title: 'VoxGuard Family Shield',
+  title: 'PauseSignal Family Shield',
   body: 'A high-risk call was flagged.',
 };
 
@@ -76,7 +76,7 @@ test('valid alert → 202 + correct OneSignal payload + Key auth', async () => {
     external_id: [RECIP_A, RECIP_B],
   });
   assert.equal(payload.target_channel, 'push');
-  assert.deepEqual(payload.headings, { en: 'VoxGuard Family Shield' });
+  assert.deepEqual(payload.headings, { en: 'PauseSignal Family Shield' });
   assert.deepEqual(payload.contents, { en: 'A high-risk call was flagged.' });
   assert.deepEqual(payload.data, {
     kind: 'family_shield_alert',
@@ -476,7 +476,7 @@ test('valid response event → 202, single target, generic copy', async () => {
   // Copy is server-fixed, neutral and PII-free — the responder's
   // opaque identity is not proof of trust, so the notification never
   // claims "a trusted person" responded.
-  assert.equal(payload.headings.en, 'VoxGuard Family Shield Update');
+  assert.equal(payload.headings.en, 'PauseSignal Family Shield Update');
   assert.equal(
     payload.contents.en,
     'A Family Shield response was received for your safety alert.',

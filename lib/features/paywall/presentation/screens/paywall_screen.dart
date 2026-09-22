@@ -103,6 +103,8 @@ class _PaywallContent extends StatelessWidget {
     if (loaded == null) return const SizedBox.shrink();
     final bloc = context.read<PaywallBloc>();
     final isDemo = loaded.backend == PurchaseBackendMode.demoStore;
+    final isTestStore =
+        loaded.backend == PurchaseBackendMode.testStore;
     final isUnavailable =
         loaded.backend == PurchaseBackendMode.unavailable;
 
@@ -121,6 +123,8 @@ class _PaywallContent extends StatelessWidget {
               const Spacer(),
               if (isDemo)
                 const _DemoBadge()
+              else if (isTestStore)
+                const _TestStoreBadge()
               else if (!isUnavailable) ...[
                 // No billing happens on the unavailable backend —
                 // so the badge stays honest by staying absent.
@@ -160,6 +164,7 @@ class _PaywallContent extends StatelessWidget {
               ),
               const SizedBox(height: 16),
               if (isDemo) const _DemoNotice(),
+              if (isTestStore) const _TestStoreNotice(),
               if (isUnavailable) const _UnavailableNotice(),
               if (loaded.notice != null && !isUnavailable)
                 _InlineNotice(message: loaded.notice!),
@@ -253,6 +258,53 @@ class _DemoNotice extends StatelessWidget {
       color: p.statusWarning,
       child: Text(
         l10n.demoStoreNotice,
+        style: AppTypography.bodyMedium,
+      ),
+    );
+  }
+}
+
+/// RevenueCat Test Store — the genuine RevenueCat-hosted judging
+/// backend, visually distinct from the local Demo Store.
+class _TestStoreBadge extends StatelessWidget {
+  const _TestStoreBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: p.accent.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(
+          color: p.accent.withValues(alpha: 0.5),
+        ),
+      ),
+      child: Text(
+        l10n.testStoreBadge,
+        style: TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.8,
+          color: p.accent,
+        ),
+      ),
+    );
+  }
+}
+
+class _TestStoreNotice extends StatelessWidget {
+  const _TestStoreNotice();
+
+  @override
+  Widget build(BuildContext context) {
+    final p = context.palette;
+    return _NoticeShell(
+      icon: Icons.verified_outlined,
+      color: p.accent,
+      child: Text(
+        l10n.testStoreNotice,
         style: AppTypography.bodyMedium,
       ),
     );
