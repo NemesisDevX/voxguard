@@ -14,6 +14,7 @@ import '../../domain/models/semantic_threat_signals.dart';
 import '../bloc/safecall_state.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/l10n/localized_text.dart';
+import '../../../../core/widgets/surfaces.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/services/preferences/app_preferences.dart';
 
@@ -48,16 +49,16 @@ class PostCallSafetySheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final p = context.palette;
     final incident = result.incident;
-    return Container(
+    return ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.of(context).size.height * 0.86,
       ),
-      decoration: BoxDecoration(
-        color: p.bgSurface,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        border: Border(top: BorderSide(color: p.borderSubtle)),
-      ),
-      child: SafeArea(
+      child: GlassPanel(
+        borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(24)),
+        border: Border(
+            top: BorderSide(color: PsGlass.edge(p))),
+        child: SafeArea(
         top: false,
         child: ListView(
           shrinkWrap: true,
@@ -140,6 +141,7 @@ class PostCallSafetySheet extends StatelessWidget {
             ),
           ],
         ),
+      ),
       ),
     );
   }
@@ -254,18 +256,10 @@ class _WhyFlaggedSection extends StatelessWidget {
         p.statusDanger,
       _ => p.statusWarning,
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.55)),
-      ),
-      child: Text(
-        localizeEvidenceLabel(l10n, e.label),
-        style:
-            AppTypography.labelSmall.copyWith(color: color, fontSize: 10),
-      ),
+    return StatusPill(
+      color: color,
+      label: localizeEvidenceLabel(l10n, e.label),
+      compact: true,
     );
   }
 }
@@ -278,15 +272,13 @@ class _VerifyCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
-      width: double.infinity,
+    return SurfaceCard(
+      elevated: true,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: p.accent.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: p.accent.withValues(alpha: 0.5), width: 1.2),
-      ),
+      tint: p.accent,
+      tintAlpha: 0.08,
+      borderColor: p.accent.withValues(alpha: 0.5),
+      borderWidth: 1.2,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -501,20 +493,14 @@ class _UpgradeRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return InkWell(
+    return SurfaceCard(
+      radius: 14,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       onTap: () {
         Navigator.of(context).pop();
         PaywallScreen.show(context, preselect: TierId.familyVault);
       },
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        decoration: BoxDecoration(
-          color: p.surfaceCard,
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: p.borderSubtle),
-        ),
-        child: Row(
+      child: Row(
           children: [
             Icon(Icons.workspace_premium_outlined,
                 size: 20, color: p.statusWarning),
@@ -527,7 +513,6 @@ class _UpgradeRow extends StatelessWidget {
             ),
             Icon(Icons.chevron_right, color: p.textMuted),
           ],
-        ),
       ),
     );
   }
@@ -567,14 +552,8 @@ class _Section extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
-      width: double.infinity,
+    return SurfaceCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.borderSubtle),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

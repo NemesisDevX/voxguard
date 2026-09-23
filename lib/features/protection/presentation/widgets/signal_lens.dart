@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/surfaces.dart';
 import '../../domain/models/audio_forensic_metrics.dart';
 
 /// PauseSignal's product signature: the **Signal Lens** — two signal
@@ -279,21 +280,11 @@ class _SignalLensState extends State<SignalLens>
         ],
         if (widget.isDemoAudio) ...[
           const SizedBox(height: 8),
-          Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
-            decoration: BoxDecoration(
-              color: p.bgElevated,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: p.borderSubtle),
-            ),
-            child: Text(
-              l10n.lensDemoAudio,
-              style: AppTypography.labelSmall.copyWith(
-                color: p.textMuted,
-                fontSize: 8,
-              ),
-            ),
+          StatusPill(
+            color: p.textMuted,
+            label: l10n.lensDemoAudio,
+            icon: Icons.science_outlined,
+            compact: true,
           ),
         ],
       ],
@@ -518,6 +509,20 @@ class _SignalLensPainter extends CustomPainter {
     final jitter = wobble * sin(phase * 2 * pi * 3);
     final start = _startAngle + jitter;
     final rect = Rect.fromCircle(center: c, radius: r);
+    // Bloom pass — a wide blurred echo of the arc beneath the sharp
+    // stroke. Light around the evidence, not a neon ring.
+    canvas.drawArc(
+      rect,
+      start,
+      sweep,
+      false,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 15
+        ..strokeCap = StrokeCap.round
+        ..color = paintColor.withValues(alpha: 0.30)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7),
+    );
     canvas.drawArc(
       rect,
       start,
@@ -529,11 +534,19 @@ class _SignalLensPainter extends CustomPainter {
         ..strokeCap = StrokeCap.round
         ..color = paintColor,
     );
-    // Terminal node — the "position" of the signal.
+    // Terminal node — the "position" of the signal, with a small
+    // halo so the endpoint reads at a glance.
     final endAngle = start + sweep;
     final node = Offset(
       c.dx + r * cos(endAngle),
       c.dy + r * sin(endAngle),
+    );
+    canvas.drawCircle(
+      node,
+      8.5,
+      Paint()
+        ..color = paintColor.withValues(alpha: 0.35)
+        ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 4),
     );
     canvas.drawCircle(node, 4.6, Paint()..color = paintColor);
   }
@@ -572,6 +585,17 @@ class _SignalLensPainter extends CustomPainter {
       Paint()
         ..color = color.withValues(alpha: 0.05 + amplitude * 0.10)
         ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 22),
+    );
+
+    // Outer halo — a faint full ring framing the lens, separating it
+    // from the surrounding surface like glass around an instrument.
+    canvas.drawCircle(
+      center,
+      outerR + 9,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1
+        ..color = trackColor.withValues(alpha: 0.30),
     );
 
     // Layer A — conversation / semantic evidence (outer path).

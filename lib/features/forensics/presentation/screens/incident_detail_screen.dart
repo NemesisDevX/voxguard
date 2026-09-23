@@ -18,6 +18,7 @@ import '../../domain/services/incident_repository.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/l10n/localized_text.dart';
 import '../../../../core/theme/app_palette.dart';
+import '../../../../core/widgets/surfaces.dart';
 
 /// Forensic viewer for a single flagged incident — consumer-first
 /// evidence hierarchy with technical telemetry collapsed by default.
@@ -276,14 +277,8 @@ class _Card extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
-      width: double.infinity,
+    return SurfaceCard(
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.borderSubtle),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -318,14 +313,11 @@ class _HeaderCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
-      width: double.infinity,
+    return SurfaceCard(
+      elevated: true,
       padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: p.bgElevated,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withValues(alpha: 0.55)),
-      ),
+      tint: color,
+      borderColor: color.withValues(alpha: 0.55),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -334,24 +326,7 @@ class _HeaderCard extends StatelessWidget {
               Expanded(
                 child: Text(incident.id, style: AppTypography.titleLarge),
               ),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.14),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: color),
-                ),
-                child: Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.9,
-                    color: color,
-                  ),
-                ),
-              ),
+              StatusPill(color: color, label: label),
             ],
           ),
           const SizedBox(height: 10),
@@ -515,17 +490,10 @@ class _WhyFlaggedCard extends StatelessWidget {
         p.statusDanger,
       _ => p.statusWarning,
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.55)),
-      ),
-      child: Text(
-        localizeEvidenceLabel(l10n, e.label),
-        style: AppTypography.labelSmall.copyWith(color: color, fontSize: 10),
-      ),
+    return StatusPill(
+      color: color,
+      label: localizeEvidenceLabel(l10n, e.label),
+      compact: true,
     );
   }
 }
@@ -548,12 +516,8 @@ class _TechnicalEvidenceSectionState extends State<_TechnicalEvidenceSection> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
-      decoration: BoxDecoration(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.borderSubtle),
-      ),
+    return SurfaceCard(
+      padding: EdgeInsets.zero,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -767,40 +731,17 @@ class _SemanticCard extends StatelessWidget {
   }
 
   Widget _scoreBadge(String label, double score, AppPalette p) {
-    final color = p.forThreat(score);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        '$label ${(score * 100).round()}/100',
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w700,
-          color: color,
-        ),
-      ),
+    return StatusPill(
+      color: p.forThreat(score),
+      label: '$label ${(score * 100).round()}/100',
     );
   }
 
   Widget _keywordChip(String text, Color color, AppPalette p) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: p.bgSurface,
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: color.withValues(alpha: 0.45)),
-      ),
-      child: Text(
-        text,
-        style: AppTypography.bodyMedium.copyWith(
-          color: p.textPrimary,
-          fontSize: 12,
-        ),
-      ),
+    return StatusPill(
+      color: color,
+      label: text,
+      compact: true,
     );
   }
 }

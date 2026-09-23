@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/app_palette.dart';
+import '../../../../core/widgets/surfaces.dart';
 
 /// How the meter's current value is rendered on the trailing edge.
 enum ThreatMeterStyle {
@@ -48,14 +49,9 @@ class ThreatMeterCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
-      width: double.infinity,
+    return SurfaceCard(
+      radius: 14,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-      decoration: BoxDecoration(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: p.borderSubtle),
-      ),
       child: TweenAnimationBuilder<double>(
         tween: Tween<double>(end: value.clamp(0.0, 1.0)),
         duration: const Duration(milliseconds: 700),
@@ -121,17 +117,10 @@ class _TrailingValue extends StatelessWidget {
       final elevated = value >= 0.5;
       final chipColor =
           elevated ? p.statusWarning : p.statusSafe;
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: chipColor.withValues(alpha: 0.14),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: chipColor.withValues(alpha: 0.5)),
-        ),
-        child: Text(
-          elevated ? elevatedLabel : normalLabel,
-          style: AppTypography.labelSmall.copyWith(color: chipColor),
-        ),
+      return StatusPill(
+        color: chipColor,
+        label: elevated ? elevatedLabel : normalLabel,
+        compact: true,
       );
     }
     return SizedBox(

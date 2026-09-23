@@ -8,6 +8,7 @@ import 'incident_detail_screen.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/l10n/localized_text.dart';
+import '../../../../core/widgets/surfaces.dart';
 
 /// "Incidents" tab — a calm safety log, not a forensic console.
 /// Each card leads with when it happened and the one-line reason;
@@ -25,7 +26,9 @@ class IncidentsHistoryScreen extends StatelessWidget {
             return const _EmptyState();
           }
           return ListView.separated(
-            padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+            // SafeArea already carries the Scaffold-injected chrome
+            // insets — the list only adds breathing room.
+            padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
             itemCount: incidents.length,
             separatorBuilder: (context, index) =>
                 const SizedBox(height: 10),
@@ -79,23 +82,16 @@ class _IncidentCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Material(
-      color: p.surfaceCard,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+    return Pressable(
+      child: SurfaceCard(
+        radius: 16,
         onTap: () => Navigator.of(context).push(
           MaterialPageRoute<void>(
             builder: (_) => IncidentDetailScreen(incident: incident),
           ),
         ),
-        child: Ink(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: p.borderSubtle),
-          ),
-          child: Column(
+        padding: const EdgeInsets.all(16),
+        child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
@@ -122,24 +118,10 @@ class _IncidentCard extends StatelessWidget {
                     ),
                   ),
                   const SizedBox(width: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 8, vertical: 3),
-                    decoration: BoxDecoration(
-                      color: _riskColor(p).withValues(alpha: 0.14),
-                      borderRadius: BorderRadius.circular(6),
-                      border:
-                          Border.all(color: _riskColor(p).withValues(alpha: 0.55)),
-                    ),
-                    child: Text(
-                      _riskLabel,
-                      style: TextStyle(
-                        fontSize: 10,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: 0.8,
-                        color: _riskColor(p),
-                      ),
-                    ),
+                  StatusPill(
+                    color: _riskColor(p),
+                    label: _riskLabel,
+                    compact: true,
                   ),
                 ],
               ),
@@ -175,7 +157,6 @@ class _IncidentCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
     );
   }
 }

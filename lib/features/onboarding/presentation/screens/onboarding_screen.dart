@@ -8,6 +8,8 @@ import '../../../../core/services/push/onesignal_push_identity_service.dart';
 import '../../../../core/services/push/push_identity_service.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/chrome.dart';
+import '../../../../core/widgets/surfaces.dart';
 import '../../../protection/presentation/safecall_launcher.dart';
 
 /// First-run onboarding — five concise pages covering what PauseSignal
@@ -111,8 +113,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     return Scaffold(
-      body: SafeArea(
-        child: Column(
+      body: Stack(
+        children: [
+          const AmbientBackground(),
+          SafeArea(
+            child: Column(
           children: [
             // Top bar — Back / progress / Skip (or Close in review).
             Padding(
@@ -185,7 +190,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
           ],
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -206,13 +213,22 @@ class _Dot extends StatelessWidget {
       decoration: BoxDecoration(
         color: active ? p.accent : p.borderSubtle,
         borderRadius: BorderRadius.circular(4),
+        boxShadow: active
+            ? [
+                BoxShadow(
+                  color: p.accent.withValues(alpha: 0.45),
+                  blurRadius: 8,
+                ),
+              ]
+            : null,
       ),
     );
   }
 }
 
 /// Shared page scaffold — scrollable, safe on small screens and
-/// large text scaling.
+/// large text scaling. On tall viewports the content is lifted
+/// toward the optical center instead of hugging the top.
 class _Page extends StatelessWidget {
   const _Page({
     required this.icon,
@@ -228,18 +244,36 @@ class _Page extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 12),
-          Icon(icon, size: 44, color: iconColor),
-          const SizedBox(height: 18),
-          Text(title, style: AppTypography.titleLarge),
-          const SizedBox(height: 14),
-          ...children,
-        ],
+    return LayoutBuilder(
+      builder: (context, c) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(24, 4, 24, 24),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(minHeight: c.maxHeight - 28),
+          child: IntrinsicHeight(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Spacer(flex: 2),
+                // The icon floats in a circular glass well — the
+                // product's own shape language instead of stock
+                // illustration.
+                SurfaceCard(
+                  radius: 28,
+                  elevated: true,
+                  tint: iconColor,
+                  tintAlpha: 0.10,
+                  padding: const EdgeInsets.all(13),
+                  child: Icon(icon, size: 34, color: iconColor),
+                ),
+                const SizedBox(height: 16),
+                Text(title, style: AppTypography.titleLarge),
+                const SizedBox(height: 14),
+                ...children,
+                const Spacer(flex: 3),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -483,9 +517,9 @@ class _ReadyPage extends StatelessWidget {
         _Bullet(l10n.onboardingPrivacyAlerts),
         const SizedBox(height: 6),
         Text(l10n.onboardingPrivacyLoop, style: AppTypography.titleMedium),
-        const SizedBox(height: 10),
+        const SizedBox(height: 8),
         Text(l10n.onboardingPrivacyChoice, style: AppTypography.bodyMedium),
-        const SizedBox(height: 22),
+        const SizedBox(height: 16),
         if (reviewMode)
           SizedBox(
             width: double.infinity,

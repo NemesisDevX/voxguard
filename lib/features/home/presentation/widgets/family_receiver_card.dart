@@ -10,6 +10,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/l10n/localized_text.dart';
+import '../../../../core/widgets/surfaces.dart';
 
 /// Family Shield receiver setup — lets this device become reachable by
 /// another PauseSignal installation's alerts via its opaque `vg_…`
@@ -38,13 +39,9 @@ class _FamilyReceiverCardState extends State<FamilyReceiverCard> {
     return ValueListenableBuilder<FamilyPushRegistration>(
       valueListenable: _push.registration,
       builder: (context, reg, _) {
-        return Container(
+        return SurfaceCard(
           padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: p.surfaceCard,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: p.borderSubtle),
-          ),
+          radius: 18,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [

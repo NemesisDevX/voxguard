@@ -11,6 +11,7 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../core/l10n/localized_text.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/services/haptics/app_haptics.dart';
+import '../../../../core/widgets/surfaces.dart';
 
 /// Thin seam over `url_launcher` so tests can observe the `tel:` URI
 /// without touching platform channels.
@@ -118,126 +119,150 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.familyAlertTitle)),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(20),
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+          child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(
-              l10n.familyAlertFraming,
-              style: AppTypography.bodyMedium,
-            ),
-            const SizedBox(height: 8),
-            Text(_headline, style: AppTypography.titleLarge),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: riskColor.withValues(alpha: 0.12),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                    color: riskColor.withValues(alpha: 0.5)),
-              ),
-              child: Text(
-                _partial
-                    ? l10n.bandPartial
-                    : switch (widget.alert.riskLevel) {
-                        'highRisk' => l10n.bandHigh,
-                        'suspicious' => l10n.bandSuspicious,
-                        _ => l10n.familyBandAlert,
-                      },
-                style: AppTypography.titleMedium.copyWith(
-                    color: riskColor, letterSpacing: 1.2),
-              ),
-            ),
-            if (_partial) ...[
-              const SizedBox(height: 8),
-              Text(
-                l10n.conversationNotAnalyzed,
-                style: AppTypography.bodyMedium
-                    .copyWith(color: p.textMuted),
-              ),
-            ],
-            const SizedBox(height: 24),
-
-            Text(l10n.familyVerifyDirectly, style: AppTypography.titleMedium),
-            const SizedBox(height: 6),
-            Text(
-              _knownSender
-                  ? l10n.familyVerifyKnownSender(_senderName)
-                  : l10n.familyVerifyUnknownSender,
-              style: AppTypography.bodyMedium,
-            ),
-            const SizedBox(height: 16),
-
-            if (phone != null)
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: () =>
-                      TrustedPhoneLauncher.callTrusted(phone),
-                  icon: const Icon(Icons.call_outlined),
-                  label: Text(_knownSender
-                      ? l10n.familyCallAction(_senderName)
-                      : l10n.familyCallContact),
-                ),
-              )
-            else
-              Text(
-                l10n.familyNoTrustedNumber,
-                style: AppTypography.bodyMedium
-                    .copyWith(color: p.textMuted),
-              ),
-
-            const SizedBox(height: 24),
-            Text(l10n.yourJudgment,
-                style: AppTypography.titleMedium),
-            const SizedBox(height: 6),
-            Text(
-              l10n.humanResponseNote,
-              style: AppTypography.bodyMedium,
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: _resolution == AlertResolution.safe
-                        ? null
-                        : () => _resolve(AlertResolution.safe),
-                    icon: const Icon(Icons.check_circle_outline),
-                    label: Text(l10n.familyMarkSafe),
+            // Who raised it — sender identity, framing, and the
+            // risk band read as one banner.
+            SurfaceCard(
+              padding: const EdgeInsets.all(14),
+              tint: riskColor,
+              tintAlpha: 0.06,
+              borderColor: riskColor.withValues(alpha: 0.35),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.shield_outlined,
+                          size: 20, color: riskColor),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          l10n.familyAlertFraming,
+                          style: AppTypography.bodyMedium,
+                        ),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed:
-                        _resolution == AlertResolution.stillSuspicious
-                            ? null
-                            : () =>
-                                _resolve(AlertResolution.stillSuspicious),
-                    icon: const Icon(Icons.warning_amber_outlined),
-                    label: Text(l10n.familyStillSuspicious),
+                  const SizedBox(height: 10),
+                  Text(_headline, style: AppTypography.titleLarge),
+                  const SizedBox(height: 10),
+                  StatusPill(
+                    color: riskColor,
+                    label: _partial
+                        ? l10n.bandPartial
+                        : switch (widget.alert.riskLevel) {
+                            'highRisk' => l10n.bandHigh,
+                            'suspicious' => l10n.bandSuspicious,
+                            _ => l10n.familyBandAlert,
+                          },
                   ),
-                ),
-              ],
+                  if (_partial) ...[
+                    const SizedBox(height: 8),
+                    Text(
+                      l10n.conversationNotAnalyzed,
+                      style: AppTypography.bodyMedium
+                          .copyWith(color: p.textMuted),
+                    ),
+                  ],
+                ],
+              ),
             ),
-            if (_note != null) ...[
-              const SizedBox(height: 10),
-              Text(_note!, style: AppTypography.bodyMedium),
-            ],
+            const SizedBox(height: 14),
+
+            // The human loop in one action card — verify through the
+            // saved trusted number, then mark a judgment. Deliberately
+            // separate from the AI assessment; a human response never
+            // changes the risk score.
+            SurfaceCard(
+              padding: const EdgeInsets.all(14),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PsSectionHeader(l10n.familyVerifyDirectly),
+                  const SizedBox(height: 6),
+                  Text(
+                    _knownSender
+                        ? l10n.familyVerifyKnownSender(_senderName)
+                        : l10n.familyVerifyUnknownSender,
+                    style: AppTypography.bodyMedium,
+                  ),
+                  const SizedBox(height: 12),
+                  if (phone != null)
+                    SizedBox(
+                      width: double.infinity,
+                      child: FilledButton.icon(
+                        onPressed: () =>
+                            TrustedPhoneLauncher.callTrusted(phone),
+                        icon: const Icon(Icons.call_outlined),
+                        label: Text(_knownSender
+                            ? l10n.familyCallAction(_senderName)
+                            : l10n.familyCallContact),
+                      ),
+                    )
+                  else
+                    Text(
+                      l10n.familyNoTrustedNumber,
+                      style: AppTypography.bodyMedium
+                          .copyWith(color: p.textMuted),
+                    ),
+                  const SizedBox(height: 14),
+                  Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: p.borderSubtle),
+                  const SizedBox(height: 14),
+                  PsSectionHeader(l10n.yourJudgment),
+                  const SizedBox(height: 6),
+                  Text(
+                    l10n.humanResponseNote,
+                    style: AppTypography.bodyMedium,
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _resolution == AlertResolution.safe
+                              ? null
+                              : () => _resolve(AlertResolution.safe),
+                          icon: const Icon(Icons.check_circle_outline),
+                          label: Text(l10n.familyMarkSafe),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed:
+                              _resolution == AlertResolution.stillSuspicious
+                                  ? null
+                                  : () => _resolve(
+                                      AlertResolution.stillSuspicious),
+                          icon: const Icon(Icons.warning_amber_outlined),
+                          label: Text(l10n.familyStillSuspicious),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (_note != null) ...[
+                    const SizedBox(height: 10),
+                    Text(_note!, style: AppTypography.bodyMedium),
+                  ],
+                ],
+              ),
+            ),
             if (_resolution == AlertResolution.stillSuspicious) ...[
               const SizedBox(height: 14),
-              Container(
+              SurfaceCard(
+                radius: 14,
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: p.statusWarning
-                      .withValues(alpha: 0.08),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: p.statusWarning
-                          .withValues(alpha: 0.4)),
-                ),
+                tint: p.statusWarning,
+                tintAlpha: 0.08,
+                borderColor:
+                    p.statusWarning.withValues(alpha: 0.4),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -250,25 +275,55 @@ class _FamilyAlertScreenState extends State<FamilyAlertScreen> {
               ),
             ],
 
-            const SizedBox(height: 28),
-            Text(l10n.familyDetailsTitle, style: AppTypography.labelSmall),
-            const SizedBox(height: 6),
-            Text(
-              '${l10n.familyDetailsBody(
-                widget.alert.incidentId,
-                _formatTime(widget.alert.receivedAt),
-                l10n.familyResolutionLabel(switch (_resolution) {
-                  AlertResolution.safe => l10n.familyResolutionSafe,
-                  AlertResolution.stillSuspicious =>
-                      l10n.familyResolutionStillSuspicious,
-                  AlertResolution.unresolved =>
-                      l10n.familyResolutionUnresolved,
-                }),
-              )}\n\n${l10n.familyPrivacyNote}',
-              style: AppTypography.bodyMedium
-                  .copyWith(color: p.textMuted),
+            const SizedBox(height: 20),
+            SurfaceCard(
+              radius: 14,
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  PsSectionHeader(l10n.familyDetailsTitle),
+                  const SizedBox(height: 10),
+                  Text(
+                    l10n.familyDetailsBody(
+                      widget.alert.incidentId,
+                      _formatTime(widget.alert.receivedAt),
+                      l10n.familyResolutionLabel(switch (_resolution) {
+                        AlertResolution.safe => l10n.familyResolutionSafe,
+                        AlertResolution.stillSuspicious =>
+                            l10n.familyResolutionStillSuspicious,
+                        AlertResolution.unresolved =>
+                            l10n.familyResolutionUnresolved,
+                      }),
+                    ),
+                    style: AppTypography.bodyMedium,
+                  ),
+                  const SizedBox(height: 10),
+                  Divider(
+                      height: 1,
+                      thickness: 1,
+                      color: p.borderSubtle),
+                  const SizedBox(height: 10),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.lock_outline,
+                          size: 14, color: p.textMuted),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          l10n.familyPrivacyNote,
+                          style: AppTypography.labelSmall
+                              .copyWith(color: p.textMuted),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
+          ),
         ),
       ),
     );

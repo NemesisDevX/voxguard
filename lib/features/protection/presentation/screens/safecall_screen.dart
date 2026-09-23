@@ -20,6 +20,8 @@ import '../../../../core/l10n/localized_text.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/services/haptics/app_haptics.dart';
 import '../../../../core/services/preferences/app_preferences.dart';
+import '../../../../core/widgets/chrome.dart';
+import '../../../../core/widgets/surfaces.dart';
 
 /// SafeCall active-session screen.
 ///
@@ -149,7 +151,11 @@ class _SafeCallViewState extends State<_SafeCallView>
             : l10n.conversationNotAnalyzed;
 
         return Scaffold(
-          appBar: AppBar(
+          // Frosted chrome over the session content; the ambient
+          // field drifts toward danger at HIGH RISK — atmospheric,
+          // not alarming.
+          extendBodyBehindAppBar: true,
+          appBar: GlassAppBar(
             title: Text(l10n.safeCallTitle),
             actions: [
               if (isDemo)
@@ -168,13 +174,35 @@ class _SafeCallViewState extends State<_SafeCallView>
               ),
             ],
           ),
-          body: SafeArea(
-            child: Column(
-              children: [
-                Expanded(
-                  child: ListView(
-                    padding: const EdgeInsets.fromLTRB(20, 4, 20, 24),
-                    children: [
+          body: Stack(
+            children: [
+              AmbientBackground(
+                tint: p.statusDanger,
+                tintAlpha:
+                    report.riskLevel == ThreatRiskLevel.highRisk
+                        ? 0.55
+                        : 0.0,
+              ),
+              SafeArea(
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, c) =>
+                            SingleChildScrollView(
+                          // SafeArea carries the app-bar inset — only
+                          // breathing room is added here. Spacers lift
+                          // the session cluster so the lens reads as
+                          // suspended rather than top-anchored.
+                          padding: const EdgeInsets.fromLTRB(
+                              20, 4, 20, 24),
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(
+                                minHeight: c.maxHeight - 28),
+                            child: IntrinsicHeight(
+                              child: Column(
+                                children: [
+                      const Spacer(),
                       _CallerCard(
                         durationLabel: _durationLabel,
                         onEndCall: () => context
@@ -266,9 +294,14 @@ class _SafeCallViewState extends State<_SafeCallView>
                             acoustic?.syntheticVoiceScore ?? 0,
                         semantic: semantic,
                       ),
-                    ],
-                  ),
-                ),
+                      const Spacer(flex: 2),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                 _SessionActionBar(
                   report: report,
                   conversationAnalyzed: conversationAnalyzed,
@@ -277,8 +310,10 @@ class _SafeCallViewState extends State<_SafeCallView>
                       .read<SafeCallBloc>()
                       .add(const EndCallEvent()),
                 ),
-              ],
-            ),
+                  ],
+                ),
+              ),
+            ],
           ),
           floatingActionButton: isDemo
               ? FloatingActionButton.extended(
@@ -319,13 +354,9 @@ class _CallerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
+    return SurfaceCard(
+      radius: 18,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-      decoration: BoxDecoration(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.borderSubtle),
-      ),
       child: Row(
         children: [
           Icon(
@@ -452,19 +483,15 @@ class _TranscriptFeedState extends State<_TranscriptFeed> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
-      decoration: BoxDecoration(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.borderSubtle),
-      ),
+    return SurfaceCard(
+      radius: 18,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           InkWell(
             onTap: () => setState(() => _expanded = !_expanded),
             borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(16),
+              top: Radius.circular(18),
             ),
             child: Padding(
               padding:
@@ -629,25 +656,10 @@ class _EvidenceChip extends StatelessWidget {
           Icons.visibility_off_outlined
         ),
     };
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.55)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 12, color: color),
-          const SizedBox(width: 5),
-          Text(
-            context.evidenceLabel(category.label),
-            style: AppTypography.labelSmall
-                .copyWith(color: color, fontSize: 10),
-          ),
-        ],
-      ),
+    return StatusPill(
+      color: color,
+      label: context.evidenceLabel(category.label),
+      icon: icon,
     );
   }
 }
@@ -682,19 +694,15 @@ class _TechnicalDetailsState extends State<_TechnicalDetails> {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
-      decoration: BoxDecoration(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.borderSubtle),
-      ),
+    return SurfaceCard(
+      radius: 18,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           InkWell(
             onTap: () => setState(() => _expanded = !_expanded),
             borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(16),
+              top: Radius.circular(18),
             ),
             child: Padding(
               padding:
@@ -806,9 +814,9 @@ class _WaveformCard extends StatelessWidget {
       height: 84,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
-        color: p.bgSurface,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.borderSubtle),
+        color: p.bgBase.withValues(alpha: 0.5),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: p.borderSubtle.withValues(alpha: 0.7)),
       ),
       child: AnimatedBuilder(
         animation: animation,
@@ -885,15 +893,11 @@ class _SessionActionBar extends StatelessWidget {
                   : context.threatReason(
                       report.primaryThreatReasons.first))
               : l10n.bannerProtectedDetail;
-      return Container(
+      return SurfaceCard(
         margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+        radius: 16,
         padding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: p.bgSurface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(color: p.borderSubtle),
-        ),
         child: Row(
           children: [
             Icon(
@@ -918,19 +922,18 @@ class _SessionActionBar extends StatelessWidget {
     }
 
     // HIGH RISK — clarity, not panic. The primary next step is a
-    // human verification, ending the session first.
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 500),
-      curve: Curves.easeOut,
+    // human verification, ending the session first. A lifted,
+    // danger-tinted glass panel — serious without flooding the
+    // screen in red.
+    return SurfaceCard(
+      elevated: true,
+      radius: 20,
+      tint: p.statusDanger,
+      tintAlpha: 0.10,
+      borderColor: p.statusDanger.withValues(alpha: 0.55),
+      borderWidth: 1.3,
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 8),
       padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: p.statusDanger.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-            color: p.statusDanger.withValues(alpha: 0.7),
-            width: 1.2),
-      ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -1028,13 +1031,26 @@ class _ModePickerView extends StatelessWidget {
     final p = context.palette;
     final error = state is SafeCallError ? state as SafeCallError : null;
     return Scaffold(
-      appBar: AppBar(title: Text(l10n.safeCallTitle)),
-      body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 24, 20, 24),
-          children: [
-            Icon(Icons.graphic_eq,
-                size: 52, color: p.accent),
+      extendBodyBehindAppBar: true,
+      appBar: GlassAppBar(title: Text(l10n.safeCallTitle)),
+      body: Stack(
+        children: [
+          const AmbientBackground(),
+          SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 24),
+              children: [
+            Center(
+              child: SurfaceCard(
+                radius: 42,
+                elevated: true,
+                tint: p.accent,
+                tintAlpha: 0.10,
+                padding: const EdgeInsets.all(20),
+                child: Icon(Icons.graphic_eq,
+                    size: 44, color: p.accent),
+              ),
+            ),
             const SizedBox(height: 16),
             Text(
               l10n.safeCallPickerTitle,
@@ -1079,14 +1095,12 @@ class _ModePickerView extends StatelessWidget {
             ),
             if (error != null) ...[
               const SizedBox(height: 20),
-              Container(
+              SurfaceCard(
+                radius: 14,
                 padding: const EdgeInsets.all(14),
-                decoration: BoxDecoration(
-                  color: p.statusWarning.withValues(alpha: 0.10),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: p.statusWarning.withValues(alpha: 0.5)),
-                ),
+                tint: p.statusWarning,
+                tintAlpha: 0.08,
+                borderColor: p.statusWarning.withValues(alpha: 0.5),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1110,8 +1124,10 @@ class _ModePickerView extends StatelessWidget {
                   ),
                 ),
             ],
-          ],
-        ),
+              ],
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1148,81 +1164,67 @@ class _ModeCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Material(
-      color: primary ? p.bgElevated : p.surfaceCard,
-      borderRadius: BorderRadius.circular(16),
-      child: InkWell(
+    return Pressable(
+      child: SurfaceCard(
+        radius: 20,
+        elevated: primary,
+        tint: accent,
+        tintAlpha: primary ? 0.08 : 0.04,
+        borderColor: accent.withValues(alpha: primary ? 0.5 : 0.3),
+        borderWidth: primary ? 1.3 : 1,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(16),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(
-              color: accent.withValues(alpha: primary ? 0.55 : 0.35),
-              width: primary ? 1.4 : 1,
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(context.isGuided ? 22 : 18),
-            child: Row(
-              children: [
-                Container(
-                  width: context.isGuided ? 60 : 50,
-                  height: context.isGuided ? 60 : 50,
-                  decoration: BoxDecoration(
-                    color: accent.withValues(alpha: 0.14),
-                    borderRadius: BorderRadius.circular(14),
-                  ),
-                  child: Icon(icon, color: accent,
-                      size: context.isGuided ? 28 : 24),
+        padding: EdgeInsets.all(context.isGuided ? 22 : 18),
+        child: Row(
+          children: [
+            // Icon tile — a soft accent halo, not a filled box.
+            Container(
+              width: context.isGuided ? 60 : 50,
+              height: context.isGuided ? 60 : 50,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    accent.withValues(alpha: 0.18),
+                    accent.withValues(alpha: 0.05),
+                  ],
                 ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                border: Border.all(
+                    color: accent.withValues(alpha: 0.35)),
+              ),
+              child: Icon(icon, color: accent,
+                  size: context.isGuided ? 28 : 24),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Text(title,
-                              style: AppTypography.titleMedium.copyWith(
-                                  fontSize: context.isGuided
-                                      ? 17.5
-                                      : null)),
-                          const SizedBox(width: 8),
-                          Flexible(
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 6, vertical: 2),
-                              decoration: BoxDecoration(
-                                color: accent.withValues(alpha: 0.12),
-                                borderRadius: BorderRadius.circular(6),
-                                border: Border.all(
-                                    color: accent.withValues(alpha: 0.5)),
-                              ),
-                              child: Text(
-                                badge,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  fontSize: 8,
-                                  fontWeight: FontWeight.w800,
-                                  letterSpacing: 1.0,
-                                  color: accent,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                      Flexible(
+                        child: Text(title,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTypography.titleMedium.copyWith(
+                                fontSize: context.isGuided
+                                    ? 17.5
+                                    : null)),
                       ),
-                      const SizedBox(height: 4),
-                      Text(description, style: AppTypography.bodyMedium),
+                      const SizedBox(width: 8),
+                      StatusPill(
+                        color: accent,
+                        label: badge,
+                        compact: true,
+                      ),
                     ],
                   ),
-                ),
-                Icon(Icons.chevron_right,
-                    color: p.textMuted),
-              ],
+                  const SizedBox(height: 4),
+                  Text(description, style: AppTypography.bodyMedium),
+                ],
+              ),
             ),
-          ),
+            Icon(Icons.chevron_right,
+                color: p.textMuted),
+          ],
         ),
       ),
     );
@@ -1236,31 +1238,10 @@ class _LiveMicBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-      decoration: BoxDecoration(
-        color: p.statusDanger.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(
-            color: p.statusDanger.withValues(alpha: 0.5)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.mic, size: 11, color: p.statusDanger),
-          SizedBox(width: 4),
-          Text(
-            l10n.modeLiveBadgeShort,
-            style: TextStyle(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.1,
-              color: p.statusDanger,
-            ),
-          ),
-        ],
-      ),
+    return StatusPill(
+      color: context.palette.statusDanger,
+      label: l10n.modeLiveBadgeShort,
+      icon: Icons.mic,
     );
   }
 }
@@ -1274,37 +1255,12 @@ class _DemoBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Container(
-      padding: EdgeInsets.symmetric(
-        horizontal: compact ? 7 : 10,
-        vertical: compact ? 3 : 5,
-      ),
-      decoration: BoxDecoration(
-        color: p.accent.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: p.accent.withValues(alpha: 0.45)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            Icons.science_outlined,
-            size: compact ? 10 : 12,
-            color: p.accent,
-          ),
-          const SizedBox(width: 4),
-          Text(
-            compact ? l10n.demoBadgeCompact : l10n.modeDemoModeLabel,
-            style: TextStyle(
-              fontSize: compact ? 9 : 10,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.1,
-              color: p.accent,
-            ),
-          ),
-        ],
-      ),
+    return StatusPill(
+      color: context.palette.accent,
+      label:
+          compact ? l10n.demoBadgeCompact : l10n.modeDemoModeLabel,
+      icon: Icons.science_outlined,
+      compact: compact,
     );
   }
 }
@@ -1342,10 +1298,10 @@ class _LiveBadgeState extends State<_LiveBadge>
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: p.statusSafe.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(8),
+        color: p.statusSafe.withValues(alpha: 0.13),
+        borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: p.statusSafe.withValues(alpha: 0.5),
+          color: p.statusSafe.withValues(alpha: 0.45),
         ),
       ),
       child: Row(
@@ -1369,10 +1325,8 @@ class _LiveBadgeState extends State<_LiveBadge>
           const SizedBox(width: 6),
           Text(
             l10n.liveBadge,
-            style: TextStyle(
-              fontSize: 11,
-              fontWeight: FontWeight.w700,
-              letterSpacing: 1.2,
+            style: AppTypography.labelSmall.copyWith(
+              fontSize: 10,
               color: p.statusSafe,
             ),
           ),

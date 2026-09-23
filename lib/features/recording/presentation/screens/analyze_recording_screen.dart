@@ -15,6 +15,7 @@ import '../../domain/services/recording_file_picker.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/l10n/localized_text.dart';
 import '../../../../core/theme/app_palette.dart';
+import '../../../../core/widgets/surfaces.dart';
 
 /// Analyze Recording — pick a local audio file, choose a privacy
 /// mode, and run the same PauseSignal threat engines SafeCall uses.
@@ -171,51 +172,95 @@ class _AnalyzeRecordingScreenState extends State<AnalyzeRecordingScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(l10n.analyzeRecordingTitle)),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-          children: [
-            if (_result != null) ..._buildResult(_result!)
-            else if (_picked == null) ..._buildEmpty(p)
-            else ..._buildSelected(),
-            if (_error != null) ...[
-              const SizedBox(height: 16),
-              _ErrorCard(message: _error!),
+        child: LayoutBuilder(
+          builder: (context, c) => ListView(
+            padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+            children: [
+              if (_result != null) ..._buildResult(_result!)
+              else if (_picked == null)
+                ..._buildEmpty(p, c.maxHeight)
+              else ..._buildSelected(),
+              if (_error != null) ...[
+                const SizedBox(height: 16),
+                _ErrorCard(message: _error!),
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 
-  List<Widget> _buildEmpty(AppPalette p) => [
+  List<Widget> _buildEmpty(AppPalette p, double viewportHeight) => [
         const SizedBox(height: 8),
         _StepLabel(l10n.stepPickRecording),
         const SizedBox(height: 16),
-        Icon(Icons.audio_file_outlined,
-            size: 56, color: p.accent),
-        const SizedBox(height: 16),
-        Text(
-          l10n.recordingStepTitle,
-          textAlign: TextAlign.center,
-          style: AppTypography.titleLarge,
-        ),
-        const SizedBox(height: 10),
-        Text(
-          l10n.recordingAnalyzerIntro,
-          textAlign: TextAlign.center,
-          style: AppTypography.bodyMedium,
-        ),
-        const SizedBox(height: 8),
-        Text(
-          l10n.recordingFormatsHint,
-          textAlign: TextAlign.center,
-          style: AppTypography.labelSmall,
-        ),
-        const SizedBox(height: 24),
-        FilledButton.icon(
-          onPressed: _busy ? null : _chooseAudio,
-          icon: const Icon(Icons.upload_file_outlined),
-          label: Text(l10n.recordingChooseAudio),
+        // The drop zone is the whole invitation — a centered panel
+        // rather than bare text floating under the app bar.
+        ConstrainedBox(
+          constraints: BoxConstraints(
+              minHeight: viewportHeight * 0.55),
+          child: Center(
+            child: SurfaceCard(
+              radius: 22,
+              elevated: true,
+              onTap: _busy ? null : _chooseAudio,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 24, vertical: 30),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 76,
+                    height: 76,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      gradient: RadialGradient(
+                        colors: [
+                          p.accent.withValues(alpha: 0.20),
+                          p.accent.withValues(alpha: 0.0),
+                        ],
+                      ),
+                      border: Border.all(
+                        color: p.accent.withValues(alpha: 0.28),
+                      ),
+                    ),
+                    child: Center(
+                      child: Icon(Icons.audio_file_outlined,
+                          size: 36, color: p.accent),
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    l10n.recordingStepTitle,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.titleLarge,
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    l10n.recordingAnalyzerIntro,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    l10n.recordingFormatsHint,
+                    textAlign: TextAlign.center,
+                    style: AppTypography.labelSmall,
+                  ),
+                  const SizedBox(height: 22),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton.icon(
+                      onPressed: _busy ? null : _chooseAudio,
+                      icon: const Icon(Icons.upload_file_outlined),
+                      label: Text(l10n.recordingChooseAudio),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ];
 
@@ -383,13 +428,8 @@ class _FileSummaryCard extends StatelessWidget {
       return m > 0 ? '$m min ${s}s' : '${d.inSeconds}s';
     }
 
-    return Container(
+    return SurfaceCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: p.borderSubtle),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -465,23 +505,14 @@ class _PrivacyModeCard extends StatelessWidget {
     final p = context.palette;
     return Opacity(
       opacity: enabled || locked ? 1 : 0.55,
-      child: Material(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          onTap: locked ? onLockedTap : (enabled ? onTap : null),
-          borderRadius: BorderRadius.circular(14),
-          child: Ink(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(
-                color: selected
-                    ? p.accent
-                    : p.borderSubtle,
-              ),
-            ),
-            child: Row(
+      child: SurfaceCard(
+        onTap: locked ? onLockedTap : (enabled ? onTap : null),
+        padding: const EdgeInsets.all(14),
+        tint: selected ? p.accent : null,
+        tintAlpha: 0.05,
+        borderColor: selected ? p.accent.withValues(alpha: 0.7) : null,
+        borderWidth: selected ? 1.2 : 1.0,
+        child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Icon(
@@ -523,8 +554,6 @@ class _PrivacyModeCard extends StatelessWidget {
                 ),
               ],
             ),
-          ),
-        ),
       ),
     );
   }
@@ -536,25 +565,11 @@ class _SentinelChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        color: p.accent.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(5),
-        border: Border.all(
-          color: p.accent.withValues(alpha: 0.45),
-        ),
-      ),
-      child: Text(
-        context.l10n.recordingSentinelBadge,
-        style: TextStyle(
-          fontSize: 8,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.6,
-          color: p.accent,
-        ),
-      ),
+    return StatusPill(
+      color: context.palette.accent,
+      label: context.l10n.recordingSentinelBadge,
+      icon: Icons.lock_outline,
+      compact: true,
     );
   }
 }
@@ -572,7 +587,6 @@ class _ManualTranscriptSection extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -585,13 +599,9 @@ class _ManualTranscriptSection extends StatelessWidget {
           label: Text(l10n.recordingManualTranscript),
         ),
         if (expanded) ...[
-          Container(
+          SurfaceCard(
+            radius: 14,
             padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: p.surfaceCard,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: p.borderSubtle),
-            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -643,8 +653,10 @@ class _StageProgress extends StatelessWidget {
     final stages =
         stagesRun.isEmpty ? const [RecordingStage.preparing] : stagesRun;
     final current = stages.indexOf(stage);
-    return Column(
-      children: [
+    return SurfaceCard(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      child: Column(
+        children: [
         for (var i = 0; i < stages.length; i++)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 4),
@@ -674,7 +686,8 @@ class _StageProgress extends StatelessWidget {
               ],
             ),
           ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -707,19 +720,7 @@ class _FullResultHeader extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 4),
-        Container(
-          padding:
-              const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: color),
-          ),
-          child: Text(
-            label,
-            style: AppTypography.labelSmall.copyWith(color: color),
-          ),
-        ),
+        StatusPill(color: color, label: label),
         const SizedBox(height: 8),
         Text(
           context.threatReason(report.recommendedAction),
@@ -1073,14 +1074,12 @@ class _ErrorCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
+    return SurfaceCard(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: p.statusDanger.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-            color: p.statusDanger.withValues(alpha: 0.4)),
-      ),
+      radius: 14,
+      tint: p.statusDanger,
+      tintAlpha: 0.10,
+      borderColor: p.statusDanger.withValues(alpha: 0.4),
       child: Row(
         children: [
           Icon(Icons.error_outline,
@@ -1103,15 +1102,8 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Container(
-      width: double.infinity,
+    return SurfaceCard(
       padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: p.borderSubtle),
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

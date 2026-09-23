@@ -7,7 +7,9 @@ import '../../../../core/services/push/onesignal_push_identity_service.dart';
 import '../../../../core/services/push/push_identity_service.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/chrome.dart';
 import '../../../../core/widgets/signal_mark.dart';
+import '../../../../core/widgets/surfaces.dart';
 import '../../../forensics/presentation/screens/incidents_history_screen.dart';
 import '../../../paywall/presentation/screens/paywall_screen.dart';
 import '../../../protection/presentation/safecall_launcher.dart';
@@ -32,7 +34,11 @@ class _HomeScreenState extends State<HomeScreen> {
     final l10n = context.l10n;
     final p = context.palette;
     return Scaffold(
-      appBar: AppBar(
+      // Floating chrome — content passes under the frosted bar and
+      // nav pill; each tab clears it through the injected SafeArea.
+      extendBodyBehindAppBar: true,
+      extendBody: true,
+      appBar: GlassAppBar(
         title: Row(
           children: [
             SignalMark(size: 24, color: p.accent,
@@ -63,39 +69,33 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(width: 4),
         ],
       ),
-      body: IndexedStack(
-        index: _tabIndex,
+      body: Stack(
         children: [
-          _ShieldTab(
-            onSafeCall: _openSafeCall,
-            onOpenFamily: () => setState(() => _tabIndex = 2),
+          const AmbientBackground(),
+          IndexedStack(
+            index: _tabIndex,
+            children: [
+              _ShieldTab(
+                onSafeCall: _openSafeCall,
+                onOpenFamily: () => setState(() => _tabIndex = 2),
+              ),
+              const IncidentsHistoryScreen(),
+              const SettingsScreen(),
+            ],
           ),
-          const IncidentsHistoryScreen(),
-          const SettingsScreen(),
         ],
       ),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          border: Border(top: BorderSide(color: p.borderSubtle)),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: _tabIndex,
-          onTap: (i) => setState(() => _tabIndex = i),
-          items: [
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.graphic_eq),
-              label: l10n.navShield,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.receipt_long_outlined),
-              label: l10n.navIncidents,
-            ),
-            BottomNavigationBarItem(
-              icon: const Icon(Icons.settings_outlined),
-              label: l10n.navSettings,
-            ),
-          ],
-        ),
+      bottomNavigationBar: GlassNavBar(
+        currentIndex: _tabIndex,
+        onTap: (i) => setState(() => _tabIndex = i),
+        items: [
+          GlassNavItem(icon: Icons.graphic_eq, label: l10n.navShield),
+          GlassNavItem(
+              icon: Icons.receipt_long_outlined,
+              label: l10n.navIncidents),
+          GlassNavItem(
+              icon: Icons.settings_outlined, label: l10n.navSettings),
+        ],
       ),
     );
   }
@@ -112,59 +112,83 @@ class _ShieldTab extends StatelessWidget {
     final l10n = context.l10n;
     final prefs = AppPreferencesLocator.instance;
     return SafeArea(
-      child: ListenableBuilder(
-        listenable: prefs,
-        builder: (context, _) {
-          // Read inside the builder — a Settings name change rebuilds
-          // this subtree and must see the new value, not a stale one.
-          final name = prefs.displayName;
-          return ListView(
-          padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-          children: [
-            const ProtectionBanner(),
-            // Optional local name — a quiet greeting, not a social
-            // profile. Absent by default; never rendered as an empty
-            // placeholder.
-            if (name != null && name.isNotEmpty) ...[
-              const SizedBox(height: 14),
-              Text(
-                l10n.homeGreetingNamed(name),
-                style: AppTypography.bodyMedium,
-              ),
-            ],
-            const SizedBox(height: 28),
+      child: LayoutBuilder(
+        builder: (context, c) => ListenableBuilder(
+          listenable: prefs,
+          builder: (context, _) {
+            // Read inside the builder — a Settings name change rebuilds
+            // this subtree and must see the new value, not a stale one.
+            final name = prefs.displayName;
+            return SingleChildScrollView(
+              // SafeArea already carries the chrome insets the Scaffold
+              // injects (frosted bar top, floating nav bottom) — the
+              // list only adds breathing room.
+              padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
+              child: ConstrainedBox(
+                constraints:
+                    BoxConstraints(minHeight: c.maxHeight - 26),
+                child: IntrinsicHeight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const ProtectionBanner(),
+                      // Optional local name — a quiet greeting, not a
+                      // social profile. Absent by default; never
+                      // rendered as an empty placeholder.
+                      if (name != null && name.isNotEmpty) ...[
+                        const SizedBox(height: 14),
+                        Text(
+                          l10n.homeGreetingNamed(name),
+                          style: AppTypography.bodyMedium,
+                        ),
+                      ],
+                      // The hero cluster centers in the free space;
+                      // the status card anchors at the bottom.
+                      const Spacer(flex: 2),
+                      const SizedBox(height: 28),
 
-            // Hero — the primary experience. One statement, one action.
-            _HeroProtectionCard(onTap: onSafeCall),
+                      // Hero — the primary experience. One statement,
+                      // one action.
+                      _HeroProtectionCard(onTap: onSafeCall),
 
-            const SizedBox(height: 14),
+                      const SizedBox(height: 14),
 
-            // Secondary product path — a real, shipped feature.
-            _ActionTile(
-              icon: Icons.audio_file_outlined,
-              title: l10n.analyzeRecording,
-              description: l10n.analyzeRecordingDesc,
-              onTap: () => Navigator.of(context).push(
-                MaterialPageRoute<void>(
-                  builder: (_) => const AnalyzeRecordingScreen(),
+                      // Secondary product path — a real, shipped
+                      // feature.
+                      _ActionTile(
+                        icon: Icons.audio_file_outlined,
+                        title: l10n.analyzeRecording,
+                        description: l10n.analyzeRecordingDesc,
+                        onTap: () => Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) =>
+                                const AnalyzeRecordingScreen(),
+                          ),
+                        ),
+                      ),
+
+                      const Spacer(flex: 3),
+                      const SizedBox(height: 20),
+
+                      // Calm Family Shield readiness — a status
+                      // surface, never an emergency banner when
+                      // nothing is happening.
+                      _FamilyShieldStatusCard(onTap: onOpenFamily),
+                    ],
+                  ),
                 ),
               ),
-            ),
-
-            const SizedBox(height: 28),
-
-            // Calm Family Shield readiness — a status surface, never
-            // an emergency banner when nothing is happening.
-            _FamilyShieldStatusCard(onTap: onOpenFamily),
-          ],
-          );
-        },
+            );
+          },
+        ),
       ),
     );
   }
 }
 
-/// The hero — large, calm, unmistakably the main action.
+/// The hero — the product's centerpiece. A lifted glass panel with
+/// the SignalMark suspended in a soft accent glow, one statement,
+/// one dominant action.
 class _HeroProtectionCard extends StatelessWidget {
   const _HeroProtectionCard({required this.onTap});
 
@@ -175,63 +199,78 @@ class _HeroProtectionCard extends StatelessWidget {
     final l10n = context.l10n;
     final p = context.palette;
     final guided = AppPreferencesLocator.instance.isGuided;
-    return Material(
-      color: p.bgElevated,
-      borderRadius: BorderRadius.circular(22),
-      child: InkWell(
+    return Pressable(
+      haptic: true,
+      scale: 0.985,
+      child: SurfaceCard(
+        elevated: true,
+        radius: 26,
+        tint: p.accent,
+        tintAlpha: 0.05,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(22),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(22),
-            border: Border.all(
-              color: p.accent.withValues(alpha: 0.4),
-            ),
-          ),
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(22, guided ? 30 : 24, 22, 22),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SignalMark(size: 40, color: p.accent,
+        padding: EdgeInsets.fromLTRB(22, guided ? 30 : 26, 22, 22),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // The mark floats in its own light — a radial glow halo
+            // behind it gives the hero real depth without animation.
+            Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: RadialGradient(
+                  colors: [
+                    p.accent.withValues(alpha: 0.22),
+                    p.accent.withValues(alpha: 0.0),
+                  ],
+                ),
+                border: Border.all(
+                  color: p.accent.withValues(alpha: 0.28),
+                ),
+              ),
+              child: Center(
+                child: SignalMark(
+                    size: 34,
+                    color: p.accent,
                     secondaryColor: p.signalAcoustic),
-                const SizedBox(height: 18),
-                Text(
-                  l10n.protectionCheckTitle,
-                  style: AppTypography.displaySmall,
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  l10n.protectionCheckDesc,
-                  style: AppTypography.bodyMedium,
-                ),
-                SizedBox(height: guided ? 24 : 18),
-                SizedBox(
-                  width: double.infinity,
-                  // Guided Mode: a taller, more confident primary CTA.
-                  height: guided ? 56 : 48,
-                  child: FilledButton.icon(
-                    onPressed: onTap,
-                    icon: const Icon(Icons.graphic_eq, size: 18),
-                    label: Text(
-                      l10n.protectionCheckCta,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        fontSize: guided ? 16 : null,
-                      ),
-                    ),
-                    style: FilledButton.styleFrom(
-                      backgroundColor: p.accent,
-                      foregroundColor: p.onAccent,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              l10n.protectionCheckTitle,
+              style: AppTypography.displaySmall,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.protectionCheckDesc,
+              style: AppTypography.bodyMedium,
+            ),
+            SizedBox(height: guided ? 24 : 20),
+            SizedBox(
+              width: double.infinity,
+              // Guided Mode: a taller, more confident primary CTA.
+              height: guided ? 56 : 48,
+              child: FilledButton.icon(
+                onPressed: onTap,
+                icon: const Icon(Icons.graphic_eq, size: 18),
+                label: Text(
+                  l10n.protectionCheckCta,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: guided ? 16 : null,
                   ),
                 ),
-              ],
+                style: FilledButton.styleFrom(
+                  backgroundColor: p.accent,
+                  foregroundColor: p.onAccent,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );
@@ -255,43 +294,32 @@ class _ActionTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Material(
-      color: p.surfaceCard,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
+    return Pressable(
+      child: SurfaceCard(
+        radius: 16,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: p.borderSubtle),
-          ),
-          child: Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            child: Row(
-              children: [
-                Icon(icon, color: p.textMuted, size: 20),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(title, style: AppTypography.titleMedium),
-                      const SizedBox(height: 2),
-                      Text(
-                        description,
-                        style: AppTypography.bodyMedium
-                            .copyWith(fontSize: 12),
-                      ),
-                    ],
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+        child: Row(
+          children: [
+            Icon(icon, color: p.textMuted, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title, style: AppTypography.titleMedium),
+                  const SizedBox(height: 2),
+                  Text(
+                    description,
+                    style:
+                        AppTypography.bodyMedium.copyWith(fontSize: 12),
                   ),
-                ),
-                Icon(Icons.chevron_right,
-                    color: p.textMuted, size: 18),
-              ],
+                ],
+              ),
             ),
-          ),
+            Icon(Icons.chevron_right, color: p.textMuted, size: 18),
+          ],
         ),
       ),
     );
@@ -311,19 +339,12 @@ class _FamilyShieldStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = context.l10n;
     final p = context.palette;
-    return Material(
-      color: p.surfaceCard,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
+    return Pressable(
+      child: SurfaceCard(
+        radius: 16,
         onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Ink(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: p.borderSubtle),
-          ),
-          child: ValueListenableBuilder<List<FamilyContact>>(
+        padding: const EdgeInsets.all(14),
+        child: ValueListenableBuilder<List<FamilyContact>>(
             valueListenable: FamilyContactLocator.instance.contacts,
             builder: (context, contacts, _) {
               return ValueListenableBuilder<FamilyPushRegistration>(
@@ -384,7 +405,6 @@ class _FamilyShieldStatusCard extends StatelessWidget {
             },
           ),
         ),
-      ),
     );
   }
 }

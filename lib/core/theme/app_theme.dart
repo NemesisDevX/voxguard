@@ -56,10 +56,20 @@ abstract final class AppTheme {
       extensions: [p],
       splashFactory: InkSparkle.splashFactory,
       appBarTheme: AppBarTheme(
-        backgroundColor: p.bgBase,
+        // Translucent chrome: the ambient bloom reads faintly through
+        // the bar, and a hairline separates it from content. Screens
+        // wanting real blur use GlassAppBar + extendBodyBehindAppBar.
+        backgroundColor: p.bgBase.withValues(alpha: dark ? 0.72 : 0.82),
+        surfaceTintColor: Colors.transparent,
         foregroundColor: p.textPrimary,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: false,
+        shape: Border(
+          bottom: BorderSide(
+            color: p.borderSubtle.withValues(alpha: dark ? 0.55 : 0.8),
+          ),
+        ),
         titleTextStyle:
             AppTypography.titleLarge.copyWith(color: p.textPrimary),
       ),
@@ -100,7 +110,14 @@ abstract final class AppTheme {
             AppTypography.bodyLarge.copyWith(color: p.textPrimary),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12)),
+            borderRadius: BorderRadius.circular(14)),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: p.bgElevated,
+        surfaceTintColor: Colors.transparent,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -110,6 +127,9 @@ abstract final class AppTheme {
       ),
       dialogTheme: DialogThemeData(
         backgroundColor: p.bgElevated,
+        surfaceTintColor: Colors.transparent,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20)),
         titleTextStyle:
             AppTypography.titleLarge.copyWith(color: p.textPrimary),
         contentTextStyle:

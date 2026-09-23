@@ -4,6 +4,7 @@ import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
 import '../../../../core/widgets/signal_mark.dart';
+import '../../../../core/widgets/surfaces.dart';
 import '../../../paywall/domain/models/entitlement_state.dart';
 import '../../../paywall/domain/models/subscription_tier.dart';
 import '../../../paywall/domain/services/purchase_service_locator.dart';
@@ -17,15 +18,9 @@ class ProtectionBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = context.l10n;
-    final p = context.palette;
-    return Container(
-      width: double.infinity,
+    return SurfaceCard(
+      radius: 20,
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
-      decoration: BoxDecoration(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.borderSubtle),
-      ),
       child: Row(
         children: [
           const _ReadyMark(),
@@ -73,25 +68,7 @@ class _PlanBadge extends StatelessWidget {
           _ => l10n.planFreeBadge,
         };
         final color = premium ? p.statusSafe : p.textMuted;
-        return Container(
-          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
-          decoration: BoxDecoration(
-            color: color.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(8),
-            border: Border.all(color: color.withValues(alpha: 0.5)),
-          ),
-          child: Text(
-            label,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontSize: 9,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.8,
-              color: color,
-            ),
-          ),
-        );
+        return StatusPill(color: color, label: label, compact: true);
       },
     );
   }
@@ -156,9 +133,14 @@ class _ReadyMarkState extends State<_ReadyMark>
           height: 52,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: p.accent.withValues(alpha: 0.10),
+            gradient: RadialGradient(
+              colors: [
+                p.accent.withValues(alpha: 0.18),
+                p.accent.withValues(alpha: 0.04),
+              ],
+            ),
             border: Border.all(
-              color: p.accent.withValues(alpha: 0.45),
+              color: p.accent.withValues(alpha: 0.35),
             ),
           ),
           child: Center(

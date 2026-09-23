@@ -1,3 +1,5 @@
+import 'dart:ui' show ImageFilter;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -12,6 +14,8 @@ import '../bloc/paywall_event.dart';
 import '../bloc/paywall_state.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/theme/app_palette.dart';
+import '../../../../core/widgets/chrome.dart';
+import '../../../../core/widgets/surfaces.dart';
 
 /// Subscription paywall.
 ///
@@ -71,16 +75,22 @@ class _PaywallView extends StatelessWidget {
       builder: (context, state) {
         return Scaffold(
           backgroundColor: p.bgBase,
-          body: SafeArea(
-            child: switch (state) {
-              PaywallLoading() => Center(
-                  child: CircularProgressIndicator(
-                    color: p.accent,
-                  ),
-                ),
-              PaywallError() => _ErrorView(message: state.errorMessage),
-              _ => _PaywallContent(state: state),
-            },
+          body: Stack(
+            children: [
+              const AmbientBackground(),
+              SafeArea(
+                child: switch (state) {
+                  PaywallLoading() => Center(
+                      child: CircularProgressIndicator(
+                        color: p.accent,
+                      ),
+                    ),
+                  PaywallError() =>
+                    _ErrorView(message: state.errorMessage),
+                  _ => _PaywallContent(state: state),
+                },
+              ),
+            ],
           ),
         );
       },
@@ -224,25 +234,10 @@ class _DemoBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: p.statusWarning.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: p.statusWarning.withValues(alpha: 0.5),
-        ),
-      ),
-      child: Text(
-        l10n.demoStoreBadge,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.8,
-          color: p.statusWarning,
-        ),
-      ),
+    return StatusPill(
+      color: context.palette.statusWarning,
+      label: l10n.demoStoreBadge,
+      icon: Icons.science_outlined,
     );
   }
 }
@@ -271,25 +266,10 @@ class _TestStoreBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: p.accent.withValues(alpha: 0.14),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(
-          color: p.accent.withValues(alpha: 0.5),
-        ),
-      ),
-      child: Text(
-        l10n.testStoreBadge,
-        style: TextStyle(
-          fontSize: 10,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.8,
-          color: p.accent,
-        ),
-      ),
+    return StatusPill(
+      color: context.palette.accent,
+      label: l10n.testStoreBadge,
+      icon: Icons.verified_outlined,
     );
   }
 }
@@ -357,14 +337,13 @@ class _NoticeShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return SurfaceCard(
+      radius: 14,
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: color.withValues(alpha: 0.35)),
-      ),
+      tint: color,
+      tintAlpha: 0.08,
+      borderColor: color.withValues(alpha: 0.35),
       child: Row(
         children: [
           Icon(icon, size: 16, color: color),
@@ -400,13 +379,9 @@ class _BillingToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
+    return SurfaceCard(
+      radius: 14,
       padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: p.bgSurface,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: p.borderSubtle),
-      ),
       child: Row(
         children: [
           for (final c in BillingCycle.values)
@@ -426,10 +401,13 @@ class _BillingToggle extends StatelessWidget {
           duration: const Duration(milliseconds: 200),
           padding: const EdgeInsets.symmetric(vertical: 10),
           decoration: BoxDecoration(
-            color: active ? p.bgElevated : Colors.transparent,
-            borderRadius: BorderRadius.circular(9),
-            border:
-                active ? Border.all(color: p.borderSubtle) : null,
+            color: active
+                ? p.accent.withValues(alpha: 0.16)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(11),
+            border: active
+                ? Border.all(color: p.accent.withValues(alpha: 0.55))
+                : null,
           ),
           child: Center(
             child: Text(
@@ -438,7 +416,7 @@ class _BillingToggle extends StatelessWidget {
                 color: !enabled
                     ? p.textMuted.withValues(alpha: 0.4)
                     : active
-                        ? p.textPrimary
+                        ? p.accent
                         : p.textMuted,
               ),
             ),
@@ -521,20 +499,16 @@ class _TierCard extends StatelessWidget {
             ? p.accentMuted
             : p.borderSubtle;
 
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(16),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
+    return Pressable(
+      child: SurfaceCard(
+        onTap: onTap,
+        elevated: highlight,
+        radius: 20,
         padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: highlight ? p.bgElevated : p.surfaceCard,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: borderColor,
-            width: selected ? 1.6 : 1,
-          ),
-        ),
+        tint: selected ? p.accent : null,
+        tintAlpha: 0.05,
+        borderColor: borderColor,
+        borderWidth: selected ? 1.6 : 1.0,
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -616,23 +590,11 @@ class _PopularChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(
-        color: p.accent.withValues(alpha: 0.18),
-        borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: p.accent.withValues(alpha: 0.5)),
-      ),
-      child: Text(
-        l10n.mostPopular,
-        style: TextStyle(
-          fontSize: 9,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.8,
-          color: p.accent,
-        ),
-      ),
+    return StatusPill(
+      color: context.palette.accent,
+      label: l10n.mostPopular,
+      icon: Icons.star_outline_rounded,
+      compact: true,
     );
   }
 }
@@ -669,11 +631,16 @@ class _CtaBar extends StatelessWidget {
             ? () => Navigator.of(context).maybePop()
             : () => bloc.add(const PurchaseSelectedEvent());
 
-    return Container(
+    return ClipRect(
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 14),
       decoration: BoxDecoration(
-        color: p.bgSurface,
-        border: Border(top: BorderSide(color: p.borderSubtle)),
+        color: PsGlass.chromeFill(p),
+        border: Border(
+            top: BorderSide(
+                color: PsGlass.edge(p).withValues(alpha: 0.6))),
       ),
       child: Column(
         mainAxisSize: MainAxisSize.min,
@@ -713,6 +680,8 @@ class _CtaBar extends StatelessWidget {
           const SizedBox(height: 10),
           _FooterRow(loaded: loaded),
         ],
+      ),
+        ),
       ),
     );
   }

@@ -12,6 +12,7 @@ import '../../../../core/services/push/onesignal_push_identity_service.dart';
 import '../../../../core/services/push/push_identity_service.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/surfaces.dart';
 import '../../../home/presentation/widgets/family_receiver_card.dart';
 import '../../../home/presentation/widgets/trusted_circle_card.dart';
 import '../../../onboarding/presentation/screens/onboarding_screen.dart';
@@ -33,21 +34,23 @@ class SettingsScreen extends StatelessWidget {
     final prefs = AppPreferencesLocator.instance;
     return SafeArea(
       child: ListView(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 28),
+        // SafeArea already carries the Scaffold-injected chrome
+        // insets — the list only adds breathing room.
+        padding: const EdgeInsets.fromLTRB(20, 6, 20, 20),
         children: [
-          _SectionHeader(l10n.settingsSectionProfile),
+          PsSectionHeader(l10n.settingsSectionProfile, top: 4),
           _ProfileSection(prefs: prefs),
-          _SectionHeader(l10n.settingsSectionAppearance),
+          PsSectionHeader(l10n.settingsSectionAppearance),
           _AppearanceSection(prefs: prefs),
-          _SectionHeader(l10n.settingsSectionSafety),
+          PsSectionHeader(l10n.settingsSectionSafety),
           const FamilyReceiverCard(),
           const SizedBox(height: 12),
           const TrustedCircleCard(),
-          _SectionHeader(l10n.settingsSectionNotifications),
+          PsSectionHeader(l10n.settingsSectionNotifications),
           const _NotificationsSection(),
-          _SectionHeader(l10n.settingsSectionSubscription),
+          PsSectionHeader(l10n.settingsSectionSubscription),
           const SubscriptionCard(),
-          _SectionHeader(l10n.settingsSectionAbout),
+          PsSectionHeader(l10n.settingsSectionAbout),
           const _AboutSection(),
         ],
       ),
@@ -55,33 +58,15 @@ class SettingsScreen extends StatelessWidget {
   }
 }
 
-class _SectionHeader extends StatelessWidget {
-  const _SectionHeader(this.title);
-  final String title;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(2, 22, 0, 10),
-      child: Text(title, style: AppTypography.labelSmall),
-    );
-  }
-}
-
-/// Shared settings surface — a card wrapping section content.
+/// Shared settings surface — a glass card wrapping section content.
 class _SettingsCard extends StatelessWidget {
   const _SettingsCard({required this.children});
   final List<Widget> children;
 
   @override
   Widget build(BuildContext context) {
-    final p = context.palette;
-    return Container(
-      decoration: BoxDecoration(
-        color: p.surfaceCard,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.borderSubtle),
-      ),
+    return SurfaceCard(
+      radius: 18,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: children,
@@ -148,9 +133,13 @@ Future<void> _pickOption<T>({
   return showModalBottomSheet<void>(
     context: context,
     showDragHandle: true,
+    backgroundColor: Colors.transparent,
     builder: (sheetCtx) {
-      return SafeArea(
-        child: Column(
+      return GlassPanel(
+        radius: 24,
+        child: SafeArea(
+          top: false,
+          child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -177,6 +166,7 @@ Future<void> _pickOption<T>({
             ),
             const SizedBox(height: 8),
           ],
+          ),
         ),
       );
     },

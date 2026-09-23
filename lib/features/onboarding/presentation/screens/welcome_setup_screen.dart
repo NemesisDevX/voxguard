@@ -7,7 +7,9 @@ import '../../../../core/l10n/localized_text.dart';
 import '../../../../core/services/preferences/app_preferences.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/theme/app_typography.dart';
+import '../../../../core/widgets/chrome.dart';
 import '../../../../core/widgets/signal_mark.dart';
+import '../../../../core/widgets/surfaces.dart';
 
 /// First-run Welcome Setup — runs before the safety/privacy
 /// onboarding. Language + an optional local-only display name.
@@ -68,22 +70,29 @@ class _WelcomeSetupScreenState extends State<WelcomeSetupScreen> {
     final p = context.palette;
     final l10n = context.l10n;
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          // One restrained gradient — the welcome hero is one of the
-          // few surfaces where tonal depth earns its place.
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [p.bgSurface, p.bgBase],
-          ),
-        ),
-        child: SafeArea(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
-            children: [
-              Center(child: SignalMark(size: 72, color: p.accent,
-                  secondaryColor: p.signalAcoustic)),
+      body: Stack(
+        children: [
+          const AmbientBackground(),
+          SafeArea(
+            child: ListView(
+              padding: const EdgeInsets.fromLTRB(24, 28, 24, 20),
+              children: [
+              // The mark floats in a glass well — the product's own
+              // shape language carries the hero, not stock art.
+              Center(
+                child: SurfaceCard(
+                  radius: 40,
+                  elevated: true,
+                  tint: p.accent,
+                  tintAlpha: 0.08,
+                  padding: const EdgeInsets.all(20),
+                  child: SignalMark(
+                    size: 64,
+                    color: p.accent,
+                    secondaryColor: p.signalAcoustic,
+                  ),
+                ),
+              ),
               const SizedBox(height: 26),
               Text(
                 l10n.welcomeTitle,
@@ -130,8 +139,9 @@ class _WelcomeSetupScreenState extends State<WelcomeSetupScreen> {
                 ),
               ),
             ],
+            ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -194,29 +204,20 @@ class _LanguageTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Material(
-      color: selected ? p.accentMuted.withValues(alpha: 0.35) : p.surfaceCard,
-      borderRadius: BorderRadius.circular(14),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(14),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(
-              color: selected ? p.accent : p.borderSubtle,
-              width: selected ? 1.6 : 1,
-            ),
-          ),
-          child: Row(
-            children: [
-              Expanded(child: Text(label, style: AppTypography.titleMedium)),
-              if (selected)
-                Icon(Icons.check_circle, size: 18, color: p.accent),
-            ],
-          ),
-        ),
+    return SurfaceCard(
+      radius: 14,
+      onTap: onTap,
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      tint: selected ? p.accent : null,
+      tintAlpha: 0.10,
+      borderColor: selected ? p.accent.withValues(alpha: 0.7) : null,
+      borderWidth: selected ? 1.4 : 1.0,
+      child: Row(
+        children: [
+          Expanded(child: Text(label, style: AppTypography.titleMedium)),
+          if (selected)
+            Icon(Icons.check_circle, size: 18, color: p.accent),
+        ],
       ),
     );
   }

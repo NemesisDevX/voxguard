@@ -5,6 +5,7 @@ import '../../../../core/theme/app_typography.dart';
 import '../../../../core/theme/app_palette.dart';
 import '../../../../core/l10n/l10n.dart';
 import '../../../../core/l10n/localized_text.dart';
+import '../../../../core/widgets/surfaces.dart';
 
 /// Trusted Circle — the up-to-5 real people Family Shield alerts
 /// target. Contacts persist locally (SharedPreferences); only their
@@ -21,12 +22,9 @@ class TrustedCircleCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final p = context.palette;
-    return Container(
-      decoration: BoxDecoration(
-        color: p.bgElevated,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: p.borderSubtle),
-      ),
+    return SurfaceCard(
+      radius: 18,
+      elevated: true,
       padding: const EdgeInsets.all(16),
       child: ValueListenableBuilder<List<FamilyContact>>(
         // Ensure the persisted store is loaded before first paint.

@@ -9,6 +9,7 @@ import '../../../paywall/domain/models/subscription_tier.dart';
 import '../../../paywall/domain/services/i_purchase_service.dart';
 import '../../../paywall/domain/services/purchase_service_locator.dart';
 import '../../../paywall/presentation/screens/paywall_screen.dart';
+import '../../../../core/widgets/surfaces.dart';
 
 /// Subscription section — current plan truth plus store actions.
 /// Reactive to entitlement changes: a purchase/restore/expiration
@@ -37,12 +38,8 @@ class SubscriptionCard extends StatelessWidget {
             entitlement.backend == PurchaseBackendMode.testStore;
         final isUnavailable =
             entitlement.backend == PurchaseBackendMode.unavailable;
-        return Container(
-          decoration: BoxDecoration(
-            color: p.surfaceCard,
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: p.borderSubtle),
-          ),
+        return SurfaceCard(
+          padding: EdgeInsets.zero,
           child: Padding(
             padding: const EdgeInsets.symmetric(
                 horizontal: 14, vertical: 14),
@@ -61,27 +58,15 @@ class SubscriptionCard extends StatelessWidget {
                       ),
                     ),
                     if (isDemo || isTestStore)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 6, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: (isDemo ? p.statusWarning : p.accent)
-                              .withValues(alpha: 0.14),
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                        child: Text(
-                          isDemo
-                              ? l10n.demoStoreSection
-                              : l10n.testStoreSection,
-                          style: TextStyle(
-                            fontSize: 8,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 0.6,
-                            color: isDemo
-                                ? p.statusWarning
-                                : p.accent,
-                          ),
-                        ),
+                      StatusPill(
+                        color: isDemo ? p.statusWarning : p.accent,
+                        label: isDemo
+                            ? l10n.demoStoreSection
+                            : l10n.testStoreSection,
+                        icon: isDemo
+                            ? Icons.science_outlined
+                            : Icons.verified_outlined,
+                        compact: true,
                       ),
                   ],
                 ),
