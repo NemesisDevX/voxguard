@@ -263,6 +263,49 @@ class _SafeCallViewState extends State<_SafeCallView>
                         ),
                       ],
                       const SizedBox(height: 16),
+                      // Demo control lives in-flow beside the demo
+                      // provenance — a floating action button here
+                      // would cover the safety CTA on real phones.
+                      if (isDemo)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 12),
+                          child: Center(
+                            child: FilledButton.icon(
+                              onPressed: () {
+                                AppHaptics.tap();
+                                context.read<SafeCallBloc>().add(
+                                    const SimulateDemoAttackEvent());
+                              },
+                              icon: Icon(
+                                demoActive
+                                    ? Icons.stop
+                                    : Icons.science_outlined,
+                                size: 16,
+                              ),
+                              label: Text(
+                                demoActive
+                                    ? l10n.stopSimulation
+                                    : l10n.simulateScam,
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: demoActive
+                                    ? p.statusDanger
+                                    : p.bgElevated,
+                                foregroundColor: demoActive
+                                    ? Colors.white
+                                    : p.textPrimary,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius:
+                                      BorderRadius.circular(999),
+                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(
+                                        horizontal: 16,
+                                        vertical: 8),
+                              ),
+                            ),
+                          ),
+                        ),
                       if (semantic.evidenceCategories.isNotEmpty)
                         Padding(
                           padding: const EdgeInsets.only(bottom: 12),
@@ -315,28 +358,6 @@ class _SafeCallViewState extends State<_SafeCallView>
               ),
             ],
           ),
-          floatingActionButton: isDemo
-              ? FloatingActionButton.extended(
-                  onPressed: () {
-                    AppHaptics.tap();
-                    context
-                        .read<SafeCallBloc>()
-                        .add(const SimulateDemoAttackEvent());
-                  },
-                  backgroundColor: demoActive
-                      ? p.statusDanger
-                      : p.bgElevated,
-                  foregroundColor: p.textPrimary,
-                  icon: Icon(
-                    demoActive ? Icons.stop : Icons.science_outlined,
-                  ),
-                  label: Text(
-                    demoActive
-                        ? l10n.stopSimulation
-                        : l10n.simulateScam,
-                  ),
-                )
-              : null,
         );
       },
     );

@@ -1,18 +1,27 @@
 // Submission screenshot capture — renders REAL app screens at the
 // Shipaton-required 1179×2556 portrait size into
-// `submission/screenshots/`. Not a stretched upscale: each frame is
-// laid out natively at the target resolution.
+// `submission/screenshots/`.
+//
+// Capture architecture: the test view is configured as a real phone
+// — 1179×2556 physical pixels at devicePixelRatio 3.0, so Flutter
+// lays the app out at a realistic 393×852 logical viewport (no
+// desktop-width layout artifacts). Output is then rasterized through
+// a RepaintBoundary.toImage(pixelRatio: 3.0), which repaints that
+// logical layout at full 1179×2556 resolution — a true render, never
+// an upscale of a smaller frame.
 //
 // Run explicitly (skipped in normal `flutter test` runs):
 //   flutter test test/screenshot_capture_test.dart --update-goldens
 //     --dart-define=CAPTURE_SHOTS=true
 //
-// Loads Roboto from the Flutter SDK material_fonts cache so golden
-// output uses real glyphs instead of the Ahem test font.
+// Loads Roboto from the Flutter SDK material_fonts cache so output
+// uses real glyphs instead of the Ahem test font.
 
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -43,6 +52,11 @@ import 'package:voxguard/features/recording/presentation/screens/analyze_recordi
 
 const _enabled = bool.fromEnvironment('CAPTURE_SHOTS');
 const _shotSize = Size(1179, 2556); // Shipaton-required, no frame
+const _devicePixelRatio = 3.0; // → 393×852 logical phone viewport
+
+/// Render boundary wrapped around every captured screen — the
+/// 3× rasterization source for the exact-size PNG output.
+final _captureBoundary = GlobalKey();
 
 Future<void> _loadRoboto() async {
   // flutter_tester lives under <sdk>/bin/cache/artifacts/engine/… —
@@ -134,8 +148,30 @@ Widget _shell(Widget child,
     // MaterialApp's ambient DefaultTextStyle derives from the themed
     // textTheme — transcript bubbles (Text.rich) merge it, so the
     // fontFamilyFallback reaches Arabic spans with no explicit family.
-    home: child,
+    home: RepaintBoundary(key: _captureBoundary, child: child),
   );
+}
+
+/// Rasterizes the wrapped screen at 3× — the logical 393×852 layout
+/// becomes an exact 1179×2556 PNG. Writes are unconditional: this
+/// file only runs under CAPTURE_SHOTS, where regeneration is the
+/// whole point.
+Future<void> _capturePng(WidgetTester tester, String relativePath) async {
+  // Rasterization runs on the real async loop — the fake-async zone
+  // widget tests live in would starve the engine's raster task.
+  await tester.runAsync(() async {
+    final boundary = _captureBoundary.currentContext!
+        .findRenderObject()! as RenderRepaintBoundary;
+    final image = await boundary.toImage(pixelRatio: _devicePixelRatio);
+    final bytes = await image.toByteData(format: ui.ImageByteFormat.png);
+    image.dispose();
+    if (bytes == null) {
+      throw StateError('PNG encode failed for $relativePath');
+    }
+    final file = File(relativePath);
+    await file.parent.create(recursive: true);
+    await file.writeAsBytes(bytes.buffer.asUint8List());
+  });
 }
 
 Future<void> _settle(WidgetTester tester, [int frames = 8]) async {
@@ -178,16 +214,14 @@ void main() {
       String dir = 'screenshots',
       Brightness brightness = Brightness.dark,
       Locale? locale}) async {
+    // Phone-shaped view: physical pixels ÷ DPR = 393×852 logical.
     tester.view.physicalSize = _shotSize;
-    tester.view.devicePixelRatio = 1.0;
+    tester.view.devicePixelRatio = _devicePixelRatio;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(
         _shell(child, brightness: brightness, locale: locale));
     await _settle(tester, frames);
-    await expectLater(
-      find.byWidget(child),
-      matchesGoldenFile('../submission/$dir/$name.png'),
-    );
+    await _capturePng(tester, 'submission/$dir/$name.png');
   }
 
   testWidgets('capture submission screens', (tester) async {
@@ -288,7 +322,7 @@ void main() {
     SharedPreferences.setMockInitialValues(
         const {'voxguard.onboarding_version': 1});
     tester.view.physicalSize = _shotSize;
-    tester.view.devicePixelRatio = 1.0;
+    tester.view.devicePixelRatio = _devicePixelRatio;
     addTearDown(tester.view.reset);
     await tester.pumpWidget(_shell(const SafeCallScreen()));
     await _settle(tester);
@@ -300,19 +334,16 @@ void main() {
     await _settle(tester, 12);
 
     // Trigger the scripted attack; lines land every ~1.4 s.
-    // Target the FAB specifically — the mode card uses the same icon.
-    final fab =
-        find.widgetWithIcon(FloatingActionButton, Icons.science_outlined);
-    if (fab.evaluate().isNotEmpty) {
-      await tester.tap(fab);
+    // The simulate control lives in-flow under the lens (not a FAB —
+    // a floating button would cover the safety CTA at phone width).
+    final trigger = find.text('Simulate Scam');
+    if (trigger.evaluate().isNotEmpty) {
+      await tester.tap(trigger);
       for (var i = 0; i < 40; i++) {
         await tester.pump(const Duration(milliseconds: 250));
       }
     }
-    await expectLater(
-      find.byType(SafeCallScreen),
-      matchesGoldenFile('../submission/screenshots/02_safecall_demo.png'),
-    );
+    await _capturePng(tester, 'submission/screenshots/02_safecall_demo.png');
     // Close the bloc directly — provider disposal doesn't await the
     // async teardown, and its demo-audio timer would otherwise still
     // be pending when the test invariant check runs.
