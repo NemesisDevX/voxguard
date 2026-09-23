@@ -201,6 +201,72 @@ void main() {
       }
     });
 
+    // Diagnostics must mirror resolveTranscriptionTokenProvider —
+    // dev credentials are IGNORED in release, never "armed".
+    test('release + only temp token → notConfigured (ignored)', () {
+      final d = _byName(
+        integrationDiagnostics(
+          platform: TargetPlatform.android,
+          config: _cfg(hasAaiTempToken: true),
+          isRelease: true,
+        ),
+        'assemblyai.streaming',
+      );
+      expect(d.status, IntegrationStatus.notConfigured);
+      expect(d.detail, 'dev credential present but ignored in release');
+    });
+
+    test('release + only API key → notConfigured (ignored)', () {
+      final d = _byName(
+        integrationDiagnostics(
+          platform: TargetPlatform.android,
+          config: _cfg(hasAaiDevKey: true),
+          isRelease: true,
+        ),
+        'assemblyai.streaming',
+      );
+      expect(d.status, IntegrationStatus.notConfigured);
+      expect(d.detail, 'dev credential present but ignored in release');
+    });
+
+    test('release + broker + token → still configured', () {
+      final d = _byName(
+        integrationDiagnostics(
+          platform: TargetPlatform.android,
+          config: _cfg(hasAaiBroker: true, hasRelayToken: true),
+          isRelease: true,
+        ),
+        'assemblyai.streaming',
+      );
+      expect(d.status, IntegrationStatus.configured);
+    });
+
+    test('release + broker without token → incompleteConfiguration',
+        () {
+      final d = _byName(
+        integrationDiagnostics(
+          platform: TargetPlatform.android,
+          config: _cfg(hasAaiBroker: true),
+          isRelease: true,
+        ),
+        'assemblyai.streaming',
+      );
+      expect(d.status, IntegrationStatus.incompleteConfiguration);
+    });
+
+    test('release + nothing → notConfigured', () {
+      final d = _byName(
+        integrationDiagnostics(
+          platform: TargetPlatform.android,
+          config: _none,
+          isRelease: true,
+        ),
+        'assemblyai.streaming',
+      );
+      expect(d.status, IntegrationStatus.notConfigured);
+      expect(d.detail, 'none');
+    });
+
     // ── Groq semantic: proxy needs the relay token; dev path is
     //    release-disabled ──────────────────────────────────────────
 

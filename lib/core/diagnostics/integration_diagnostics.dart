@@ -205,8 +205,8 @@ List<IntegrationDiagnostic> integrationDiagnostics({
     ),
     IntegrationDiagnostic(
       name: 'assemblyai.streaming',
-      status: _assemblyAiStreamingStatus(c),
-      detail: _assemblyAiStreamingDetail(c),
+      status: _assemblyAiStreamingStatus(c, isRelease ?? kReleaseMode),
+      detail: _assemblyAiStreamingDetail(c, isRelease ?? kReleaseMode),
     ),
     IntegrationDiagnostic(
       name: 'assemblyai.recording',
@@ -244,7 +244,12 @@ IntegrationStatus _has(bool url, bool token) => url && token
         ? IntegrationStatus.incompleteConfiguration
         : IntegrationStatus.notConfigured;
 
-IntegrationStatus _assemblyAiStreamingStatus(IntegrationConfig c) {
+/// Mirrors `resolveTranscriptionTokenProvider` EXACTLY — the broker
+/// is the only release-eligible path; temp-token/dev-key defines are
+/// ignored in release (the resolver returns UnconfiguredTokenProvider
+/// for them), so they must never read as "armed" there.
+IntegrationStatus _assemblyAiStreamingStatus(
+    IntegrationConfig c, bool isRelease) {
   if (c.hasAaiBroker) {
     // The broker endpoint enforces relay auth — a URL without the
     // shared token will only produce 401s.
@@ -252,18 +257,30 @@ IntegrationStatus _assemblyAiStreamingStatus(IntegrationConfig c) {
         ? IntegrationStatus.configured
         : IntegrationStatus.incompleteConfiguration;
   }
-  if (c.hasAaiTempToken) return IntegrationStatus.devOnlyArmed;
-  if (c.hasAaiDevKey) return IntegrationStatus.devOnlyArmed;
+  if (!isRelease) {
+    if (c.hasAaiTempToken) return IntegrationStatus.devOnlyArmed;
+    if (c.hasAaiDevKey) return IntegrationStatus.devOnlyArmed;
+  }
   return IntegrationStatus.notConfigured;
 }
 
-String _assemblyAiStreamingDetail(IntegrationConfig c) => c.hasAaiBroker
-    ? (c.hasRelayToken ? 'brokered-token' : 'broker set, token MISSING')
-    : c.hasAaiTempToken
-        ? 'static-temp-token (non-release only)'
-        : c.hasAaiDevKey
-            ? 'dev-api-key (never ship)'
-            : 'none';
+String _assemblyAiStreamingDetail(IntegrationConfig c, bool isRelease) {
+  if (c.hasAaiBroker) {
+    return c.hasRelayToken ? 'brokered-token' : 'broker set, token MISSING';
+  }
+  if (isRelease) {
+    // Runtime resolver ignores both dev defines here — say so.
+    if (c.hasAaiTempToken || c.hasAaiDevKey) {
+      return 'dev credential present but ignored in release';
+    }
+    return 'none';
+  }
+  return c.hasAaiTempToken
+      ? 'static-temp-token (non-release only)'
+      : c.hasAaiDevKey
+          ? 'dev-api-key (never ship)'
+          : 'none';
+}
 
 IntegrationStatus _groqSemanticStatus(IntegrationConfig c, bool isRelease) {
   if (c.hasSemanticProxy) {
