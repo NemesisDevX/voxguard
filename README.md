@@ -119,7 +119,7 @@ Real DSP on every incoming audio chunk (heuristic prototype — not a validated 
 ### Engine B — Semantic Threat Engine
 
 - **Production**: a deterministic bilingual rule engine — English + Egyptian-Arabic lexicons for urgency (`بسرعة`, `دلوقتي`), financial demands (`حول`, `جنيه`, `محفظة`, `انستاباي`), secrecy/isolation (`متقولش لحد`, `بيني وبينك`), and impersonation claims (`أنا أخوك`). Zero network dependency.
-- **Developer experimentation only**: direct Groq API calls (`llama-3.3-70b-versatile`, JSON-mode) are gated behind BOTH `GROQ_API_KEY` and the explicit opt-in flag `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true`. Without both, semantics stay local. A permanent Groq key must never ship in a released build — production semantic traffic stays on-device or, in a future sprint, behind a server-side proxy with user consent.
+- **Developer experimentation only**: direct Groq API calls (`llama-3.3-70b-versatile`, JSON-mode) are gated behind BOTH `GROQ_API_KEY` and the explicit opt-in flag `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true`. Without both, semantics stay local. A permanent Groq key must never ship in a released build — production semantic traffic stays on-device or, in a future release, behind a server-side proxy with user consent.
 - **Analyze Recording never calls Groq**: user-provided and provider-produced recording transcripts are analyzed by the local engine only.
 
 ### Threat Fusion Matrix
@@ -227,7 +227,7 @@ Relay holds OneSignal credentials → fans out via
 include_aliases.external_id push to relatives
 ```
 
-**Receiving device (P0.2B):** any PauseSignal install can become a real Family Shield receiver — *Settings → Family Shield Receiver → Enable Family Alerts* requests notification permission (only ever from that button, never at launch), generates an opaque `vg_…` identity persisted locally, and links it via `OneSignal.login(externalId)` so the relay's `include_aliases.external_id` reaches the device. The `onesignal_flutter` 5.x SDK is isolated behind `IPushIdentityService`; a live `FamilyPushRegistration` state tracks permission → registered transitions via the push-subscription observer (no polling). Two-device test procedure: `docs/FAMILY_SHIELD_SMOKE_TEST.md`.
+**Receiving device:** any PauseSignal install can become a real Family Shield receiver — *Settings → Family Shield Receiver → Enable Family Alerts* requests notification permission (only ever from that button, never at launch), generates an opaque `vg_…` identity persisted locally, and links it via `OneSignal.login(externalId)` so the relay's `include_aliases.external_id` reaches the device. The `onesignal_flutter` 5.x SDK is isolated behind `IPushIdentityService`; a live `FamilyPushRegistration` state tracks permission → registered transitions via the push-subscription observer (no polling). Two-device test procedure: `docs/FAMILY_SHIELD_SMOKE_TEST.md`.
 
 **Security boundary:** the OneSignal REST API key lives on the relay — never inside the Flutter client (the SDK only needs the App ID, which is not a secret). The client payload carries no raw audio, no transcript, no PII — just an incident reference and risk band. Without a relay URL the app runs an explicitly-labelled **Demo Mode** broadcast (`IFamilyContactRepository` → `DemoFamilyContactRepository`), keeping the full journey demoable without shipping secrets. "Alert accepted" means the relay + OneSignal API accepted the notification — confirmed device receipt is only observable on the receiving device.
 
@@ -300,7 +300,7 @@ Release signing reads `android/key.properties` (gitignored) first, then falls ba
 | `docs/NEXT_GEN_REVENUECAT_TEST_STORE.md` | RevenueCat Test Store judging setup — dashboard + dart-define |
 | `docs/STORE_METADATA.md` | Store listing copy, subscription descriptions, reviewer notes (future commercial release) |
 | `docs/DEMO_SCRIPT.md` | <2 min timestamped demo video script |
-| `docs/ONESIGNAL_CAMPAIGN.md` | "Keep Them Coming Back" campaign spec + deploy checklist |
+| `docs/ONESIGNAL_CAMPAIGN.md` | OneSignal integration spec + deploy checklist (technical reference) |
 | `docs/REVENUECAT_SETUP.md` / `docs/REVENUECAT_QA.md` | Store configuration + real-device purchase QA |
 | `docs/FINAL_QA.md` / `docs/FINAL_RELEASE_STATUS.md` | Hardware QA matrix + external blocker report |
 | `docs/BRAND_RELEASE_DECISION.md` | Public brand resolved: **PauseSignal** — technical identifiers unchanged |

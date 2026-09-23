@@ -936,18 +936,10 @@ class _SessionActionBar extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            l10n.pauseHeadline,
+            l10n.verifyBeforeYouAct,
             style: AppTypography.titleLarge.copyWith(
               color: p.statusDanger,
             ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            report.primaryThreatReasons.firstOrNull == null
-                ? l10n.bannerThreatDetail
-                : context.threatReason(
-                    report.primaryThreatReasons.first),
-            style: AppTypography.bodyMedium,
           ),
           const SizedBox(height: 6),
           Text(

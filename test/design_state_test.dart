@@ -263,7 +263,7 @@ void main() {
         ),
       ));
       await settle(tester);
-      expect(find.text('Pause before acting.'), findsWidgets);
+      expect(find.text('Verify before you act.'), findsOneWidget);
       expect(find.text('End call & verify'), findsOneWidget);
       expect(find.textContaining('number you already trust'),
           findsWidgets);

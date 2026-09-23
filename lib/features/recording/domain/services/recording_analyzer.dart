@@ -53,7 +53,7 @@ final class RecordingAnalyzer {
         _incidents = incidentRepository ?? IncidentRepositoryLocator.instance,
         _productAccess = productAccess ?? ProductAccessLocator.instance;
 
-  /// Hackathon-safe bounds — everything is decoded in memory.
+  /// Bounded because the source is decoded fully in memory.
   /// Aliased to [kMaxRecordingSourceBytes], which the picker also
   /// enforces before bytes are read.
   static const maxSourceBytes = kMaxRecordingSourceBytes; // 25 MB

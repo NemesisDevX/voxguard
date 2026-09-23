@@ -193,18 +193,8 @@ class _HeroProtectionCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    SignalMark(size: 40, color: p.accent,
-                        secondaryColor: p.signalAcoustic),
-                    const Spacer(),
-                    Icon(
-                      Icons.arrow_forward,
-                      color: p.textMuted,
-                      size: 20,
-                    ),
-                  ],
-                ),
+                SignalMark(size: 40, color: p.accent,
+                    secondaryColor: p.signalAcoustic),
                 const SizedBox(height: 18),
                 Text(
                   l10n.protectionCheckTitle,

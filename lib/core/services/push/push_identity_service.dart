@@ -72,7 +72,8 @@ final class FamilyAlertTap {
   final String riskLevel;
 
   /// The sender's opaque `vg_…` identity — which trusted contact
-  /// raised the alert. P0.2C uses this for the resolution screen.
+  /// raised the alert. The resolution screen maps it to a saved
+  /// contact name; unknown senders render as unrecognized.
   final String senderExternalId;
 
   /// `full` (acoustic + conversation) or `partial` (acoustic only).
@@ -135,8 +136,8 @@ abstract interface class IPushIdentityService {
   ValueListenable<FamilyPushRegistration> get registration;
 
   /// Notification taps carrying Family Shield metadata — user
-  /// interaction only. P0.2C deep-link navigation must hook this
-  /// stream, never [alertReceived].
+  /// interaction only. Deep-link navigation must hook this stream,
+  /// never [alertReceived].
   Stream<FamilyAlertTap> get alertTaps;
 
   /// Family Shield notifications received while the app was in the

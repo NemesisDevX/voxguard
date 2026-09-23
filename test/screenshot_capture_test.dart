@@ -100,6 +100,13 @@ Widget _shell(Widget child,
           : AppTheme.light())
       .copyWith(platform: TargetPlatform.android);
   const fallback = ['NotoNaskh'];
+  // Explicit families: test-rendered text otherwise resolves to
+  // the hollow Ahem box font; the fallback covers Arabic glyphs.
+  // Component-level text styles (AppBar title, dialogs, snackbars)
+  // sit outside textTheme and need the same treatment.
+  const family = 'Roboto';
+  TextStyle? roboto(TextStyle? s) =>
+      s?.copyWith(fontFamily: family, fontFamilyFallback: fallback);
   return MaterialApp(
     debugShowCheckedModeBanner: false,
     locale: locale,
@@ -110,13 +117,19 @@ Widget _shell(Widget child,
       GlobalWidgetsLocalizations.delegate,
       GlobalCupertinoLocalizations.delegate,
     ],
-    // Explicit families: test-rendered text otherwise resolves to
-    // the hollow Ahem box font; the fallback covers Arabic glyphs.
     theme: base.copyWith(
       textTheme: base.textTheme
-          .apply(fontFamily: 'Roboto', fontFamilyFallback: fallback),
+          .apply(fontFamily: family, fontFamilyFallback: fallback),
       primaryTextTheme: base.primaryTextTheme
-          .apply(fontFamily: 'Roboto', fontFamilyFallback: fallback),
+          .apply(fontFamily: family, fontFamilyFallback: fallback),
+      appBarTheme: base.appBarTheme
+          .copyWith(titleTextStyle: roboto(base.appBarTheme.titleTextStyle)),
+      dialogTheme: base.dialogTheme.copyWith(
+        titleTextStyle: roboto(base.dialogTheme.titleTextStyle),
+        contentTextStyle: roboto(base.dialogTheme.contentTextStyle),
+      ),
+      snackBarTheme: base.snackBarTheme.copyWith(
+          contentTextStyle: roboto(base.snackBarTheme.contentTextStyle)),
     ),
     // MaterialApp's ambient DefaultTextStyle derives from the themed
     // textTheme — transcript bubbles (Text.rich) merge it, so the
