@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../models/semantic_threat_signals.dart';
@@ -31,7 +32,9 @@ abstract interface class ISemanticThreatAnalyzer {
 ///   rules on any failure.
 /// * DEVELOPMENT ONLY — a direct `GROQ_API_KEY` dart-define, which
 ///   additionally requires `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true`.
-///   A permanent Groq key must never ship in a released build.
+///   A permanent Groq key must never ship in a released build — and a
+///   release build must never USE one: the direct path is hard-disabled
+///   in release regardless of the key or opt-in flag.
 ///
 /// Recording analysis never uses either remote path — the UI promises
 /// transcripts stay on-device, so `RecordingAnalyzer` calls
@@ -43,7 +46,9 @@ final class SemanticThreatService implements ISemanticThreatAnalyzer {
     bool? devRemoteSemantic,
     String? proxyUrl,
     String? relayToken,
+    bool? isRelease,
   })  : _client = httpClient ?? http.Client(),
+        _isRelease = isRelease ?? kReleaseMode,
         _apiKey = apiKey ??
             const String.fromEnvironment('GROQ_API_KEY', defaultValue: ''),
         _devRemote = devRemoteSemantic ??
@@ -86,11 +91,19 @@ final class SemanticThreatService implements ISemanticThreatAnalyzer {
   final String _proxyUrl;
   final String _relayToken;
 
+  /// Build-mode flag — injectable so the release-safety contract is
+  /// testable without compiling two variants.
+  final bool _isRelease;
+
   /// True only when the production proxy path is configured.
   bool get proxyConfigured => _proxyUrl.isNotEmpty;
 
-  /// True only when remote Groq analysis is *both* keyed and opted in.
-  bool get remoteSemanticEnabled => _apiKey.isNotEmpty && _devRemote;
+  /// True only when remote Groq analysis is *both* keyed and opted in —
+  /// AND the build is non-release. A release build can never reach the
+  /// provider directly with a client-side permanent key; the proxy is
+  /// the only remote path allowed there.
+  bool get remoteSemanticEnabled =>
+      !_isRelease && _apiKey.isNotEmpty && _devRemote;
 
   /// Analyzes accumulated transcript text and returns threat signals.
   ///

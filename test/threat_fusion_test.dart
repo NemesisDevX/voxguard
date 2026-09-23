@@ -255,6 +255,102 @@ void main() {
     });
   });
 
+  group('SemanticThreatService (release safety)', () {
+    test('release + proxy → proxy path still allowed', () async {
+      var hit = false;
+      final client = http_testing.MockClient((_) async {
+        hit = true;
+        return http.Response(
+          jsonEncode({
+            'urgency_score': 0.5,
+            'financial_demand_score': 0.5,
+            'secrecy_score': 0.5,
+          }),
+          200,
+        );
+      });
+      final svc = SemanticThreatService(
+        httpClient: client,
+        proxyUrl: 'https://relay.example.com',
+        relayToken: 'tok',
+        isRelease: true,
+      );
+      expect(svc.proxyConfigured, isTrue);
+      await svc.analyze('anything');
+      expect(hit, isTrue);
+    });
+
+    test('release + direct key + dev flag → direct path disabled; '
+        'zero HTTP calls, local rules run', () async {
+      var hit = false;
+      final client = http_testing.MockClient((_) async {
+        hit = true;
+        return http.Response('{}', 200);
+      });
+      final svc = SemanticThreatService(
+        httpClient: client,
+        apiKey: 'gsk_permanent',
+        devRemoteSemantic: true,
+        isRelease: true,
+      );
+      expect(svc.remoteSemanticEnabled, isFalse);
+      final signals = await svc.analyze('transfer money now');
+      expect(signals.financialDemandScore, greaterThan(0));
+      expect(hit, isFalse); // provider never contacted
+    });
+
+    test('debug + key + flag → dev direct path allowed', () async {
+      Uri? hit;
+      final client = http_testing.MockClient((req) async {
+        hit = req.url;
+        return http.Response(
+          jsonEncode({
+            'choices': [
+              {
+                'message': {
+                  'content': jsonEncode({
+                    'urgency_score': 0.7,
+                    'financial_demand_score': 0.7,
+                    'secrecy_score': 0.7,
+                    'detected_keywords': <String>[],
+                    'impersonation_claims': <String>[],
+                  }),
+                },
+              },
+            ],
+          }),
+          200,
+        );
+      });
+      final svc = SemanticThreatService(
+        httpClient: client,
+        apiKey: 'gsk_dev',
+        devRemoteSemantic: true,
+        isRelease: false,
+      );
+      expect(svc.remoteSemanticEnabled, isTrue);
+      await svc.analyze('hi');
+      expect(hit!.host, 'api.groq.com');
+    });
+
+    test('release without proxy → local fallback, zero HTTP calls',
+        () async {
+      var hit = false;
+      final client = http_testing.MockClient((_) async {
+        hit = true;
+        return http.Response('{}', 200);
+      });
+      final svc = SemanticThreatService(
+        httpClient: client,
+        proxyUrl: '',
+        isRelease: true,
+      );
+      final signals = await svc.analyze('urgent wire transfer');
+      expect(signals.urgencyScore, greaterThan(0));
+      expect(hit, isFalse);
+    });
+  });
+
   group('SemanticThreatSignals.evidenceCategories', () {
     test('exposes all four evidence buckets for the demo scam script', () {
       final signals = SemanticThreatService().analyzeLocally(

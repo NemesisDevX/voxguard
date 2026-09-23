@@ -73,6 +73,13 @@ function withCors(response, cors) {
   return response;
 }
 
+/** Every /aai-token response is uncacheable — minted tokens are
+ *  one-time-use secrets and must never sit in a shared cache. */
+function noStore(response) {
+  response.headers.set('Cache-Control', 'no-store');
+  return response;
+}
+
 /** GET|POST /aai-token — mint one short-lived streaming token. */
 async function mintToken(request, env, fetchImpl, cors) {
   const denied = checkRelayAuth(request, env);
@@ -141,10 +148,10 @@ export async function handleTokenRequest(request, env, fetchImpl, cors) {
     (request.method === 'GET' || request.method === 'POST') &&
     url.pathname === '/aai-token'
   ) {
-    return mintToken(request, env, fetchImpl, cors);
+    return noStore(await mintToken(request, env, fetchImpl, cors));
   }
   if (url.pathname === '/aai-token' || url.pathname.startsWith('/aai-token/')) {
-    return jsonResponse(404, { error: 'not found' }, cors);
+    return noStore(jsonResponse(404, { error: 'not found' }, cors));
   }
   return null;
 }

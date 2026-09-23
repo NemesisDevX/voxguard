@@ -83,6 +83,21 @@ test('permanent provider key never appears in the response', async () => {
   assert.ok(!text.includes('aai-secret-key'));
 });
 
+test('successful token response is Cache-Control: no-store', async () => {
+  const res = await handleRequest(tokenRequest(), ENV, tokenFetch([]));
+  assert.equal(res.status, 200);
+  assert.equal(res.headers.get('Cache-Control'), 'no-store');
+});
+
+test('no-store applies to error responses on the token route too',
+  async () => {
+    const res = await handleRequest(
+      tokenRequest({ auth: null }), ENV, tokenFetch([]),
+    );
+    assert.equal(res.status, 401);
+    assert.equal(res.headers.get('Cache-Control'), 'no-store');
+  });
+
 // ── Provider failure mapping ───────────────────────────────────────
 
 test('provider non-2xx → 502 with no provider detail', async () => {

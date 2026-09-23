@@ -202,6 +202,74 @@ void main() {
     });
   });
 
+  group('token provider resolution — release safety', () {
+    test('release + broker URL → BrokeredTokenProvider', () {
+      final p = resolveTranscriptionTokenProvider(
+        brokerUrl: 'https://relay.example.com/aai-token',
+        isRelease: true,
+      );
+      expect(p, isA<BrokeredTokenProvider>());
+      expect(p.isConfigured, isTrue);
+    });
+
+    test('release + only temp token → explicitly unconfigured', () {
+      final p = resolveTranscriptionTokenProvider(
+        tempToken: 'one-shot',
+        isRelease: true,
+      );
+      expect(p, isA<UnconfiguredTokenProvider>());
+      expect(p.isConfigured, isFalse);
+      expect(() => p.mintToken(), throwsStateError);
+    });
+
+    test('release + only API key → explicitly unconfigured — a '
+        'permanent key can never activate in release', () {
+      final p = resolveTranscriptionTokenProvider(
+        apiKey: 'aai-permanent',
+        isRelease: true,
+      );
+      expect(p, isA<UnconfiguredTokenProvider>());
+      expect(p.isConfigured, isFalse);
+      expect(() => p.mintToken(), throwsStateError);
+    });
+
+    test('release + nothing at all → unconfigured', () {
+      final p = resolveTranscriptionTokenProvider(isRelease: true);
+      expect(p, isA<UnconfiguredTokenProvider>());
+      expect(p.isConfigured, isFalse);
+    });
+
+    test('debug + temp token → StaticTokenProvider', () {
+      final p = resolveTranscriptionTokenProvider(
+        tempToken: 'one-shot',
+        isRelease: false,
+      );
+      expect(p, isA<StaticTokenProvider>());
+      expect(p.isConfigured, isTrue);
+    });
+
+    test('debug + API key → DevApiKeyTokenProvider', () {
+      final p = resolveTranscriptionTokenProvider(
+        apiKey: 'aai-permanent',
+        isRelease: false,
+      );
+      expect(p, isA<DevApiKeyTokenProvider>());
+      expect(p.isConfigured, isTrue);
+    });
+
+    test('broker outranks dev paths in every build mode', () {
+      for (final release in [true, false]) {
+        final p = resolveTranscriptionTokenProvider(
+          brokerUrl: 'https://relay.example.com/aai-token',
+          tempToken: 'one-shot',
+          apiKey: 'aai-permanent',
+          isRelease: release,
+        );
+        expect(p, isA<BrokeredTokenProvider>());
+      }
+    });
+  });
+
   group('AssemblyAiStreamingService', () {
     test('explicit speech model + ar/en language bias reach the WS URI',
         () async {
