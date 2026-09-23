@@ -1,4 +1,8 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/testing.dart' as http_testing;
 import 'package:voxguard/features/protection/domain/models/audio_forensic_metrics.dart';
 import 'package:voxguard/features/protection/domain/models/composite_threat_report.dart';
 import 'package:voxguard/features/protection/domain/models/semantic_threat_signals.dart';
@@ -128,6 +132,126 @@ void main() {
       expect(signals.financialDemandScore, 0);
       expect(signals.secrecyScore, 0);
       expect(signals.impersonationClaims, isEmpty);
+    });
+  });
+
+  group('SemanticThreatService (semantic proxy path)', () {
+    SemanticThreatService proxied(
+      http_testing.MockClient client, {
+      String relayToken = 'relay-tok',
+    }) =>
+        SemanticThreatService(
+          httpClient: client,
+          proxyUrl: 'https://relay.example.com',
+          relayToken: relayToken,
+        );
+
+    test('configured proxy POSTs transcript + bearer token to /semantic',
+        () async {
+      Uri? hit;
+      Map<String, dynamic>? sent;
+      String? auth;
+      final client = http_testing.MockClient((req) async {
+        hit = req.url;
+        auth = req.headers['Authorization'];
+        sent = jsonDecode(req.body) as Map<String, dynamic>;
+        return http.Response(
+          jsonEncode({
+            'urgency_score': 0.9,
+            'financial_demand_score': 0.8,
+            'secrecy_score': 0.6,
+            'detected_keywords': ['now'],
+            'impersonation_claims': ['i am your son'],
+          }),
+          200,
+        );
+      });
+      final svc = proxied(client);
+      expect(svc.proxyConfigured, isTrue);
+
+      final signals = await svc.analyze('send money now');
+      expect(hit!.path, '/semantic');
+      expect(auth, 'Bearer relay-tok');
+      expect(sent, {'transcript': 'send money now'});
+      expect(signals.urgencyScore, 0.9);
+      expect(signals.impersonationClaims, ['i am your son']);
+    });
+
+    test('transcript is truncated to the proxy bound before sending',
+        () async {
+      int? sentLength;
+      final client = http_testing.MockClient((req) async {
+        sentLength = (jsonDecode(req.body)
+            as Map<String, dynamic>)['transcript']
+            .toString()
+            .length;
+        return http.Response(
+          jsonEncode({
+            'urgency_score': 0.0,
+            'financial_demand_score': 0.0,
+            'secrecy_score': 0.0,
+          }),
+          200,
+        );
+      });
+      final svc = proxied(client);
+      await svc.analyze('x' * 20000);
+      expect(sentLength, 12000);
+    });
+
+    test('proxy non-200 falls back to the local engine', () async {
+      final client = http_testing.MockClient(
+        (_) async => http.Response('upstream down', 502),
+      );
+      final svc = proxied(client);
+      // Local rules catch this — proxy failure must not hide it.
+      final signals = await svc.analyze('transfer money now');
+      expect(signals.financialDemandScore, greaterThan(0));
+      expect(signals.urgencyScore, greaterThan(0));
+    });
+
+    test('malformed proxy JSON falls back to local rules', () async {
+      final client = http_testing.MockClient(
+        (_) async => http.Response('{"urgency_score":"high"}', 200),
+      );
+      final svc = proxied(client);
+      final signals = await svc.analyze('send a wire now');
+      expect(signals.financialDemandScore, greaterThan(0));
+    });
+
+    test('proxy unreachable falls back to local rules', () async {
+      final client = http_testing.MockClient(
+        (_) async => throw http.ClientException('dns'),
+      );
+      final svc = proxied(client);
+      final signals = await svc.analyze('urgent transfer now');
+      expect(signals.urgencyScore, greaterThan(0));
+    });
+
+    test('unconfigured proxy stays fully local — zero HTTP calls',
+        () async {
+      var hit = false;
+      final client = http_testing.MockClient((_) async {
+        hit = true;
+        return http.Response('{}', 200);
+      });
+      final svc = SemanticThreatService(httpClient: client, proxyUrl: '');
+      expect(svc.proxyConfigured, isFalse);
+      await svc.analyze('send money now');
+      expect(hit, isFalse);
+    });
+
+    test('empty transcript short-circuits before any remote call',
+        () async {
+      var hit = false;
+      final client = http_testing.MockClient((_) async {
+        hit = true;
+        return http.Response('{}', 200);
+      });
+      final svc = proxied(client);
+      final signals = await svc.analyze('   ');
+      expect(signals.urgencyScore, 0);
+      expect(hit, isFalse);
     });
   });
 

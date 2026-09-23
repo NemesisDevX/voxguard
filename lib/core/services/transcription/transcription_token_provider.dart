@@ -75,14 +75,27 @@ ITranscriptionTokenProvider transcriptionTokenProviderFromEnvironment({
 /// ever sees expiring tokens.
 ///
 /// Contract: `GET <brokerUrl>` → `200 { "token": "…" }`.
+///
+/// The broker shares the relay's abuse boundary: when
+/// `VOXGUARD_RELAY_TOKEN` is configured it is sent as a bearer token.
 final class BrokeredTokenProvider implements ITranscriptionTokenProvider {
-  BrokeredTokenProvider(this.brokerUrl, {http.Client? httpClient})
-      : _http = httpClient ?? http.Client();
+  BrokeredTokenProvider(
+    this.brokerUrl, {
+    http.Client? httpClient,
+    String? relayToken,
+  })  : _http = httpClient ?? http.Client(),
+        _relayToken = (relayToken ??
+                const String.fromEnvironment(
+                  'VOXGUARD_RELAY_TOKEN',
+                  defaultValue: '',
+                ))
+            .trim();
 
   static const _timeout = Duration(seconds: 10);
 
   final String brokerUrl;
   final http.Client _http;
+  final String _relayToken;
 
   @override
   bool get isConfigured => brokerUrl.isNotEmpty;
@@ -92,8 +105,15 @@ final class BrokeredTokenProvider implements ITranscriptionTokenProvider {
 
   @override
   Future<String> mintToken() async {
-    final response =
-        await _http.get(Uri.parse(brokerUrl)).timeout(_timeout);
+    final response = await _http
+        .get(
+          Uri.parse(brokerUrl),
+          headers: {
+            if (_relayToken.isNotEmpty)
+              'Authorization': 'Bearer $_relayToken',
+          },
+        )
+        .timeout(_timeout);
     if (response.statusCode != 200) {
       throw StateError(
         'Token broker request failed (${response.statusCode})',

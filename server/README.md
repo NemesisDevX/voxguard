@@ -33,7 +33,8 @@ under `node --test` for local verification.
 |---|---|
 | `ONESIGNAL_APP_ID` | OneSignal App ID (UUID) |
 | `ONESIGNAL_REST_API_KEY` | OneSignal REST key — **secret**, server-only |
-| `ASSEMBLYAI_API_KEY` | AssemblyAI key for prerecorded transcription — **secret**, server-only |
+| `ASSEMBLYAI_API_KEY` | AssemblyAI key — streaming-token mints + prerecorded transcription — **secret**, server-only |
+| `GROQ_API_KEY` | Groq key for the semantic-analysis proxy — **secret**, server-only |
 | `RELAY_CLIENT_TOKEN` | Shared token the app sends as `Bearer …` — abuse resistance, not a real credential |
 | `ALLOWED_ORIGINS` | Comma-separated CORS origins (defaults: GitHub Pages + localhost) |
 
@@ -46,7 +47,8 @@ cd server
 npm install
 npx wrangler secret put ONESIGNAL_REST_API_KEY
 npx wrangler secret put RELAY_CLIENT_TOKEN
-npx wrangler secret put ASSEMBLYAI_API_KEY   # transcription jobs only
+npx wrangler secret put ASSEMBLYAI_API_KEY   # streaming tokens + transcription jobs
+npx wrangler secret put GROQ_API_KEY         # semantic proxy only
 # edit wrangler.toml [vars] for ONESIGNAL_APP_ID + ALLOWED_ORIGINS
 npx wrangler deploy
 ```
@@ -57,8 +59,29 @@ Then point the app at it:
 flutter run \
   --dart-define=VOXGUARD_ALERT_RELAY_URL=https://<worker>.workers.dev/alert \
   --dart-define=VOXGUARD_RELAY_TOKEN=<same-as-RELAY_CLIENT_TOKEN> \
-  --dart-define=VOXGUARD_RECORDING_TRANSCRIPTION_URL=https://<worker>.workers.dev
+  --dart-define=VOXGUARD_RECORDING_TRANSCRIPTION_URL=https://<worker>.workers.dev \
+  --dart-define=ASSEMBLYAI_TOKEN_BROKER_URL=https://<worker>.workers.dev/aai-token \
+  --dart-define=VOXGUARD_SEMANTIC_PROXY_URL=https://<worker>.workers.dev
 ```
+
+## Token broker route
+
+`GET|POST /aai-token` · `Authorization: Bearer <RELAY_CLIENT_TOKEN>`
+→ `200 {token, expires_in_seconds: 600}`. Mints a short-lived,
+one-time-use AssemblyAI streaming token via the documented
+`streaming.assemblyai.com/v3/token` endpoint — the permanent key
+never leaves the server. Rate-limited per bearer token.
+
+## Semantic proxy route
+
+`POST /semantic` · `Authorization: Bearer <RELAY_CLIENT_TOKEN>` ·
+`{transcript: "…"}` (≤ 12 000 chars) → `200` with the compact signal
+object `{urgency_score, financial_demand_score, secrecy_score,
+detected_keywords, impersonation_claims}` — the same vocabulary the
+on-device rule engine produces. Provider output is strictly
+validated; malformed or non-2xx upstream → safe `502`/`503`, and the
+client falls back to the local bilingual engine. The transcript is
+proxied in memory only — never logged, never persisted.
 
 ## Test locally (no real pushes)
 

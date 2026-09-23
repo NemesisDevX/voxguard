@@ -112,6 +112,14 @@ unlinked_spec.ds
 # Coverage
 coverage/
 
+# Local secrets — provider keys, relay tokens, wrangler dev vars.
+# .env.example / documented placeholders stay tracked; real values
+# must never reach the repository.
+.env
+.env.*
+!.env.example
+**/.dev.vars
+
 # Symbols
 app.*.symbols
 

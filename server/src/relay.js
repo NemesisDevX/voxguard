@@ -15,6 +15,8 @@
  */
 
 import { handleTranscriptionRequest } from './transcription.js';
+import { handleTokenRequest } from './aai_token.js';
+import { handleSemanticRequest } from './semantic.js';
 
 export const MAX_RECIPIENTS = 5; // Family Vault model — hard cap, no fan-out abuse.
 const MAX_INCIDENT_ID_LEN = 64;
@@ -294,6 +296,18 @@ export async function handleRequest(request, env, fetchImpl = fetch) {
     const res = await handleTranscriptionRequest(
       request, env, fetchImpl, cors,
     );
+    if (res) return res;
+  }
+
+  // AssemblyAI streaming-token broker (/aai-token).
+  if (url.pathname.startsWith('/aai-token')) {
+    const res = await handleTokenRequest(request, env, fetchImpl, cors);
+    if (res) return res;
+  }
+
+  // Groq semantic-analysis proxy (/semantic).
+  if (url.pathname.startsWith('/semantic')) {
+    const res = await handleSemanticRequest(request, env, fetchImpl, cors);
     if (res) return res;
   }
 

@@ -145,6 +145,39 @@ void main() {
       expect(hit!.host, 'relay.example.com');
     });
 
+    test('broker provider sends the shared relay token as bearer auth',
+        () async {
+      String? auth;
+      final client = http_testing.MockClient((req) async {
+        auth = req.headers['Authorization'];
+        return http.Response(jsonEncode({'token': 'broker-tok'}), 200);
+      });
+      final p = BrokeredTokenProvider(
+        'https://relay.example.com/aai-token',
+        httpClient: client,
+        relayToken: 'relay-secret',
+      );
+
+      expect(await p.mintToken(), 'broker-tok');
+      expect(auth, 'Bearer relay-secret');
+    });
+
+    test('broker provider omits auth header when no relay token', () async {
+      var headerSeen = false;
+      final client = http_testing.MockClient((req) async {
+        headerSeen = req.headers.containsKey('Authorization');
+        return http.Response(jsonEncode({'token': 't'}), 200);
+      });
+      final p = BrokeredTokenProvider(
+        'https://relay.example.com/aai-token',
+        httpClient: client,
+        relayToken: '',
+      );
+
+      await p.mintToken();
+      expect(headerSeen, isFalse);
+    });
+
     test('mint failure propagates (non-200 and missing token)', () async {
       final bad = http_testing.MockClient(
         (_) async => http.Response('nope', 500),
