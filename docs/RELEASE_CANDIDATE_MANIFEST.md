@@ -12,7 +12,7 @@ live-status rows after the credentials + live-QA phase.*
 | Dart package | `voxguard` |
 | Android application ID | `com.nemesisdevx.voxguard` |
 | Branch | `main` |
-| Pre-credential SHA | `d77a714471cee5c9d150ae6282d4cc8f67689f42` |
+| Product-code freeze SHA | `d77a714471cee5c9d150ae6282d4cc8f67689f42` — last commit touching product/server source; docs-only commits may follow on `main` |
 | Flutter | 3.41.2 (stable) |
 | Dart | 3.11.0 |
 | Android SDK target | API 36 verified on emulator (sdk gphone64 x86_64) |

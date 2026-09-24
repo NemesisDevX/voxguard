@@ -60,8 +60,8 @@ PauseSignal's answer is **multi-signal threat fusion**: acoustic anomaly indicat
 │           │   Rate           │  │ • Secrecy / Isolation│        │
 │           │                  │  │ • Impersonation      │        │
 │           │                  │  │                      │        │
-│           │                  │  │ (Groq = dev-only     │        │
-│           │                  │  │  experiment, gated)  │        │
+│           │                  │  │ (Groq: /semantic     │        │
+│           │                  │  │  proxy; dev gated)   │        │
 │           └────────┬─────────┘  └──────────┬───────────┘        │
 │                  │ syntheticScore    combinedScore              │
 │                  ▼                    ▼                          │

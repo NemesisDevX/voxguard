@@ -14,7 +14,8 @@ build. Detailed per-topic docs are linked, not duplicated.
 
 | Item | State |
 |---|---|
-| Branch / SHA | `main` @ `d77a714471cee5c9d150ae6282d4cc8f67689f42` |
+| Branch | `main` |
+| Product-code freeze SHA | `d77a714471cee5c9d150ae6282d4cc8f67689f42` — last commit touching product/server source; later commits on `main` are docs/scripts only |
 | Flutter tests | 421/421 pass |
 | Server tests | 74/74 pass |
 | `flutter analyze` | 0 issues |

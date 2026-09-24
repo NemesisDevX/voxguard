@@ -110,9 +110,13 @@ rate limits, bounded timeouts, sanitized errors, no secret logging.
 Raw mic audio is processed in memory and never stored. Recording
 analysis defaults to on-device; enhanced transcription is an explicit
 opt-in. Family Shield payloads carry an incident reference and risk
-band only — no audio, transcript, or PII. Provider keys never ship in
-the client; the AssemblyAI streaming token is short-lived and
-one-time-use; the broker route is `Cache-Control: no-store`.
+band only — no audio, transcript, or PII. Production and judging
+paths keep permanent provider credentials server-side; release builds
+code-reject the direct AssemblyAI/Groq credential paths.
+Development-only direct-key escape hatches exist for local/debug use
+and must never be used in judging or release builds. The AssemblyAI
+streaming token is short-lived and one-time-use; the broker route is
+`Cache-Control: no-store`.
 
 ## Accessibility & localization
 

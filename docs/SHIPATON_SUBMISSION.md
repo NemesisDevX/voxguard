@@ -7,25 +7,43 @@ review, release keystore, or paid developer account is required for
 this submission.**
 
 Prepared against the published Shipaton 2026 rules (Devpost,
-deadline **Sep 30, 2026, 11:45 PM PDT**). Nothing below claims
-eligibility that has not been executed — external steps are marked.
+deadline **Sep 30, 2026, 11:45 PM PDT**; official rules last updated
+**August 31, 2026**). Nothing below claims eligibility that has not
+been executed — external steps are marked `HUMAN/EXTERNAL`.
 
 ## Next Gen requirements
 
+### REPO / DONE
+
 | Requirement | Status |
 |-------------|--------|
-| Active-student eligibility + qualifying academic/student email on Devpost | `BLOCKED_EXTERNAL` — entrant attestation; nothing in the repo proves it |
 | Public GitHub repository | **VERIFIED** — `github.com/NemesisDevX/voxguard` returns 200 unauthenticated |
 | Open-source license | **VERIFIED** — `LICENSE` (MIT) at repo root |
-| Working Android judging build | **DONE** — `flutter build apk --debug` compiles; device smoke pending |
-| App uses RevenueCat SDK for ≥1 purchase | **Repo-side DONE** — `purchases_flutter`, real SDK integration; judging path uses the RevenueCat **Test Store** (`docs/NEXT_GEN_REVENUECAT_TEST_STORE.md`) |
-| Real RevenueCat Test Store integration demonstrated | `BLOCKED_EXTERNAL` — needs a Test Store API key + dashboard config; the `--dart-define=REVENUECAT_TEST_STORE_KEY=...` seam is implemented and tested |
-| RevenueCat Project ID on the Devpost form | `BLOCKED_EXTERNAL` — dashboard value |
-| Public demo video < 2 min | `BLOCKED_EXTERNAL` — script ready: `docs/DEMO_SCRIPT.md` |
 | 1024×1024 app icon | **DONE** — `submission/pausesignal-icon-1024.png`, SignalMark, verified 1024×1024 |
 | 1179×2556 screenshot(s), no device frame | **DONE** — `submission/screenshots/` (7 frames at exact native resolution) |
+| Working Android build | **DONE** — `flutter build apk --debug` PASS; emulator smoke QA DONE |
+| App uses RevenueCat SDK for ≥1 purchase | **Repo-side DONE** — `purchases_flutter`, real SDK integration; judging path uses the RevenueCat **Test Store** (`docs/NEXT_GEN_REVENUECAT_TEST_STORE.md`) |
 | Accurate English submission text | DONE — this file + `docs/STORE_METADATA.md` description |
-| Final Devpost submission | `BLOCKED_EXTERNAL` — human submits |
+
+### HUMAN / EXTERNAL PENDING
+
+| Requirement | Status |
+|-------------|--------|
+| Active-student eligibility + qualifying academic/student email on Devpost | `HUMAN/EXTERNAL` — entrant attestation; nothing in the repo proves enrollment, age, consent, or academic-email eligibility |
+| Minor-entrant consent | `HUMAN/EXTERNAL` — per the official rules: entrants under the age of majority where they reside, but at least 13 years old, may enter Next Gen subject to the parent/legal-guardian conditions in the official rules |
+| Real RevenueCat Test Store integration demonstrated | `HUMAN/EXTERNAL` — needs a Test Store API key + dashboard config; the `--dart-define=REVENUECAT_TEST_STORE_KEY=...` seam is implemented and tested |
+| RevenueCat Project ID on the Devpost form | `HUMAN/EXTERNAL` — dashboard value |
+| Public demo video < 2 min | `HUMAN/EXTERNAL` — script ready: `docs/DEMO_SCRIPT.md`; recording deferred |
+| Final Devpost submission | `HUMAN/EXTERNAL` — human submits |
+
+### QA status (factual)
+
+| Item | Status |
+|---|---|
+| Android debug/judging APK build | **PASS** |
+| Android emulator smoke QA | **DONE** — zero-config launch, RTL, SafeCall demo, honest fallback states |
+| Physical Android device QA | **PENDING** — checklist ready in `docs/FINAL_LIVE_QA_HANDOFF.md` §J |
+| iOS build | **NOT VERIFIED** — no macOS/Xcode evidence |
 
 **Explicitly NOT Next Gen blockers** (future commercial-release items,
 tracked in `docs/RELEASE_HANDOFF.md`): store publication, store review,
@@ -102,13 +120,14 @@ Full dashboard setup: `docs/NEXT_GEN_REVENUECAT_TEST_STORE.md`.
 
 ## Devpost checklist
 
-- [ ] Project name + tagline (above)
-- [ ] Description (`docs/STORE_METADATA.md` full description)
-- [ ] Public repo URL + OSS license — repo public, `LICENSE` MIT
-- [ ] YouTube/Vimeo video link (<2 min, public) — `BLOCKED_EXTERNAL`
-- [ ] 1179×2556 screenshot — `submission/screenshots/01_home_threatcore.png` + alternates
-- [ ] 1024×1024 icon — `submission/pausesignal-icon-1024.png`
-- [ ] RevenueCat Project ID — `BLOCKED_EXTERNAL` (dashboard)
-- [ ] Test Store judging notes — link `docs/NEXT_GEN_REVENUECAT_TEST_STORE.md`
-- [ ] Student eligibility + academic email — `BLOCKED_EXTERNAL`
-- [ ] Team member details — `BLOCKED_EXTERNAL`
+- [ ] Project name + tagline (above) — REPO/DONE
+- [ ] Description (`docs/STORE_METADATA.md` full description) — REPO/DONE
+- [ ] Public repo URL + OSS license — REPO/DONE: repo public, `LICENSE` MIT
+- [ ] 1179×2556 screenshot — REPO/DONE: `submission/screenshots/01_home_threatcore.png` + alternates
+- [ ] 1024×1024 icon — REPO/DONE: `submission/pausesignal-icon-1024.png`
+- [ ] Test Store judging notes — REPO/DONE: `docs/NEXT_GEN_REVENUECAT_TEST_STORE.md`
+- [ ] YouTube/Vimeo video link (<2 min, public) — `HUMAN/EXTERNAL` (deferred)
+- [ ] RevenueCat Project ID — `HUMAN/EXTERNAL` (dashboard)
+- [ ] Student eligibility + academic email — `HUMAN/EXTERNAL`
+- [ ] Guardian consent if entrant is a minor — `HUMAN/EXTERNAL` (official-rules conditions)
+- [ ] Team member details — `HUMAN/EXTERNAL`
