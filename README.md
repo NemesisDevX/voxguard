@@ -119,7 +119,8 @@ Real DSP on every incoming audio chunk (heuristic prototype — not a validated 
 ### Engine B — Semantic Threat Engine
 
 - **Production**: a deterministic bilingual rule engine — English + Egyptian-Arabic lexicons for urgency (`بسرعة`, `دلوقتي`), financial demands (`حول`, `جنيه`, `محفظة`, `انستاباي`), secrecy/isolation (`متقولش لحد`, `بيني وبينك`), and impersonation claims (`أنا أخوك`). Zero network dependency.
-- **Developer experimentation only**: direct Groq API calls (`llama-3.3-70b-versatile`, JSON-mode) are gated behind BOTH `GROQ_API_KEY` and the explicit opt-in flag `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true`. Without both, semantics stay local. A permanent Groq key must never ship in a released build — production semantic traffic stays on-device or, in a future release, behind a server-side proxy with user consent.
+- **Production cloud path**: `VOXGUARD_SEMANTIC_PROXY_URL` points SafeCall at the relay's `POST /semantic` route — transcript text (bounded) is the only payload, the `GROQ_API_KEY` stays server-side, the response is a strictly-validated compact signal object, and any provider failure falls back to the local engine. Recording analysis never uses it.
+- **Developer experimentation only**: direct Groq API calls (`llama-3.3-70b-versatile`, JSON-mode) are gated behind BOTH `GROQ_API_KEY` and the explicit opt-in flag `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true` — and are **code-disabled in release builds** regardless of the flags. A permanent Groq key must never ship in a released build.
 - **Analyze Recording never calls Groq**: user-provided and provider-produced recording transcripts are analyzed by the local engine only.
 
 ### Threat Fusion Matrix
@@ -252,16 +253,17 @@ flutter run                  # attached device
 
 # Full integrations via --dart-define:
 flutter run \
-  --dart-define=GROQ_API_KEY=gsk_... \
-  --dart-define=VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true \
-  --dart-define=ASSEMBLYAI_TOKEN_BROKER_URL=https://your-broker.example.com/aai-token \
+  --dart-define=ASSEMBLYAI_TOKEN_BROKER_URL=https://your-relay.example.com/aai-token \
+  --dart-define=VOXGUARD_SEMANTIC_PROXY_URL=https://your-relay.example.com \
+  --dart-define=VOXGUARD_RELAY_TOKEN=<shared-relay-token> \
   --dart-define=REVENUECAT_ANDROID_KEY=goog_... \
   --dart-define=VOXGUARD_ALERT_RELAY_URL=https://your-relay.example.com/alert
 ```
 
 | `--dart-define` | Service | Without it |
 |---|---|---|
-| `GROQ_API_KEY` + `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true` | **Developer experimentation only** — direct Llama-3 semantic calls require BOTH the key and the opt-in flag; never ship a permanent Groq key in a released build | deterministic bilingual rule engine (the production path) |
+| `VOXGUARD_SEMANTIC_PROXY_URL` | **Production cloud-semantic path** — SafeCall posts bounded transcript text to the relay's `/semantic` route; provider key stays server-side; failure falls back locally | deterministic bilingual rule engine |
+| `GROQ_API_KEY` + `VOXGUARD_ENABLE_DEV_REMOTE_SEMANTIC=true` | **Developer experimentation only** — direct Llama-3 semantic calls require BOTH the key and the opt-in flag, and are code-disabled in release builds | deterministic bilingual rule engine (the production fallback) |
 | `ASSEMBLYAI_TOKEN_BROKER_URL` | **Production transcription path** — the client GETs a short-lived streaming token (≤600 s, one-time use) from a trusted broker that holds the provider secret server-side | falls through to the next option |
 | `ASSEMBLYAI_API_KEY` | **Development only** — the client mints its own short-lived token via `GET /v3/token`. Never ship a permanent provider key in a released build | Live Mic runs acoustic-only; UI shows "Live transcription unavailable" |
 | `ASSEMBLYAI_TEMP_TOKEN` | Pre-minted short-lived token (CI/demo convenience) | — |
@@ -310,7 +312,7 @@ Release signing reads `android/key.properties` (gitignored) first, then falls ba
 
 ## Tech Stack
 
-- **Flutter 3.41 / Dart 3.11** — Material 3 dark design system (deep zinc `#0B0D13`, emerald/amber/crimson semantics)
+- **Flutter 3.41 / Dart 3.11** — Material 3 token-based design system, light + dark (`AppPalette` ThemeExtension; Periwinkle/Soft Blue/Soft Violet accents, accent-proof safety colors)
 - **flutter_bloc** — `SafeCallBloc` (streaming threat telemetry), `PaywallBloc` (checkout lifecycle)
 - **purchases_flutter** — RevenueCat subscriptions + cross-platform sandbox
 - **http** — Groq chat completions + Family Shield relay broadcast

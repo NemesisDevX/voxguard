@@ -1,8 +1,8 @@
-# PauseSignal — one-command local/judging run (PowerShell).
+# PauseSignal - one-command local/judging run (PowerShell).
 #
 # Assembles --dart-define args from environment variables WITHOUT
 # echoing their values, then runs the app. Any variable left unset
-# simply isn't passed — the app resolves its truthful fallback.
+# simply isn't passed - the app resolves its truthful fallback.
 #
 # Usage:
 #   $env:REVENUECAT_TEST_STORE_KEY = "..."
@@ -16,6 +16,7 @@
 #   .\scripts\judge_local.ps1 run -d emulator-5554   # run on a device
 #   .\scripts\judge_local.ps1 apk                     # build judging APK
 #   .\scripts\judge_local.ps1 relay                   # wrangler dev relay
+#   .\scripts\judge_local.ps1 doctor                  # config check - set/missing only, never values
 param(
   [Parameter(Position = 0)][string]$Mode = "run",
   [Parameter(ValueFromRemainingArguments = $true)][string[]]$Rest
@@ -41,8 +42,23 @@ foreach ($name in @(
 }
 
 switch ($Mode) {
+  "doctor" {
+    Write-Host "PauseSignal integration config (values never printed):"
+    foreach ($name in @(
+      "REVENUECAT_TEST_STORE_KEY", "REVENUECAT_ANDROID_KEY",
+      "VOXGUARD_RELAY_TOKEN", "VOXGUARD_ALERT_RELAY_URL",
+      "VOXGUARD_RECORDING_TRANSCRIPTION_URL",
+      "ASSEMBLYAI_TOKEN_BROKER_URL", "VOXGUARD_SEMANTIC_PROXY_URL",
+      "ONESIGNAL_APP_ID"
+    )) {
+      $value = [Environment]::GetEnvironmentVariable($name)
+      $state = if ([string]::IsNullOrEmpty($value)) { "missing" } else { "set" }
+      Write-Host ("  " + $name + ": " + $state)
+    }
+    Write-Host "Relay-backed features need VOXGUARD_RELAY_TOKEN plus their URL var."
+  }
   "relay" {
-    Write-Host "Starting local relay (wrangler dev) — secrets come from server/.dev.vars"
+    Write-Host "Starting local relay (wrangler dev) - secrets come from server/.dev.vars"
     Push-Location server
     try { npx wrangler dev } finally { Pop-Location }
   }
@@ -56,7 +72,7 @@ switch ($Mode) {
     Write-Host "APK: build/app/outputs/flutter-apk/app-debug.apk"
   }
   default {
-    Write-Error "usage: judge_local.ps1 [run <flutter-run-args> | apk | relay]"
+    Write-Error "usage: judge_local.ps1 [run <flutter-run-args> | apk | relay | doctor]"
     exit 2
   }
 }
