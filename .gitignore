@@ -120,6 +120,13 @@ coverage/
 !.env.example
 **/.dev.vars
 
+# Video production intermediates — raw screenrecord segments, clip
+# renders, contact sheets, caption/filter scratch, local font copies.
+# The final MP4 stays local (binary asset, uploaded to YouTube/Vimeo);
+# only *.md metadata in submission/final/ is tracked.
+submission/final/*
+!submission/final/*.md
+
 # Symbols
 app.*.symbols
 
