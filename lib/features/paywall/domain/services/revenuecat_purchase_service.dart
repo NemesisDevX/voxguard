@@ -17,9 +17,10 @@ abstract final class RevenueCatEntitlements {
   static const String familyVault = 'family_vault';
 }
 
-/// Expected custom package identifiers in the CURRENT RevenueCat
-/// Offering. Product ids underneath may differ per store — Flutter
-/// code never sees them.
+/// Canonical package/product identifiers in the RevenueCat Offering.
+/// The current dashboard may use these custom ids OR RevenueCat
+/// standard ids (`$rc_monthly`, `$rc_annual`, …) over the same
+/// products — the mapper resolves both deterministically.
 abstract final class RevenueCatPackageIds {
   RevenueCatPackageIds._();
 
@@ -249,7 +250,7 @@ final class RevenueCatPurchaseService implements IPurchaseService {
     if (current == null) return const [];
     final packages = <StorePackage>[];
     for (final pkg in current.availablePackages) {
-      final mapped = _mapPackageIdentifier(pkg.identifier);
+      final mapped = _mapPackage(pkg);
       if (mapped == null) continue;
       packages.add(
         StorePackage(
@@ -265,19 +266,86 @@ final class RevenueCatPurchaseService implements IPurchaseService {
     return packages;
   }
 
-  static (TierId, BillingCycle)? _mapPackageIdentifier(String id) {
-    switch (id) {
-      case RevenueCatPackageIds.sentinelMonthly:
-        return (TierId.sentinel, BillingCycle.monthly);
-      case RevenueCatPackageIds.sentinelAnnual:
-        return (TierId.sentinel, BillingCycle.annual);
-      case RevenueCatPackageIds.familyVaultMonthly:
-        return (TierId.familyVault, BillingCycle.monthly);
-      case RevenueCatPackageIds.familyVaultAnnual:
-        return (TierId.familyVault, BillingCycle.annual);
+  /// Resolves a package to a plan from IDENTIFIERS ONLY — never from
+  /// display text, title, or price. Works for both the historical
+  /// custom ids and RevenueCat standard ids (`$rc_monthly`, …):
+  ///
+  ///   tier  — from tokens in the package identifier, else the
+  ///           StoreProduct identifier (`sentinel…`, `family_vault…`).
+  ///   cycle — from tokens in the package identifier (`…_monthly`,
+  ///           `…_annual`, `$rc_*` standards), else `PackageType`,
+  ///           else the StoreProduct identifier.
+  ///
+  /// Contradictory identifiers (e.g. a `sentinel` package over a
+  /// `family_vault` product) or unsupported durations are dropped
+  /// rather than mislabelled — a rendered row is never fabricated.
+  static (TierId, BillingCycle)? _mapPackage(Package pkg) {
+    final id = pkg.identifier;
+    final productId = pkg.storeProduct.identifier;
+
+    final idTier = _tierFromIdentifier(id);
+    final productTier = _tierFromIdentifier(productId);
+    if (idTier != null && productTier != null && idTier != productTier) {
+      return null;
     }
+    final tier = idTier ?? productTier;
+    if (tier == null) return null;
+
+    final cycles = <BillingCycle?>{
+      _cycleFromIdentifier(id),
+      _cycleFromPackageType(pkg.packageType),
+      _cycleFromIdentifier(productId),
+    }.whereType<BillingCycle>().toSet();
+    if (cycles.length != 1) return null;
+    return (tier, cycles.single);
+  }
+
+  static List<String> _tokens(String identifier) => identifier
+      .toLowerCase()
+      .split(RegExp('[^a-z0-9]+'))
+      .where((t) => t.isNotEmpty)
+      .toList();
+
+  static TierId? _tierFromIdentifier(String identifier) {
+    final tokens = _tokens(identifier);
+    if (tokens.contains('vault') ||
+        tokens.contains('familyvault') ||
+        tokens.contains('family')) {
+      return TierId.familyVault;
+    }
+    if (tokens.contains('sentinel')) return TierId.sentinel;
     return null;
   }
+
+  /// Cycle from identifier tokens. `null` covers both "no cycle
+  /// token" and unsupported durations — a six-month or weekly plan
+  /// is dropped rather than mislabelled "Monthly".
+  static BillingCycle? _cycleFromIdentifier(String identifier) {
+    final tokens = _tokens(identifier);
+    const annual = {'annual', 'annually', 'year', 'yearly', 'yr'};
+    if (tokens.any(annual.contains)) return BillingCycle.annual;
+    const unsupported = {
+      'week', 'weekly', 'lifetime', 'quarter', 'bimonth',
+      'sixmonth', 'threemonth', 'twomonth', 'semiannual',
+      '2month', '3month', '6month', '12month',
+    };
+    if (tokens.any(unsupported.contains)) return null;
+    final countTokens = {'two', 'three', 'four', 'six', 'twelve'};
+    if (tokens.contains('month') &&
+        tokens.any(countTokens.contains)) {
+      return null;
+    }
+    const monthly = {'monthly', 'month', 'mo'};
+    if (tokens.any(monthly.contains)) return BillingCycle.monthly;
+    return null;
+  }
+
+  static BillingCycle? _cycleFromPackageType(PackageType type) =>
+      switch (type) {
+        PackageType.monthly => BillingCycle.monthly,
+        PackageType.annual => BillingCycle.annual,
+        _ => null,
+      };
 
   @override
   Future<PurchaseOutcome> purchasePackage(StorePackage package) async {

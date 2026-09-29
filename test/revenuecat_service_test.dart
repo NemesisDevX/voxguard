@@ -114,11 +114,17 @@ CustomerInfo _infoWith({
   );
 }
 
-Package _rcPackage(String id, {String price = r'$9.99'}) => Package(
+Package _rcPackage(
+  String id, {
+  String price = r'$9.99',
+  String? productId,
+  PackageType type = PackageType.custom,
+}) =>
+    Package(
       id,
-      PackageType.custom,
+      type,
       StoreProduct(
-        'store_$id',
+        productId ?? 'store_$id',
         'desc',
         'Title $id',
         9.99,
@@ -322,6 +328,128 @@ void main() {
       } on PurchaseServiceException catch (e) {
         expect(e.message, isNot(contains('internal')));
       }
+    });
+
+    group('dashboard-agnostic identifier mapping', () {
+      test('RevenueCat standard \$rc_* ids map via attached product '
+          'identifiers', () async {
+        final adapter = _FakeAdapter()
+          ..offerings = _offerings([
+            _rcPackage(r'$rc_monthly',
+                type: PackageType.monthly,
+                productId: 'sentinel_monthly',
+                price: r'$9.99'),
+            _rcPackage(r'$rc_annual',
+                type: PackageType.annual,
+                productId: 'sentinel_annual',
+                price: r'$79.99'),
+            _rcPackage('fv_monthly',
+                productId: 'family_vault_monthly',
+                price: r'$19.99'),
+            _rcPackage('fv_annual',
+                productId: 'family_vault_annual',
+                price: r'$149.99'),
+          ]);
+        final svc = _svc(adapter);
+        await svc.initialize();
+        final packages = await svc.getPackages();
+
+        expect(packages, hasLength(4));
+        final byId = {for (final p in packages) p.identifier: p};
+        expect(byId[r'$rc_monthly']?.tierId, TierId.sentinel);
+        expect(byId[r'$rc_monthly']?.cycle, BillingCycle.monthly);
+        expect(byId[r'$rc_annual']?.tierId, TierId.sentinel);
+        expect(byId[r'$rc_annual']?.cycle, BillingCycle.annual);
+        expect(byId['fv_monthly']?.tierId, TierId.familyVault);
+        expect(byId['fv_annual']?.tierId, TierId.familyVault);
+      });
+
+      test('opaque package ids still map when the product '
+          'identifier carries the plan', () async {
+        final adapter = _FakeAdapter()
+          ..offerings = _offerings([
+            _rcPackage('pkg_a',
+                productId: 'sentinel_monthly'),
+            _rcPackage('pkg_b',
+                productId: 'family_vault_annual'),
+          ]);
+        final svc = _svc(adapter);
+        await svc.initialize();
+        final packages = await svc.getPackages();
+
+        expect(packages, hasLength(2));
+        expect(packages[0].tierId, TierId.sentinel);
+        expect(packages[0].cycle, BillingCycle.monthly);
+        expect(packages[1].tierId, TierId.familyVault);
+        expect(packages[1].cycle, BillingCycle.annual);
+      });
+
+      test('custom package ids resolve plan and cycle without the '
+          'product id', () async {
+        final adapter = _FakeAdapter()
+          ..offerings = _offerings([
+            _rcPackage('sentinel_annual', productId: 'prod_x1'),
+          ]);
+        final svc = _svc(adapter);
+        await svc.initialize();
+        final packages = await svc.getPackages();
+
+        expect(packages, hasLength(1));
+        expect(packages.single.tierId, TierId.sentinel);
+        expect(packages.single.cycle, BillingCycle.annual);
+      });
+
+      test('contradictory package/product tier identifiers are '
+          'dropped — never a mislabelled plan', () async {
+        final adapter = _FakeAdapter()
+          ..offerings = _offerings([
+            _rcPackage('sentinel_monthly',
+                productId: 'family_vault_monthly'),
+            _rcPackage('sentinel_annual',
+                productId: 'sentinel_annual'),
+          ]);
+        final svc = _svc(adapter);
+        await svc.initialize();
+        final packages = await svc.getPackages();
+
+        expect(packages, hasLength(1));
+        expect(packages.single.tierId, TierId.sentinel);
+        expect(packages.single.cycle, BillingCycle.annual);
+      });
+
+      test('unsupported durations are dropped rather than '
+          'mislabelled', () async {
+        final adapter = _FakeAdapter()
+          ..offerings = _offerings([
+            _rcPackage(r'$rc_weekly',
+                type: PackageType.weekly,
+                productId: 'sentinel_weekly'),
+            _rcPackage(r'$rc_six_month',
+                type: PackageType.sixMonth,
+                productId: 'sentinel_six_month'),
+            _rcPackage('sentinel_monthly',
+                productId: 'sentinel_monthly'),
+          ]);
+        final svc = _svc(adapter);
+        await svc.initialize();
+        final packages = await svc.getPackages();
+
+        expect(packages, hasLength(1));
+        expect(packages.single.cycle, BillingCycle.monthly);
+      });
+
+      test('fully opaque identifiers render nothing — no '
+          'fabricated rows', () async {
+        final adapter = _FakeAdapter()
+          ..offerings = _offerings([
+            _rcPackage('plan_1', productId: 'prod_001'),
+            _rcPackage('plan_2', productId: 'prod_002'),
+          ]);
+        final svc = _svc(adapter);
+        await svc.initialize();
+
+        expect(await svc.getPackages(), isEmpty);
+      });
     });
   });
 
