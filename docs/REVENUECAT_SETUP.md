@@ -64,16 +64,23 @@ The paywall renders only what that offering returns — missing
 packages are simply absent (a tier with no package falls back to
 truthful "not available" copy rather than a dead button).
 
-Package identifiers are **required, spelled exactly** — the service
-maps `Package.identifier` → (tier, cycle) via `RevenueCatPackageIds`
-and silently ignores unknown identifiers, never fabricating a row:
+Packages are resolved **dashboard-agnostically**: the service
+derives (tier, cycle) from package-identifier tokens, then
+`PackageType`, then the `StoreProduct` identifier, and silently
+drops packages whose signals conflict or use unsupported durations
+— never fabricating a row from display text or price. The intended
+four products:
 
-| Package | Product | Entitlement |
+| Store product id | Cycle | Entitlement |
 |---|---|---|
 | `sentinel_monthly` | monthly auto-renewing | `sentinel` |
 | `sentinel_annual` | annual auto-renewing | `sentinel` |
 | `family_vault_monthly` | monthly auto-renewing | `family_vault` |
 | `family_vault_annual` | annual auto-renewing | `family_vault` |
+
+(The current dashboard attaches `sentinel_annual` as the Sentinel
+annual product — verified via SDK inspection of the live offering.
+A future rename to `sentinel_yearly` resolves identically.)
 
 - **Prices**: always the store-localized `priceString` + `/mo` or
   `/yr` suffix — no hard-coded marketing prices anywhere.

@@ -56,7 +56,7 @@ with an `IAudioStreamSource` seam (live PCM and demo PCM share one
 pipeline), a zero-dependency Cloudflare Worker relay holding all
 provider credentials, `purchases_flutter` for subscriptions behind a
 decoupled interface, and CI that ships the web build to GitHub Pages.
-421 Flutter tests + 74 relay tests. Full localization across English,
+427 Flutter tests + 74 relay tests. Full localization across English,
 Arabic (true RTL), Spanish, and French — 581 keys each.
 
 ## RevenueCat integration
@@ -64,10 +64,13 @@ Arabic (true RTL), Spanish, and French — 581 keys each.
 Subscriptions are built on `purchases_flutter` with `CustomerInfo` as
 the sole entitlement authority:
 
-- Entitlements `sentinel` and `family_vault`; packages
-  `sentinel_monthly`, `sentinel_annual`, `family_vault_monthly`,
-  `family_vault_annual` — real localized prices rendered from the
-  current Offering.
+- Entitlements `sentinel` and `family_vault`. The live Offering
+  (verified via the SDK on 2026-09-30) resolves
+  `$rc_monthly`→`sentinel_monthly` ($1.05), `$rc_annual`→
+  `sentinel_annual` ($4.99), `$rc_two_month`→`family_vault_monthly`
+  ($15.99), and a custom `Annual` package→`family_vault_annual`
+  ($55.99) — real localized prices rendered from the current
+  Offering via dashboard-agnostic identifier mapping.
 - Four honest backends: production store, **RevenueCat Test Store**
   (the judging path — real SDK, sandbox transactions, dashboard
   evidence), a clearly-labelled local **Demo Store** for keyless
@@ -77,8 +80,15 @@ the sole entitlement authority:
   outbound Family Shield dispatch all resolve from `CustomerInfo` —
   a purchase result alone never unlocks anything.
 
-*Repository-side Test Store integration is implemented; live
-verification evidence is collected in the judging build.*
+*Verified live on 2026-09-30 with the RevenueCat Test Store SDK:
+genuine sandbox purchases for Sentinel monthly ($1.05) and Family
+Vault monthly ($15.99) completed through the native Test Store
+purchase sheet, `CustomerInfo` reported `sentinel` and
+`family_vault` active, the entitlement-gated UI updated accordingly
+(Family Vault correctly takes precedence when both are active),
+Restore Purchases re-derived the tier from `CustomerInfo`, and a
+cancelled purchase granted nothing. Test Store transactions never
+charge real money.*
 
 ## Challenges
 
@@ -96,7 +106,7 @@ verification evidence is collected in the judging build.*
   every screen works with zero credentials.
 - Truthful capability labelling throughout: DEMO / LIVE / PARTIAL /
   unavailable states are never disguised.
-- 421 + 74 passing tests, CI green, release safety pinned by
+- 427 + 74 passing tests, CI green, release safety pinned by
   regression tests.
 
 ## What we learned
@@ -108,9 +118,10 @@ semantics in two languages before you need an LLM.
 
 ## What's next
 
-- RevenueCat Test Store + relay-backed provider verification in live
-  QA (infrastructure is implemented and documented in
-  `docs/FINAL_LIVE_QA_HANDOFF.md`).
+- Relay-backed provider verification in live QA (AssemblyAI / Groq /
+  OneSignal infrastructure is implemented and documented in
+  `docs/FINAL_LIVE_QA_HANDOFF.md`; intentionally deferred to keep
+  the submission honest — no fabricated evidence).
 - Physical-device QA and iOS build (requires macOS/Xcode).
 - Calibrated acoustic models; Live Shield ambient mode.
 
@@ -118,8 +129,10 @@ semantics in two languages before you need an LLM.
 
 - **Demo Attack is simulated** — generated audio + scripted dialogue
   through the identical pipeline; always labelled.
-- The video's paywall runs in **Demo Store** state (no real charge);
-  judging builds use RevenueCat's hosted Test Store.
+- The video's subscription segment runs on **RevenueCat's hosted
+  Test Store** via `purchases_flutter` — a genuine sandbox
+  transaction against the real SDK, not a real-money charge. Demo
+  Attack remains simulated and labelled.
 - AssemblyAI / Groq / OneSignal paths are implemented server-side but
   not exercised live in the demo assets.
 - Recorded on an Android emulator, not a physical device.

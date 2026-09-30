@@ -18,15 +18,32 @@ but never charge real money.
    Devpost form.
 2. **Test Store**: every project ships with a built-in Test Store
    (no App Store Connect / Play Console linking needed).
-3. **Products** — create four Test Store products matching the app's
-   custom package identifiers:
+3. **Products** — create four Test Store products carrying the
+   tier/cycle in the product identifier (the store product id is
+   what makes each package unambiguous):
 
-   | Package identifier | Tier | Cycle |
+   | Store product id | Tier | Cycle |
    |---|---|---|
    | `sentinel_monthly` | Sentinel Shield | monthly |
    | `sentinel_annual` | Sentinel Shield | annual |
    | `family_vault_monthly` | Family Vault | monthly |
    | `family_vault_annual` | Family Vault | annual |
+
+   As observed in the live offering (2026-09-30 SDK inspection):
+   `$rc_monthly`→`sentinel_monthly` ($1.05), `$rc_annual`→
+   `sentinel_annual` ($4.99), `$rc_two_month`→`family_vault_monthly`
+   ($15.99), custom `Annual`→`family_vault_annual` ($55.99). Package
+   identifiers may be standard RevenueCat ids (`$rc_monthly`,
+   `$rc_annual`, `$rc_two_month`, …) or custom ids — the app
+   resolves tier/cycle from package-identifier tokens, then
+   `PackageType`, then the `StoreProduct` identifier, and drops any
+   package whose signals conflict. Display titles and prices are
+   never used for mapping.
+
+   Note: the current dashboard attaches `sentinel_annual` (not a
+   `sentinel_yearly` product) as the Sentinel annual product —
+   verified at runtime. If the dashboard is later renamed to
+   `sentinel_yearly`, the mapper resolves it identically.
 
    Test Store product names/prices are arbitrary — pick readable
    test values (e.g. `$4.99`/`$49.99`, `$9.99`/`$99.99`); the app
@@ -34,12 +51,11 @@ but never charge real money.
 
 4. **Entitlements** — attach products to the existing entitlement
    IDs (do NOT create new ones):
-   - `sentinel` ← `sentinel_monthly`, `sentinel_annual`
+   - `sentinel` ← `sentinel_monthly`, `sentinel_yearly`
    - `family_vault` ← `family_vault_monthly`, `family_vault_annual`
-5. **Offering** — ensure the **current** Offering contains all four
-   packages with the exact identifiers above. The app only reads the
-   current offering; unknown identifiers are ignored, never
-   fabricated.
+5. **Offering** — ensure the **current** Offering contains the four
+   packages. The app reads the current offering only; packages it
+   cannot resolve are dropped rather than fabricated.
 6. **API key** — copy the **Test Store API key** from the project's
    API keys section.
 
