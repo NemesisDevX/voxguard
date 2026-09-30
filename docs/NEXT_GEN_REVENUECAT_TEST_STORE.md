@@ -51,7 +51,7 @@ but never charge real money.
 
 4. **Entitlements** — attach products to the existing entitlement
    IDs (do NOT create new ones):
-   - `sentinel` ← `sentinel_monthly`, `sentinel_yearly`
+   - `sentinel` ← `sentinel_monthly`, `sentinel_annual`
    - `family_vault` ← `family_vault_monthly`, `family_vault_annual`
 5. **Offering** — ensure the **current** Offering contains the four
    packages. The app reads the current offering only; packages it
