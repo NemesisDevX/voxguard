@@ -2,12 +2,27 @@
 
 ## File
 
-- **File:** `pausesignal-shipaton-2026-final.mp4`
-  (previous Demo Store cut preserved as `pausesignal-shipaton-2026.mp4`)
-- **Runtime:** 106.8 s (1:47) — under the 2-minute Next Gen ceiling
-- **SHA-256:** `c43a3085ee2b711ce72416a10afcfee8ad10de70de7743f0ec44ccdd4613e002`
+- **File:** `pausesignal-shipaton-2026-final-v2.mp4`
+  (previous cuts preserved: `pausesignal-shipaton-2026-final.mp4`,
+  `pausesignal-shipaton-2026.mp4`)
+- **Runtime:** 92.7 s (1:33) — under the 2-minute Next Gen ceiling
+- **SHA-256:** `9cab788e193b1f37d77d699162c7a0009a3eb5cd638f321b345ea6cb2a331ada`
 - **Resolution:** 1080×2160 portrait (native emulator capture, H.264 + silent AAC)
 - **Audio:** silent track — no copyrighted music, no narration
+
+## Editing notes (V2)
+
+- Same approved genuine footage, tightened pacing (raw idles,
+  repeated paywall views, and processing waits trimmed).
+- English judge overlays added throughout — e.g. "Simulated scam
+  scenario — clearly labeled", "Two independent signals → one
+  Threat Score", "Egyptian Arabic scam dialogue" /
+  "Urgency • money demand • secrecy detected" (over the Arabic
+  transcript so the bilingual signal reads instantly), "Verify
+  identity through a trusted channel", "RevenueCat Test Store —
+  real SDK", "Sandbox transaction — no real charge", "Genuine Test
+  Store purchase", "CustomerInfo entitlement verified",
+  "Restore Purchases ✓", "RevenueCat Test Store verified".
 
 ## Proposed YouTube/Vimeo title
 
@@ -59,16 +74,16 @@ not yet live.
 
 | Time | Content |
 |---|---|
-| 0:00–0:05 | Title card — name, tagline, problem |
-| 0:05–0:08 | Welcome — four-language picker |
-| 0:08–0:16 | Home + SafeCall picker (REAL SESSION / DEMO) |
-| 0:16–0:24 | Demo session — acoustic-only start, DEMO MODE badges |
-| 0:24–0:40 | Escalation SAFE → CAUTION → HIGH RISK 90+ |
-| 0:40–0:52 | Pause sheet — flags, verification steps, Family Shield demo |
-| 0:52–1:04 | Incident report INC — bilingual transcript + evidence |
-| 1:04–1:05 | Analyze Recording picker |
-| 1:05–1:10 | RevenueCat Test Store paywall — badge + live Offering prices |
-| 1:10–1:19 | Sentinel monthly selected → Subscribe → native Test Store purchase sheet (`sentinel_monthly`, $1.05/P1M) |
-| 1:19–1:24 | "Test valid purchase" → sheet dismissed, purchase processing |
-| 1:24–1:42 | Paywall revisit → Restore Purchases → CustomerInfo refresh → home shows SENTINEL ACTIVE + "Sentinel Shield activated — shield upgraded" |
-| 1:42–1:47 | End card — tagline, repo, license |
+| 0:00–0:04 | Title card — name, tagline, "AI-assisted voice scam defense" overlay |
+| 0:04–0:11 | Home + SafeCall picker — overlay "Listen for acoustic anomalies" |
+| 0:11–0:17 | Demo session start, DEMO MODE badges — "Simulated scam scenario — clearly labeled", "Acoustic + semantic signals analyzed together" |
+| 0:17–0:26 | Threat climb SAFE → CAUTION → HIGH RISK — "Two independent signals → one Threat Score" |
+| 0:26–0:34 | HIGH RISK peak 90+ + pause sheet |
+| 0:34–0:42 | Verification steps + Family Shield demo — "Verify identity through a trusted channel" |
+| 0:42–0:50 | Incident report INC — bilingual transcript — "Egyptian Arabic scam dialogue" → "Urgency • money demand • secrecy detected" |
+| 0:50–0:54 | Analyze Recording picker |
+| 0:54–0:59 | RevenueCat Test Store paywall — badge + Offering prices — "RevenueCat Test Store — real SDK", "Sandbox transaction — no real charge" |
+| 0:59–1:08 | Sentinel monthly selected → Subscribe → native Test Store purchase sheet (`sentinel_monthly`, $1.05/P1M) — "Live Offering prices", "Genuine Test Store purchase" |
+| 1:08–1:14 | Purchase completes — sheet dismissed, processing |
+| 1:14–1:28 | Paywall revisit → Restore Purchases → home SENTINEL ACTIVE + "Sentinel Shield activated" — "CustomerInfo entitlement verified", "Restore Purchases ✓" |
+| 1:28–1:33 | End card — tagline, repo, license + "RevenueCat Test Store verified" |
